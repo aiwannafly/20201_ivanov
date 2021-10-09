@@ -1,0 +1,6 @@
+#ifndef FLATMAP_FLATMAPUNITTESTS_H
+#define FLATMAP_FLATMAPUNITTESTS_H
+
+int RunTests(int argc, char *argv[]);
+
+#endif //FLATMAP_FLATMAPUNITTESTS_H

@@ -1,0 +1,12 @@
+    TValue s1 = {};
+    s1.Age = 19;
+    s1.Weight = 80;
+    std::string name = "8 bytes";
+    bool status = map.Insert(name, s1);
+    printf("inserted: %d\n", status);
+    status = map.Insert(name, s1);
+    printf("inserted: %d\n", status);
+//    status = map.Erase(name);
+//    printf("deleted: %d\n", status);
+    TValue student = map[name];
+    printf("Age: %zu, Weight: %zu\n", student.Age, student.Weight);
