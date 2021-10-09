@@ -8,6 +8,8 @@
 #include "util.h"
 
 #define KEY_NOT_EXIST_MSG "The key does not exist in the flatmap.\n"
+#define INITIAL_CAPACITY 1
+#define EXPAND_COEF 2
 
 struct TValue {
     size_t Age;
@@ -225,7 +227,7 @@ const TValue &FlatMap::At(const TKey &key) const {
 }
 
 bool FlatMap::InitTable() {
-    capacity_ = 1;
+    capacity_ = INITIAL_CAPACITY;
     cells_ = new TCell[capacity_];
     if (!cells_) {
         return false;
@@ -235,7 +237,7 @@ bool FlatMap::InitTable() {
 
 bool FlatMap::ExpandTable() {
     assert(capacity_);
-    capacity_ *= 2;
+    capacity_ *= EXPAND_COEF;
     auto *newCells = new TCell[capacity_];
     assert(size_ <= capacity_);
     for (size_t i = 0; i < size_; i++) {
