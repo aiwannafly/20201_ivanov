@@ -146,7 +146,7 @@ bool FlatMap::Insert(const TKey &key, const TValue &value) {
         return false;
     }
     bool status = true;
-    if (size_ == 0) {
+    if (capacity_ == 0) {
         status = this->InitTable();
         if (!status) {
             return false;

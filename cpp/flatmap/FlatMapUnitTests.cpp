@@ -80,21 +80,21 @@ TEST(FlatMap, Many_Inserts_Erases) {
     FlatMap map;
     TValue student = {40, 40};
     for (size_t i = 0; i < countOfKeys; i++) {
-        map.Insert(basicKey + std::to_string(i), student);
+        EXPECT_TRUE(map.Insert(basicKey + std::to_string(i), student));
     }
     EXPECT_FALSE(map.Empty());
     for (size_t i = 0; i < countOfKeys; i++) {
         EXPECT_TRUE(map.Contains(basicKey + std::to_string(i)));
     }
     for (size_t i = 0; i < countOfKeys; i++) {
-        map.Erase(basicKey + std::to_string(i));
+        EXPECT_TRUE(map.Erase(basicKey + std::to_string(i)));
     }
     for (size_t i = 0; i < countOfKeys; i++) {
         EXPECT_FALSE(map.Contains(basicKey + std::to_string(i)));
     }
     EXPECT_TRUE(map.Empty());
     for (size_t i = 0; i < countOfKeys; i++) {
-        map.Insert(basicKey + std::to_string(i), student);
+        EXPECT_TRUE(map.Insert(basicKey + std::to_string(i), student));
     }
     for (size_t i = 0; i < countOfKeys; i++) {
         EXPECT_TRUE(map.Contains(basicKey + std::to_string(i)));
