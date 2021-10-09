@@ -57,7 +57,7 @@ TEST(FlatMap, Insert_Erase_Empty_Size) {
     EXPECT_EQ(map.Size(), 0);
 }
 
-TEST(FlatMap, Many_Inserts) {
+TEST(FlatMap, Strict_Order_Inserts) {
     size_t length = 7;
     const char *bottomToUp[] = {
             "A", "B", "C", "D", "E", "F", "G"
@@ -72,6 +72,34 @@ TEST(FlatMap, Many_Inserts) {
         EXPECT_TRUE(mapBU.Insert(bottomToUp[i], student));
         EXPECT_TRUE(mapUB.Insert(upToBottom[i], student));
     }
+}
+
+TEST(FlatMap, Many_Inserts_Erases) {
+    std::string basicKey = "key";
+    size_t countOfKeys = 7777;
+    FlatMap map;
+    TValue student = {40, 40};
+    for (size_t i = 0; i < countOfKeys; i++) {
+        map.Insert(basicKey + std::to_string(i), student);
+    }
+    EXPECT_FALSE(map.Empty());
+    for (size_t i = 0; i < countOfKeys; i++) {
+        EXPECT_TRUE(map.Contains(basicKey + std::to_string(i)));
+    }
+    for (size_t i = 0; i < countOfKeys; i++) {
+        map.Erase(basicKey + std::to_string(i));
+    }
+    for (size_t i = 0; i < countOfKeys; i++) {
+        EXPECT_FALSE(map.Contains(basicKey + std::to_string(i)));
+    }
+    EXPECT_TRUE(map.Empty());
+    for (size_t i = 0; i < countOfKeys; i++) {
+        map.Insert(basicKey + std::to_string(i), student);
+    }
+    for (size_t i = 0; i < countOfKeys; i++) {
+        EXPECT_TRUE(map.Contains(basicKey + std::to_string(i)));
+    }
+    EXPECT_FALSE(map.Empty());
 }
 
 TEST(FlatMap, Constructors) {
