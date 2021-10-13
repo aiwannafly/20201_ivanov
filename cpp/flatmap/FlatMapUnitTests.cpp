@@ -5,11 +5,6 @@
 
 #include "FlatMap.h"
 
-struct TValue {
-    size_t Age;
-    size_t Weight;
-};
-
 bool CmpValues(const void *c1, const void *c2) {
     auto *v1 = (TValue *) c1;
     auto *v2 = (TValue *) c2;

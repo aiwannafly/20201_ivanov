@@ -1,7 +1,5 @@
 #include "util.h"
 
-#include <cstdio>
-
 int binarySearch(void *array, int begin, int end,
                  int (*comp)(const void *, const void *), size_t elemSize,
                  const void *elem) {
@@ -19,4 +17,3 @@ int binarySearch(void *array, int begin, int end,
     }
     return -1;
 }
-

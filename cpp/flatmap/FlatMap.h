@@ -5,9 +5,10 @@
 #include <string>
 
 typedef std::string TKey;
-typedef struct TValue TValue;
-
-typedef struct TCell TCell;
+typedef struct TValue {
+    size_t Age;
+    size_t Weight;
+} TValue;
 
 class FlatMap {
 public:
@@ -95,11 +96,12 @@ public:
     friend bool operator!=(const FlatMap &a, const FlatMap &b);
 
 private:
+    typedef struct TCell TCell;
     TCell *cells_ = nullptr;
     size_t size_ = 0;
     size_t capacity_ = 0;
-    bool InitTable();
-    bool ExpandTable();
+
+    void ExpandTable();
     int GetIdx(const TKey &key) const;
     bool CopyCells(const FlatMap &another);
 };

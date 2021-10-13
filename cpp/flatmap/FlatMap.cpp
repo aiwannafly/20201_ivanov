@@ -7,34 +7,32 @@
 
 #include "util.h"
 
-#define KEY_NOT_EXIST_MSG "The key does not exist in the flatmap.\n"
-#define INITIAL_CAPACITY 1
-#define EXPAND_COEF 2
-
-struct TValue {
-    size_t Age;
-    size_t Weight;
-};
+constexpr char keyNotExistMsg[] = "The key does not exist in the flatmap.\\n";
+constexpr size_t initialCapacity = 1;
+constexpr size_t expandCoefficient = 2;
+constexpr int notFound = -1;
 
 struct TCell {
     TKey *key;
     TValue *value;
 };
 
-static int CompareKeys(const TKey *key1, const TKey *key2) {
-    assert(key1);
-    assert(key2);
-    return (*key2).compare(*key1);
-}
-
-static int ValuesAreEqual(const TValue *value1, const TValue *value2) {
-    assert(value1);
-    assert(value2);
-    if ((value1->Weight == value2->Weight) &&
-        (value1->Age == value2->Age)) {
-        return 1;
+namespace {
+    int CompareKeys(const TKey *key1, const TKey *key2) {
+        assert(key1);
+        assert(key2);
+        return (*key2).compare(*key1);
     }
-    return 0;
+
+    int ValuesAreEqual(const TValue *value1, const TValue *value2) {
+        assert(value1);
+        assert(value2);
+        if ((value1->Weight == value2->Weight) &&
+            (value1->Age == value2->Age)) {
+            return 1;
+        }
+        return 0;
+    }
 }
 
 FlatMap::FlatMap() = default;
@@ -142,37 +140,33 @@ int FlatMap::GetIdx(const TKey &key) const {
 
 bool FlatMap::Insert(const TKey &key, const TValue &value) {
     int idx = this->GetIdx(key);
-    if (idx != -1) {
+    if (idx != notFound) {
+        // the elem with the key already exists
         return false;
     }
-    bool status = true;
     if (capacity_ == 0) {
-        status = this->InitTable();
-        if (!status) {
-            return false;
-        }
+        assert(initialCapacity > 0);
+        capacity_ = initialCapacity;
+        cells_ = new TCell[capacity_];
     }
     if (size_ >= capacity_) {
-        status = this->ExpandTable();
-        if (!status) {
-            return false;
-        }
+        this->ExpandTable();
     }
-    size_t elemIdx = size_;
+    size_t insertIdx = size_;
     for (size_t i = 0; i < size_; i++) {
         assert(key != *cells_[i].key);
         if (key.compare(*cells_[i].key) > 0) {
-            elemIdx = i;
+            insertIdx = i;
             break;
         }
     }
-    for (size_t i = size_; i > elemIdx; i--) {
+    for (size_t i = size_; i > insertIdx; i--) {
         cells_[i] = cells_[i - 1];
     }
-    cells_[elemIdx].key = new TKey(key);
-    cells_[elemIdx].value = new TValue(value);
+    cells_[insertIdx].key = new TKey(key);
+    cells_[insertIdx].value = new TValue(value);
     size_++;
-    return status;
+    return true;
 }
 
 bool FlatMap::Erase(const TKey &key) {
@@ -180,7 +174,7 @@ bool FlatMap::Erase(const TKey &key) {
         return false;
     }
     int idx = this->GetIdx(key);
-    if (-1 == idx) {
+    if (notFound == idx) {
         return false;
     }
     delete cells_[idx].key;
@@ -215,7 +209,7 @@ TValue &FlatMap::At(const TKey &key) {
     if (idx >= 0) {
         return *cells_[idx].value;
     }
-    throw std::out_of_range(KEY_NOT_EXIST_MSG);
+    throw std::out_of_range(keyNotExistMsg);
 }
 
 const TValue &FlatMap::At(const TKey &key) const {
@@ -223,21 +217,12 @@ const TValue &FlatMap::At(const TKey &key) const {
     if (idx >= 0) {
         return (const TValue &) *cells_[idx].value;
     }
-    throw std::out_of_range(KEY_NOT_EXIST_MSG);
+    throw std::out_of_range(keyNotExistMsg);
 }
 
-bool FlatMap::InitTable() {
-    capacity_ = INITIAL_CAPACITY;
-    cells_ = new TCell[capacity_];
-    if (!cells_) {
-        return false;
-    }
-    return true;
-}
-
-bool FlatMap::ExpandTable() {
+void FlatMap::ExpandTable() {
     assert(capacity_);
-    capacity_ *= EXPAND_COEF;
+    capacity_ *= expandCoefficient;
     auto *newCells = new TCell[capacity_];
     assert(size_ <= capacity_);
     for (size_t i = 0; i < size_; i++) {
@@ -245,7 +230,6 @@ bool FlatMap::ExpandTable() {
     }
     delete[] cells_;
     cells_ = newCells;
-    return true;
 }
 
 size_t FlatMap::Size() const {
