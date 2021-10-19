@@ -14,27 +14,23 @@ constexpr size_t expandCoefficient = 2;
 constexpr int notFound = -1;
 
 struct TCell {
-    TKey *key;
-    TValue *value;
+    TKey key;
+    TValue value{};
 };
 
 namespace {
-    int CompareKeys(const TKey *key1, const TKey *key2) {
-        assert(key1);
-        assert(key2);
-        return (*key2).compare(*key1);
+    int CompareKeys(const TKey &key1, const TKey &key2) {
+        return key2.compare(key1);
     }
 
-    int ValuesAreEqual(const TValue *value1, const TValue *value2) {
-        assert(value1);
-        assert(value2);
-        if ((value1->Weight == value2->Weight) &&
-            (value1->Age == value2->Age)) {
+    int ValuesAreEqual(const TValue &value1, const TValue &value2) {
+        if ((value1.Weight == value2.Weight) &&
+            (value1.Age == value2.Age)) {
             return 1;
         }
         return 0;
     }
-    int CompareCells(TCell cell1, TCell cell2) {
+    int CompareCells(const TCell &cell1, const TCell &cell2) {
         return CompareKeys(cell1.key, cell2.key);
     }
 }
@@ -42,17 +38,7 @@ namespace {
 FlatMap::FlatMap() = default;
 
 FlatMap::~FlatMap() {
-    if (cells_ == nullptr) {
-        return;
-    }
-    for (size_t i = 0; i < size_; i++) {
-        delete cells_[i].key;
-        delete cells_[i].value;
-    }
-    delete[] cells_;
-    cells_ = nullptr;
-    size_ = 0;
-    capacity_ = 0;
+    Clear();
 }
 
 bool FlatMap::CopyCells(const FlatMap &another) {
@@ -60,8 +46,8 @@ bool FlatMap::CopyCells(const FlatMap &another) {
         return false;
     }
     for (size_t i = 0; i < size_; i++) {
-        cells_[i].key = new TKey(*another.cells_[i].key);
-        cells_[i].value = new TValue(*another.cells_[i].value);
+        cells_[i].key = another.cells_[i].key;
+        cells_[i].value = another.cells_[i].value;
     }
     return true;
 }
@@ -71,6 +57,7 @@ FlatMap::FlatMap(const FlatMap &copy) {
     size_ = copy.size_;
     cells_ = new TCell[capacity_];
     assert(size_ <= capacity_);
+//    std::copy(copy.cells_[0], copy.cells_[size_], cells_);
     this->CopyCells(copy);
 }
 
@@ -119,7 +106,13 @@ FlatMap &FlatMap::operator=(FlatMap &&another) noexcept {
 }
 
 void FlatMap::Clear() {
-    this->~FlatMap();
+    if (cells_ == nullptr) {
+        return;
+    }
+    delete[] cells_;
+    cells_ = nullptr;
+    size_ = 0;
+    capacity_ = 0;
 }
 
 int FlatMap::GetIdx(const TKey &key) const {
@@ -127,9 +120,8 @@ int FlatMap::GetIdx(const TKey &key) const {
         return -1;
     }
     TCell inSearch = {};
-    inSearch.key = new TKey(key);
+    inSearch.key = key;
     int result = binarySearch(cells_, 0, (int) size_ - 1, inSearch, CompareCells);
-    delete inSearch.key;
     return result;
 }
 
@@ -149,8 +141,8 @@ bool FlatMap::Insert(const TKey &key, const TValue &value) {
     }
     size_t insertIdx = size_;
     for (size_t i = 0; i < size_; i++) {
-        assert(key != *cells_[i].key);
-        if (key.compare(*cells_[i].key) > 0) {
+        assert(key != cells_[i].key);
+        if (key.compare(cells_[i].key) > 0) {
             insertIdx = i;
             break;
         }
@@ -158,8 +150,8 @@ bool FlatMap::Insert(const TKey &key, const TValue &value) {
     for (size_t i = size_; i > insertIdx; i--) {
         cells_[i] = cells_[i - 1];
     }
-    cells_[insertIdx].key = new TKey(key);
-    cells_[insertIdx].value = new TValue(value);
+    cells_[insertIdx].key = key;
+    cells_[insertIdx].value = value;
     size_++;
     return true;
 }
@@ -172,8 +164,6 @@ bool FlatMap::Erase(const TKey &key) {
     if (notFound == idx) {
         return false;
     }
-    delete cells_[idx].key;
-    delete cells_[idx].value;
     size_--;
     for (auto i = (size_t) idx; i < size_; i++) {
         cells_[i] = cells_[i + 1];
@@ -192,7 +182,7 @@ bool FlatMap::Contains(const TKey &key) const {
 TValue &FlatMap::operator[](const TKey &key) {
     int idx = this->GetIdx(key);
     if (idx >= 0) {
-        return *cells_[idx].value;
+        return cells_[idx].value;
     }
     auto *value = new TValue;
     this->Insert(key, *value);
@@ -202,7 +192,7 @@ TValue &FlatMap::operator[](const TKey &key) {
 TValue &FlatMap::At(const TKey &key) {
     int idx = this->GetIdx(key);
     if (idx >= 0) {
-        return *cells_[idx].value;
+        return cells_[idx].value;
     }
     throw std::out_of_range(keyNotExistMsg);
 }
@@ -210,7 +200,7 @@ TValue &FlatMap::At(const TKey &key) {
 const TValue &FlatMap::At(const TKey &key) const {
     int idx = this->GetIdx(key);
     if (idx >= 0) {
-        return (const TValue &) *cells_[idx].value;
+        return (const TValue &) cells_[idx].value;
     }
     throw std::out_of_range(keyNotExistMsg);
 }
