@@ -6,6 +6,7 @@
 #include <string>
 
 #include "util.h"
+#include "util.cpp"
 
 constexpr char keyNotExistMsg[] = "The key does not exist in the flatmap.\\n";
 constexpr size_t initialCapacity = 1;
@@ -32,6 +33,9 @@ namespace {
             return 1;
         }
         return 0;
+    }
+    int CompareCells(TCell cell1, TCell cell2) {
+        return CompareKeys(cell1.key, cell2.key);
     }
 }
 
@@ -118,22 +122,13 @@ void FlatMap::Clear() {
     this->~FlatMap();
 }
 
-static int CompareCells(const void *cell1, const void *cell2) {
-    assert(cell1);
-    assert(cell2);
-    TKey *key1 = ((TCell *) cell1)->key;
-    TKey *key2 = ((TCell *) cell2)->key;
-    return CompareKeys(key1, key2);
-}
-
 int FlatMap::GetIdx(const TKey &key) const {
     if (size_ == 0) {
         return -1;
     }
     TCell inSearch = {};
     inSearch.key = new TKey(key);
-    int result = binarySearch(cells_, 0, (int) size_ - 1, CompareCells, sizeof(cells_[0]),
-                              (const void *) &inSearch);
+    int result = binarySearch(cells_, 0, (int) size_ - 1, inSearch, CompareCells);
     delete inSearch.key;
     return result;
 }

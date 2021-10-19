@@ -3,8 +3,9 @@
 
 #include <cstddef>
 
-int binarySearch(void *array, int begin, int end,
-                 int (*comp)(const void *, const void *), size_t elemSize,
-                 const void *elem);
+constexpr int notFoundCode = -1;
+
+template<class Type, class Comp>
+int binarySearch(Type array[], int begin, int end, const Type &key, Comp comp);
 
 #endif //FLATMAP_UTIL_H

@@ -1,19 +1,19 @@
 #include "util.h"
 
-int binarySearch(void *array, int begin, int end,
-                 int (*comp)(const void *, const void *), size_t elemSize,
-                 const void *elem) {
-    if (end >= begin) {
+#include <cassert>
+
+template<class Type, class Comp>
+int binarySearch(Type array[], int begin, int end, const Type &key, Comp comp) {
+    assert(array);
+    while (begin <= end && begin >= 0) {
         int mid = begin + (end - begin) / 2;
-        void *current = (char *) array + mid * elemSize;
-        if (comp(current, elem) == 0) {
+        if (comp(array[mid], key) == 0) {
             return mid;
+        } else if (comp(array[mid], key) > 0) {
+            end = mid - 1;
+        } else if (comp(array[mid], key) < 0) {
+            begin = mid + 1;
         }
-        if (comp(current, elem) > 0) {
-            return binarySearch(array, begin, mid - 1, comp,
-                                elemSize, elem);
-        }
-        return binarySearch(array, mid + 1, end, comp, elemSize, elem);
     }
-    return -1;
+    return notFoundCode;
 }
