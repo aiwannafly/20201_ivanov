@@ -30,6 +30,7 @@ namespace {
         }
         return 0;
     }
+
     int CompareCells(const TCell &cell1, const TCell &cell2) {
         return CompareKeys(cell1.key, cell2.key);
     }
@@ -41,24 +42,12 @@ FlatMap::~FlatMap() {
     Clear();
 }
 
-bool FlatMap::CopyCells(const FlatMap &another) {
-    if (this->size_ != another.size_) {
-        return false;
-    }
-    for (size_t i = 0; i < size_; i++) {
-        cells_[i].key = another.cells_[i].key;
-        cells_[i].value = another.cells_[i].value;
-    }
-    return true;
-}
-
 FlatMap::FlatMap(const FlatMap &copy) {
     capacity_ = copy.capacity_;
     size_ = copy.size_;
     cells_ = new TCell[capacity_];
     assert(size_ <= capacity_);
-//    std::copy(copy.cells_[0], copy.cells_[size_], cells_);
-    this->CopyCells(copy);
+    std::copy(&copy.cells_[0], &copy.cells_[size_], cells_);
 }
 
 FlatMap::FlatMap(FlatMap &&previous) noexcept {
@@ -88,7 +77,8 @@ FlatMap &FlatMap::operator=(const FlatMap &another) {
     size_ = another.size_;
     cells_ = new TCell[capacity_];
     assert(size_ <= capacity_);
-    this->CopyCells(another);
+    std::copy(&another.cells_[0],
+              &another.cells_[size_], cells_);
     return *this;
 }
 
@@ -147,9 +137,7 @@ bool FlatMap::Insert(const TKey &key, const TValue &value) {
             break;
         }
     }
-    for (size_t i = size_; i > insertIdx; i--) {
-        cells_[i] = cells_[i - 1];
-    }
+    std::rotate(&cells_[insertIdx], &cells_[capacity_] - 1, &cells_[capacity_]);
     cells_[insertIdx].key = key;
     cells_[insertIdx].value = value;
     size_++;
@@ -165,9 +153,7 @@ bool FlatMap::Erase(const TKey &key) {
         return false;
     }
     size_--;
-    for (auto i = (size_t) idx; i < size_; i++) {
-        cells_[i] = cells_[i + 1];
-    }
+    std::rotate(&cells_[idx], &cells_[idx] + 1, &cells_[capacity_]);
     return true;
 }
 
@@ -210,9 +196,8 @@ void FlatMap::ExpandTable() {
     capacity_ *= expandCoefficient;
     auto *newCells = new TCell[capacity_];
     assert(size_ <= capacity_);
-    for (size_t i = 0; i < size_; i++) {
-        newCells[i] = cells_[i];
-    }
+    std::copy(&cells_[0],
+              &cells_[size_], newCells);
     delete[] cells_;
     cells_ = newCells;
 }

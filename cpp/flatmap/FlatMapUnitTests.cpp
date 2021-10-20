@@ -33,8 +33,11 @@ TEST(FlatMap, Insert_Erase_Empty_Size) {
     };
     EXPECT_TRUE(map.Insert("Bob", s1));
     EXPECT_TRUE(map.Insert("Adam", s2));
+    EXPECT_TRUE(map.Contains("Adam"));
     EXPECT_TRUE(map.Insert("John", s3));
+    EXPECT_TRUE(map.Contains("Adam"));
     EXPECT_TRUE(map.Insert("Clion", s4));
+    EXPECT_TRUE(map.Contains("Adam"));
     EXPECT_FALSE(map.Empty());
     EXPECT_EQ(map.Size(), 4);
     EXPECT_TRUE(map.Contains("Bob"));

@@ -103,7 +103,6 @@ private:
 
     void ExpandTable();
     int GetIdx(const TKey &key) const;
-    bool CopyCells(const FlatMap &another);
 };
 
 #endif //FLATMAP_FLATMAP_H
