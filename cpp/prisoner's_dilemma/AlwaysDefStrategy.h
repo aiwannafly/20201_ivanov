@@ -10,6 +10,8 @@ public:
     AlwaysDefStrategy(size_t orderNumber, TChoiceMatrix &history,
                       TScoreMap &scoreMap) : Strategy(orderNumber, history,
                                                       scoreMap) {};
+    ~AlwaysDefStrategy() override = default;
+
     TChoice getChoice() override;
 };
 

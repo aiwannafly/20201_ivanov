@@ -10,6 +10,9 @@ public:
     MostFreqStrategy(size_t orderNumber, TChoiceMatrix &history,
                      TScoreMap &scoreMap) : Strategy(orderNumber, history,
             scoreMap) {};
+
+    ~MostFreqStrategy() override = default;
+
     TChoice getChoice() override;
 };
 

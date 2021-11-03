@@ -11,10 +11,11 @@ namespace {
                      TScoreMap &scoreMap) {
         return new MostFreqStrategy(orderNumber, history, scoreMap);
     }
-    bool b = Factory<Strategy, std::string, Strategy* (*)(size_t, TChoiceMatrix&,
-            TScoreMap&), size_t, TChoiceMatrix&, TScoreMap&>::
-            getInstance()->registerCreator(mostFreqID, create);
 }
+
+bool b = Factory<Strategy, std::string, Strategy* (*)(size_t, TChoiceMatrix&,
+                                                      TScoreMap&), size_t, TChoiceMatrix&, TScoreMap&>::
+getInstance()->registerCreator(mostFreqID, create);
 
 TChoice MostFreqStrategy::getChoice() {
     TChoiceMatrix history = getHistory();

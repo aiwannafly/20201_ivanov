@@ -22,10 +22,6 @@ typedef enum TMode {
     DETAILED, FAST, TOURNAMENT
 } TMode;
 
-typedef struct TConfigs {
-} TConfigs;
-
-
 class Controller {
 public:
     Controller(int argc, char *argv[]);
@@ -40,7 +36,6 @@ private:
     size_t stepsCount_;
     TScoreMap scoreMap_;
     TChoiceMatrix choiceMatrix_;
-    TConfigs configs_;
     TStatus status_;
 
     bool ParseMatrix(const std::ifstream &matrixFile);

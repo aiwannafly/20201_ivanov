@@ -11,6 +11,8 @@ public:
     TScoreMap &scoreMap) : Strategy(orderNumber, history,
             scoreMap) {}
 
+    ~AlwaysCoopStrategy() override = default;
+
     TChoice getChoice() override;
 };
 

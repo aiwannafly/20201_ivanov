@@ -1,5 +1,6 @@
 #include "Controller.h"
 
+#include <cassert>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -53,6 +54,7 @@ namespace {
             std::cout << totalResults[i] << "\t";
         }
         std::cout << std::endl;
+        std::cout << "===================================" << std::endl;
     }
 }
 
@@ -163,11 +165,13 @@ bool Controller::runGame() {
     std::vector<std::unique_ptr<Strategy>> strategies;
     size_t counter = 0;
     for (auto &strategyName: strategyNames_) {
-        strategies.push_back(std::unique_ptr<Strategy>(
+        Strategy* strategy =
                 Factory<Strategy, std::string, Strategy *(*)(size_t,
-                TChoiceMatrix &, TScoreMap &), size_t, TChoiceMatrix&,
-                TScoreMap&>::getInstance()->createProduct(
-                strategyName, counter, choiceMatrix_, scoreMap_)));
+                        TChoiceMatrix &, TScoreMap &), size_t, TChoiceMatrix&,
+                        TScoreMap&>::getInstance()->createProduct(
+                        strategyName, counter, choiceMatrix_, scoreMap_);
+        assert(strategy);
+        strategies.push_back(std::unique_ptr<Strategy>(strategy));
         counter++;
     }
     std::array<size_t, combLen> totalScores = {0};
@@ -180,6 +184,9 @@ bool Controller::runGame() {
         }
         stepsCount++;
         std::array<TChoice, combLen> choices = {};
+        for (size_t i = 0; i < combLen; i++)  {
+            choices[i] = strategies[i]->getChoice();
+        }
         choiceMatrix_.push_back(choices);
         std::array<size_t, combLen> scores = scoreMap_[choices];
         for (size_t i = 0; i < combLen; i++) {

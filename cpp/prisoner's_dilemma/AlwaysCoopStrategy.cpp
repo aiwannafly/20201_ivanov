@@ -10,10 +10,11 @@ namespace {
                      TScoreMap &scoreMap) {
         return new AlwaysCoopStrategy(orderNumber, history, scoreMap);
     }
-    bool b = Factory<Strategy, std::string, Strategy* (*)(size_t, TChoiceMatrix&,
-            TScoreMap&), size_t, TChoiceMatrix&, TScoreMap&>::
-            getInstance()->registerCreator(alwaysCoopID, create);
 }
+
+bool b = Factory<Strategy, std::string, Strategy* (*)(size_t, TChoiceMatrix&,
+                                                      TScoreMap&), size_t, TChoiceMatrix&, TScoreMap&>::
+getInstance()->registerCreator(alwaysCoopID, create);
 
 TChoice AlwaysCoopStrategy::getChoice()  {
     return COOPERATE;
