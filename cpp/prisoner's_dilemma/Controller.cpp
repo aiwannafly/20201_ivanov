@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "Factory.h"
+#include "Factory.cpp"
 
 constexpr size_t combinationsCount = 8;
 constexpr size_t strategiesCount = 4;

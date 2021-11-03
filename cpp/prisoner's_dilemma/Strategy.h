@@ -20,7 +20,7 @@ public:
             : orderNumber_(orderNumber), history_(history),
               scoreMap_(scoreMap) {};
 
-    virtual ~Strategy() = 0;
+    ~Strategy() = default;
 
     virtual TChoice getChoice() = 0;
 

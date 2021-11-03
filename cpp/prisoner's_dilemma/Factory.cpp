@@ -12,7 +12,7 @@ Product *Factory<Product, Id, Creator, Args...>::createProduct(const Id &id, Arg
     if (iter == creators_.end()) {
         return nullptr;
     }
-    return iter->second()(args ...);
+    return iter->second(args ...);
 }
 
 template<class Product, class Id, class Creator, class ... Args>

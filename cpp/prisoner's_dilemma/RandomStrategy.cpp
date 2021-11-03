@@ -3,6 +3,8 @@
 #include <random>
 
 #include "Factory.h"
+#include "Factory.cpp"
+
 
 namespace {
     Strategy *create(size_t orderNumber, TChoiceMatrix &history,
