@@ -10,7 +10,7 @@ typedef enum TChoice {
 
 constexpr size_t combLen = 3;
 
-typedef std::vector<std::array<TChoice, 3>> TChoiceMatrix;
+typedef std::vector<std::array<TChoice, combLen>> TChoiceMatrix;
 typedef std::map<std::array<TChoice, combLen>, std::array<size_t, combLen>> TScoreMap;
 
 class Strategy {

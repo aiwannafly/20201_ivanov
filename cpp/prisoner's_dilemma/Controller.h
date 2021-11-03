@@ -7,10 +7,7 @@
 #include <vector>
 #include <memory>
 
-#include "RandomStrategy.h"
-#include "AlwaysCoopStrategy.h"
-#include "AlwaysDefStrategy.h"
-#include "MostFreqStrategy.h"
+#include "Strategy.h"
 
 typedef enum TStatus {
     OK, WRONG_MODE, WRONG_STEPS, WRONG_CONFIGS,
@@ -33,13 +30,24 @@ public:
 private:
     TMode mode_;
     std::vector<std::string> strategyNames_;
+    std::vector<std::unique_ptr<Strategy>> strategies_;
     size_t stepsCount_;
     TScoreMap scoreMap_;
     TChoiceMatrix choiceMatrix_;
     TStatus status_;
 
     bool parseMatrix(std::ifstream &matrixFile);
-    bool runTournament(std::vector<std::unique_ptr<Strategy>> &strategies);
+
+    bool runTournament();
+
+    void printStepResults(std::array<TChoice, combLen> choices, std::array<size_t, combLen> results,
+                          std::array<size_t, combLen> totalResults, size_t stepNumber);
+
+    static void printGameResults(std::array<size_t, combLen> gameResults,
+                          const std::string &firstStrName, const std::string &secStrName,
+                          const std::string &thirdStrName, size_t stepsCount);
+
+    static void printTotalResults(std::vector<size_t> totalScores, std::vector<std::string> strategyNames);
 };
 
 #endif

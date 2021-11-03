@@ -1,7 +1,5 @@
 #include "Factory.h"
 
-#include <iostream>
-
 template<class Product, class Id, class ... Args>
 Factory<Product, Id, Args...> *Factory<Product, Id, Args...>::getInstance() {
     static Factory f;
