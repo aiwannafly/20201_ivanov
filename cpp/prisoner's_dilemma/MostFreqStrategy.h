@@ -3,7 +3,7 @@
 
 #include "Strategy.h"
 
-constexpr char mostFreqID[] = "most_freq";
+constexpr char mostFreqID[] = "freq";
 
 class MostFreqStrategy : public Strategy {
 public:

@@ -3,7 +3,7 @@
 
 #include "Strategy.h"
 
-constexpr char alwaysDefID[] = "always_def";
+constexpr char alwaysDefID[] = "def";
 
 class AlwaysDefStrategy : public Strategy{
 public:

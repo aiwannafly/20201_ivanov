@@ -3,7 +3,7 @@
 
 #include "Strategy.h"
 
-constexpr char alwaysCoopID[] = "always_coop";
+constexpr char alwaysCoopID[] = "coop";
 
 class AlwaysCoopStrategy : public Strategy {
 public:

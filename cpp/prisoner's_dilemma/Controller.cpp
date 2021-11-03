@@ -11,7 +11,6 @@
 #include "Factory.cpp"
 
 constexpr size_t combinationsCount = 8;
-constexpr size_t strategiesCount = 4;
 constexpr const char* strategiesNames[] = {randomID, mostFreqID, alwaysCoopID, alwaysDefID};
 
 namespace {
@@ -31,11 +30,11 @@ namespace {
                           std::array<size_t, combLen> totalResults, size_t stepNumber,
                           std::vector<std::string> strategyNames) {
         std::map<TChoice, std::string> choiceMap;
-        choiceMap[COOPERATE] = "cooperate";
-        choiceMap[DEFEND] = "defend";
-        std::cout << "====================ROUND №" <<
-        stepNumber << "===============" << std::endl;
-        std::cout << "     NAMES   |";
+        choiceMap[COOPERATE] = "C";
+        choiceMap[DEFEND] = "D";
+        std::cout << "=================== ROUND №" <<
+        stepNumber << " ==============" << std::endl;
+        std::cout << "    NAMES    |";
         for (size_t i = 0; i < combLen; i++) {
             std::cout << "\t" << strategyNames[i];
         }
@@ -47,14 +46,45 @@ namespace {
         std::cout << std::endl;
         std::cout << "ROUND SCORES |";
         for (size_t i = 0; i < combLen; i++) {
-            std::cout << "\t\t" << results[i];
+            std::cout << "\t" << results[i];
         }
         std::cout << std::endl;
         std::cout << "TOTAL SCORES |";
         for (size_t i = 0; i < combLen; i++) {
-            std::cout << "\t\t" << totalResults[i];
+            std::cout << "\t" << totalResults[i];
         }
         std::cout << std::endl;
+        std::cout << "===========================================" << std::endl;
+    }
+
+    void printGameResults(std::array<size_t, combLen> gameResults,
+                          const std::string &firstStrName, const std::string &secStrName,
+                          const std::string &thirdStrName, size_t stepsCount) {
+        std::cout << "=================== GAME RESULTS ==============" << std::endl;
+        std::cout << "STEPS COUNT" << "\t|\t" << stepsCount << std::endl;
+        std::cout << "-----------------------------------------------" << std::endl;
+        std::cout << firstStrName << "\t|\t" << gameResults[0] << std::endl;
+        std::cout << secStrName << "\t|\t" << gameResults[1] << std::endl;
+        std::cout << thirdStrName << "\t|\t" << gameResults[2] << std::endl;
+        std::cout << "===========================================" << std::endl;
+    }
+
+    void printTotalResults(std::vector<size_t> totalScores, std::vector<std::string> strategyNames) {
+        assert(totalScores.size() == strategyNames.size());
+        std::cout << "================== TOTAL RESULTS ==============" << std::endl;
+        size_t indexOfWinner = 0;
+        for (size_t i = 1; i < totalScores.size(); i++) {
+            if (totalScores[i] > totalScores[indexOfWinner]) {
+                indexOfWinner = i;
+            }
+        }
+        std::cout << strategyNames[indexOfWinner] << "\t|\t" << totalScores[indexOfWinner]
+        << "\t\t<--- WINNER" << std::endl;
+        for (size_t i = 0; i < totalScores.size(); i++) {
+            if (i != indexOfWinner) {
+                std::cout << strategyNames[i] << "\t|\t" << totalScores[i] << std::endl;
+            }
+        }
         std::cout << "===========================================" << std::endl;
     }
 }
@@ -62,7 +92,7 @@ namespace {
 Controller::Controller(int argc, char *argv[]) {
     status_ = OK;
     mode_ = DETAILED;
-    stepsCount_ = 0;
+    stepsCount_ = 10;
     std::string modeKey = "--mode=";
     std::string stepsKey = "--steps=";
     std::string configsKey = "--configs_=";
@@ -99,7 +129,7 @@ Controller::Controller(int argc, char *argv[]) {
                 status_ = MATRIX_FILE_NOT_OPENED;
                 return;
             }
-            if (!ParseMatrix(matrixFile)) {
+            if (!parseMatrix(matrixFile)) {
                 status_ = WRONG_MATRIX;
                 return;
             }
@@ -128,7 +158,7 @@ Controller::Controller(int argc, char *argv[]) {
     }
 }
 
-bool Controller::ParseMatrix(std::ifstream &matrixFile) {
+bool Controller::parseMatrix(std::ifstream &matrixFile) {
     for (size_t i = 0; i < combinationsCount; i++) {
         std::array<TChoice, combLen> combination = {};
         for (size_t j = 0; j < combLen; j++) {
@@ -161,7 +191,45 @@ TStatus Controller::getStatus() {
     return status_;
 }
 
+bool Controller::runTournament(std::vector<std::unique_ptr<Strategy>> &strategies) {
+    assert(mode_ == TOURNAMENT);
+    size_t countOfStrategies = strategyNames_.size();
+    std::vector<size_t> totalScores;
+    for (size_t i = 0; i < countOfStrategies; i++) {
+        totalScores.push_back(0);
+    }
+    for (size_t i = 0; i < countOfStrategies; i++) {
+        for (size_t j = i + 1; j < countOfStrategies; j++) {
+            for (size_t k = j + 1; k < countOfStrategies; k++) {
+                std::array<size_t, combLen> gameScores = {0};
+                for (size_t step = 0; step < stepsCount_; step++) {
+                    std::array<TChoice, combLen> choices = {};
+                    choices[0] = strategies[i]->getChoice();
+                    choices[1] = strategies[j]->getChoice();
+                    choices[2] = strategies[k]->getChoice();
+                    choiceMatrix_.push_back(choices);
+                    std::array<size_t, combLen> scores = scoreMap_[choices];
+                    for (size_t ind = 0; ind < combLen; ind++) {
+                        gameScores[ind] += scores[ind];
+                    }
+                }
+                printGameResults(gameScores, strategyNames_[i], strategyNames_[j],
+                                 strategyNames_[k], stepsCount_);
+                totalScores[i] += gameScores[0];
+                totalScores[j] += gameScores[1];
+                totalScores[k] += gameScores[2];
+                choiceMatrix_.clear();
+            }
+        }
+    }
+    printTotalResults(totalScores, strategyNames_);
+    return true;
+}
+
 bool Controller::runGame() {
+    if (OK != getStatus()) {
+        return false;
+    }
     std::vector<std::unique_ptr<Strategy>> strategies;
     size_t counter = 0;
     for (auto &strategyName: strategyNames_) {
@@ -173,13 +241,18 @@ bool Controller::runGame() {
         strategies.push_back(std::unique_ptr<Strategy>(strategy));
         counter++;
     }
+    if (mode_ == TOURNAMENT) {
+        return runTournament(strategies);
+    }
     std::array<size_t, combLen> totalScores = {0};
     size_t stepsCount = 0;
     while (true) {
-        std::string command;
-        std::cin >> command;
-        if ("quit" == command) {
-            break;
+        if (mode_ == DETAILED) {
+            std::string command;
+            std::cin >> command;
+            if ("quit" == command) {
+                break;
+            }
         }
         stepsCount++;
         std::array<TChoice, combLen> choices = {};
@@ -191,7 +264,14 @@ bool Controller::runGame() {
         for (size_t i = 0; i < combLen; i++) {
             totalScores[i] += scores[i];
         }
-        printStepResults(choices, scores, totalScores, stepsCount, strategyNames_);
+        if (mode_ == DETAILED) {
+            printStepResults(choices, scores, totalScores, stepsCount, strategyNames_);
+        }
+        if (mode_ == FAST && stepsCount == stepsCount_) {
+            printGameResults(totalScores, strategyNames_[0],
+                             strategyNames_[1], strategyNames_[2], stepsCount);
+            break;
+        }
     }
     return true;
 }

@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "RandomStrategy.h"
 #include "AlwaysCoopStrategy.h"
@@ -37,7 +38,8 @@ private:
     TChoiceMatrix choiceMatrix_;
     TStatus status_;
 
-    bool ParseMatrix(std::ifstream &matrixFile);
+    bool parseMatrix(std::ifstream &matrixFile);
+    bool runTournament(std::vector<std::unique_ptr<Strategy>> &strategies);
 };
 
 #endif
