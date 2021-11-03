@@ -3,9 +3,10 @@
 
 #include <map>
 
-template<class Product, class Id, class Creator, class ... Args>
+template<class Product, class Id, class ... Args>
 class Factory {
 public:
+    typedef Product* (*Creator)(Args ...);
     static Factory *getInstance();
 
     Product *createProduct(const Id &id, Args ... args);

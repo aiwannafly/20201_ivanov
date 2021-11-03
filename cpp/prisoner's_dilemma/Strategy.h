@@ -15,12 +15,12 @@ typedef std::map<std::array<TChoice, combLen>, std::array<size_t, combLen>> TSco
 
 class Strategy {
 public:
-    explicit Strategy(size_t orderNumber, TChoiceMatrix &history,
+    Strategy(size_t orderNumber, TChoiceMatrix &history,
                       TScoreMap &scoreMap)
             : orderNumber_(orderNumber), history_(history),
               scoreMap_(scoreMap) {};
 
-    virtual ~Strategy() = 0;
+    virtual ~Strategy() = default;
 
     virtual TChoice getChoice() = 0;
 

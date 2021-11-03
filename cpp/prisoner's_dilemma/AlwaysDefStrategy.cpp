@@ -12,8 +12,7 @@ namespace {
     }
 }
 
-bool b = Factory<Strategy, std::string, Strategy* (*)(size_t, TChoiceMatrix&,
-                                                      TScoreMap&), size_t, TChoiceMatrix&, TScoreMap&>::
+bool defB = Factory<Strategy, std::string, size_t, TChoiceMatrix&, TScoreMap&>::
 getInstance()->registerCreator(alwaysDefID, create);
 
 TChoice AlwaysDefStrategy::getChoice() {

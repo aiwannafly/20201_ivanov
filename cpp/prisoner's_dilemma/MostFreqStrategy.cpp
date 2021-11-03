@@ -13,8 +13,7 @@ namespace {
     }
 }
 
-bool b = Factory<Strategy, std::string, Strategy* (*)(size_t, TChoiceMatrix&,
-                                                      TScoreMap&), size_t, TChoiceMatrix&, TScoreMap&>::
+bool mostFreqB = Factory<Strategy, std::string, size_t, TChoiceMatrix&, TScoreMap&>::
 getInstance()->registerCreator(mostFreqID, create);
 
 TChoice MostFreqStrategy::getChoice() {

@@ -33,28 +33,29 @@ namespace {
         std::map<TChoice, std::string> choiceMap;
         choiceMap[COOPERATE] = "cooperate";
         choiceMap[DEFEND] = "defend";
-        std::cout << "ROUND №" << stepNumber << std::endl;
-        std::cout << "NAMES: ";
+        std::cout << "====================ROUND №" <<
+        stepNumber << "===============" << std::endl;
+        std::cout << "     NAMES   |";
         for (size_t i = 0; i < combLen; i++) {
-            std::cout << strategyNames[i] << "\t";
+            std::cout << "\t" << strategyNames[i];
         }
         std::cout << std::endl;
-        std::cout << "CHOICES: ";
+        std::cout << "   CHOICES   |";
         for (size_t i = 0; i < combLen; i++) {
-            std::cout << choiceMap[choices[i]] << "\t";
+            std::cout << "\t" << choiceMap[choices[i]];
         }
         std::cout << std::endl;
-        std::cout << "ROUND SCORES: ";
+        std::cout << "ROUND SCORES |";
         for (size_t i = 0; i < combLen; i++) {
-            std::cout << results[i] << "\t";
+            std::cout << "\t\t" << results[i];
         }
         std::cout << std::endl;
-        std::cout << "TOTAL SCORES: ";
+        std::cout << "TOTAL SCORES |";
         for (size_t i = 0; i < combLen; i++) {
-            std::cout << totalResults[i] << "\t";
+            std::cout << "\t\t" << totalResults[i];
         }
         std::cout << std::endl;
-        std::cout << "===================================" << std::endl;
+        std::cout << "===========================================" << std::endl;
     }
 }
 
@@ -127,15 +128,15 @@ Controller::Controller(int argc, char *argv[]) {
     }
 }
 
-bool Controller::ParseMatrix(const std::ifstream &matrixFile) {
+bool Controller::ParseMatrix(std::ifstream &matrixFile) {
     for (size_t i = 0; i < combinationsCount; i++) {
         std::array<TChoice, combLen> combination = {};
         for (size_t j = 0; j < combLen; j++) {
             std::string word;
-            std::cin >> word;
-            if (word == "C") {
+            matrixFile >> word;
+            if (word == "C" || word == "С") {
                 combination[j] = COOPERATE;
-            } else if (word == "D") {
+            } else if (word[0] == 'D') {
                 combination[j] = DEFEND;
             } else {
                 return false;
@@ -144,13 +145,12 @@ bool Controller::ParseMatrix(const std::ifstream &matrixFile) {
         std::array<size_t, combLen> scores = {};
         for (size_t j = 0; j < combLen; j++) {
             std::string word;
-            std::cin >> word;
+            matrixFile >> word;
             try {
                 scores[j] = std::stol(word);
             } catch (std::invalid_argument &e) {
                 return false;
             }
-
         }
         scoreMap_[combination] = scores;
     }
@@ -166,8 +166,7 @@ bool Controller::runGame() {
     size_t counter = 0;
     for (auto &strategyName: strategyNames_) {
         Strategy* strategy =
-                Factory<Strategy, std::string, Strategy *(*)(size_t,
-                        TChoiceMatrix &, TScoreMap &), size_t, TChoiceMatrix&,
+                Factory<Strategy, std::string, size_t, TChoiceMatrix&,
                         TScoreMap&>::getInstance()->createProduct(
                         strategyName, counter, choiceMatrix_, scoreMap_);
         assert(strategy);

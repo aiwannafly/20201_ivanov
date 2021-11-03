@@ -11,7 +11,6 @@
 #include "AlwaysDefStrategy.h"
 #include "MostFreqStrategy.h"
 
-
 typedef enum TStatus {
     OK, WRONG_MODE, WRONG_STEPS, WRONG_CONFIGS,
     MATRIX_FILE_NOT_OPENED, WRONG_MATRIX, NOT_ENOUGH_STRATS,
@@ -38,7 +37,7 @@ private:
     TChoiceMatrix choiceMatrix_;
     TStatus status_;
 
-    bool ParseMatrix(const std::ifstream &matrixFile);
+    bool ParseMatrix(std::ifstream &matrixFile);
 };
 
 #endif
