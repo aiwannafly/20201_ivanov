@@ -25,7 +25,9 @@ public:
 
     TStatus getStatus();
 
-    bool runGame();
+    bool runGame(std::ostream &stream);
+
+    void printErrorMessage(std::ostream &stream);
 
 private:
     TMode mode_;
@@ -38,16 +40,18 @@ private:
 
     bool parseMatrix(std::ifstream &matrixFile);
 
-    bool runTournament();
+    bool runTournament(std::ostream &stream);
 
-    void printStepResults(std::array<TChoice, combLen> choices, std::array<size_t, combLen> results,
+    void printStepResults(std::ostream &stream, std::array<TChoice, combLen> choices,
+                          std::array<size_t, combLen> results,
                           std::array<size_t, combLen> totalResults, size_t stepNumber);
 
-    static void printGameResults(std::array<size_t, combLen> gameResults,
+    static void printGameResults(std::ostream &stream, std::array<size_t, combLen> gameResults,
                           const std::string &firstStrName, const std::string &secStrName,
                           const std::string &thirdStrName, size_t stepsCount);
 
-    static void printTotalResults(std::vector<size_t> totalScores, std::vector<std::string> strategyNames);
+    static void printTotalResults(std::ostream &stream, std::vector<size_t> totalScores,
+                                  std::vector<std::string> strategyNames);
 };
 
 #endif

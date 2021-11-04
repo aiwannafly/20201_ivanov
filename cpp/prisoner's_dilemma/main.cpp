@@ -5,9 +5,9 @@
 int main(int argc, char *argv[]) {
     Controller controller(argc, argv);
     if (OK == controller.getStatus()) {
-        controller.runGame();
+        controller.runGame(std::cout);
     } else {
-        std::cout << controller.getStatus() << std::endl;
+        controller.printErrorMessage(std::cout);
     }
     return EXIT_SUCCESS;
 }
