@@ -18,9 +18,6 @@ constexpr char modeKeySeq[] = "--mode=";
 constexpr char stepsKeySeq[] = "--steps=";
 constexpr char configsKeySeq[] = "--configs=";
 constexpr char matrixKeySeq[] = "--matrix=";
-constexpr char detailedMode[] = "detailed";
-constexpr char fastMode[] = "fast";
-constexpr char tournamentMode[] = "tournament";
 
 namespace {
     bool startsWith(const std::string &string, const std::string &subString) {
@@ -36,41 +33,19 @@ namespace {
     }
 }
 
-Runner::Runner() {
-    mode_ = DETAILED;
-    status_ = OK;
-    stepsCount_ = defaultStepsCount;
-    std::ifstream matrixFile = std::ifstream(defaultMatrixFileName);
-    if (!matrixFile.is_open()) {
-        status_ = MATRIX_FILE_NOT_OPENED;
-        return;
-    }
-    if (!parseMatrix(matrixFile)) {
-        status_ = WRONG_MATRIX;
-        return;
-    }
-}
-
 Runner::Runner(const std::vector<std::string> &params) {
-    status_ = OK;
-    mode_ = DETAILED;
-    stepsCount_ = defaultStepsCount;
     std::string modeKey = modeKeySeq;
     std::string stepsKey = stepsKeySeq;
     std::string configsKey = configsKeySeq;
     std::string matrixKey = matrixKeySeq;
+    std::vector<std::string> names;
     for (const auto &param: params) {
         if (startsWith(param, modeKey)) {
-            if (param == modeKey + detailedMode) {
-                mode_ = DETAILED;
-            } else if (param == modeKey + fastMode) {
-                mode_ = FAST;
-            } else if (param == modeKey + tournamentMode) {
-                mode_ = TOURNAMENT;
-            } else {
+            if (modeMap_.find(param) == modeMap_.end()) {
                 status_ = WRONG_MODE;
                 return;
             }
+            mode_ = modeMap_[param];
         } else if (startsWith(param, stepsKey)) {
             try {
                 stepsCount_ = std::stol(param.substr(stepsKey.length()));
@@ -79,66 +54,20 @@ Runner::Runner(const std::vector<std::string> &params) {
                 return;
             }
         } else if (startsWith(param, configsKey)) {
-            std::ifstream configsFile = std::ifstream(param.substr(configsKey.length()));
-            if (!configsFile.is_open()) {
-                status_ = CONFIGS_FILE_NOT_OPENED;
+            std::string fileName = param.substr(configsKey.length());
+            if(!setConfigs(fileName)) {
                 return;
-            }
-            while (true) {
-                std::string word;
-                configsFile >> word;
-                if (word.empty()) {
-                    break;
-                }
-                configs_.push_back(word);
             }
         } else if (startsWith(param, matrixKey)) {
-            std::ifstream matrixFile = std::ifstream(param.substr(matrixKey.length()));
-            if (!matrixFile.is_open()) {
-                status_ = MATRIX_FILE_NOT_OPENED;
-                return;
-            }
-            if (!parseMatrix(matrixFile)) {
-                status_ = WRONG_MATRIX;
+            std::string fileName = param.substr(configsKey.length());
+            if(!setScoreMap(fileName)) {
                 return;
             }
         } else {
-            names_.push_back(param);
+            names.push_back(param);
         }
     }
-    if (names_.size() < 3) {
-        status_ = NOT_ENOUGH_STRATS;
-    }
-    if (mode_ == TOURNAMENT &&
-        names_.size() < 4) {
-        status_ = NOT_ENOUGH_STRATS;
-    }
-    if (mode_ != TOURNAMENT && names_.size() > 3) {
-        status_ = TOO_MANY_STRATS;
-    }
-    if (scoreMap_.empty()) {
-        std::ifstream matrixFile = std::ifstream(defaultMatrixFileName);
-        if (!matrixFile.is_open()) {
-            status_ = MATRIX_FILE_NOT_OPENED;
-            return;
-        }
-        if (!parseMatrix(matrixFile)) {
-            status_ = WRONG_MATRIX;
-            return;
-        }
-    }
-    strategiesCount_ = names_.size();
-    size_t counter = 0;
-    for (const auto &name: names_) {
-        strategies_[name] = std::unique_ptr<Strategy>(Factory<Strategy, std::string, size_t, TChoiceMatrix &,
-                TScoreMap &, TConfigs &>::getInstance()->createProduct(
-                name, counter, choiceMatrix_, scoreMap_, configs_));
-        counter++;
-        if (!strategies_[name]) {
-            status_ = WRONG_STRATEGY_NAME;
-            return;
-        }
-    }
+    setStrategies(names);
 }
 
 void Runner::setMode(TMode mode) {
@@ -160,6 +89,22 @@ bool Runner::setStrategies(const std::vector<std::string> &strategyNames) {
         strategies_[strategyNames[i]] = std::unique_ptr<Strategy>(strategy);
     }
     strategiesCount_ = names_.size();
+    if (WRONG_STRATEGY_NAME == status_) {
+        status_ = OK;
+    }
+    if (names_.size() < 3) {
+        status_ = NOT_ENOUGH_STRATS;
+        return false;
+    }
+    if (mode_ == TOURNAMENT &&
+        names_.size() < 4) {
+        status_ = NOT_ENOUGH_STRATS;
+        return false;
+    }
+    if (mode_ != TOURNAMENT && names_.size() > 3) {
+        status_ = TOO_MANY_STRATS;
+        return false;
+    }
     return true;
 }
 
@@ -167,12 +112,34 @@ void Runner::setStepsCount(size_t stepsCount) {
     stepsCount_ = stepsCount;
 }
 
-bool Runner::setScoreMap(std::ifstream &matrixFile) {
-    return parseMatrix(matrixFile);
+bool Runner::setScoreMap(const std::string &fileName) {
+    std::ifstream matrixFile = std::ifstream(defaultMatrixFileName);
+    if (!matrixFile.is_open()) {
+        status_ = MATRIX_FILE_NOT_OPENED;
+        return false;
+    }
+    if (!parseMatrix(matrixFile)) {
+        status_ = WRONG_MATRIX;
+        return false;
+    }
+    return true;
 }
 
-void Runner::setConfigs(TConfigs &configs) {
-    configs_ = configs;
+bool Runner::setConfigs(const std::string &fileName) {
+    std::ifstream configsFile = std::ifstream(fileName);
+    if (!configsFile.is_open()) {
+        status_ = CONFIGS_FILE_NOT_OPENED;
+        return false;
+    }
+    while (true) {
+        std::string word;
+        configsFile >> word;
+        if (word.empty()) {
+            break;
+        }
+        configs_.push_back(word);
+    }
+    return true;
 }
 
 bool Runner::parseMatrix(std::ifstream &matrixFile) {
@@ -182,9 +149,9 @@ bool Runner::parseMatrix(std::ifstream &matrixFile) {
             std::string word;
             matrixFile >> word;
             if (word == "C" || word == "С") {
-                combination[j] = COOPERATE;
+                combination[j] = COOP;
             } else if (word == "D") {
-                combination[j] = DEFEND;
+                combination[j] = DEF;
             } else {
                 return false;
             }
@@ -285,8 +252,8 @@ bool Runner::runGame(std::ostream &stream) {
 
 void Runner::printStepResults(std::ostream &stream, std::array<size_t, combLen> results, size_t stepNumber) {
     std::map<TChoice, std::string> choiceMap;
-    choiceMap[COOPERATE] = "C";
-    choiceMap[DEFEND] = "D";
+    choiceMap[COOP] = "C";
+    choiceMap[DEF] = "D";
     stream << "=================== ROUND №" <<
            stepNumber << " ==============" << std::endl;
     stream << "    NAMES    |";

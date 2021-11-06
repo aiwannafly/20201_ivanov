@@ -24,7 +24,7 @@ class Runner {
 public:
     explicit Runner(const std::vector<std::string> &params);
 
-    Runner();
+    Runner() = default;
 
     TStatus getStatus();
 
@@ -38,21 +38,30 @@ public:
 
     void setStepsCount(size_t stepsCount);
 
-    bool setScoreMap(std::ifstream &matrixFile);
+    bool setScoreMap(const std::string &fileName);
 
-    void setConfigs(TConfigs &configs);
+    bool setConfigs(const std::string &fileName);
 
 private:
-    TMode mode_;
+    TStatus status_ = OK;
+    TMode mode_ = DETAILED;
     std::vector<std::string> names_;
     std::map<std::string, std::unique_ptr<Strategy>> strategies_;
     std::map<std::string, size_t> gameScores_;
     size_t strategiesCount_ = 0;
-    size_t stepsCount_;
-    TScoreMap scoreMap_;
+    size_t stepsCount_ = 10;
+    TScoreMap scoreMap_ = {
+            {{COOP, COOP, COOP}, {7, 7, 7}},
+            {{COOP, COOP, DEF}, {3, 3, 9}},
+            {{COOP, DEF, COOP}, {3, 9, 3}},
+            {{DEF, COOP, COOP}, {9, 3, 3}},
+            {{COOP, DEF, DEF}, {0, 5, 5}},
+            {{DEF, COOP, DEF}, {5, 0, 5}},
+            {{DEF, DEF, COOP}, {5, 5, 0}},
+            {{DEF, DEF, DEF}, {1, 1, 1}}
+    };
     TConfigs configs_;
     TChoiceMatrix choiceMatrix_;
-    TStatus status_;
     std::map<TStatus, std::string> errorMessages_{
             {OK,                     "Everything is alright"},
             {WRONG_MODE,             "Such mode does not exist"},
@@ -63,6 +72,11 @@ private:
             {NOT_ENOUGH_STRATS,      "Too few strategies for the chosen mode"},
             {WRONG_STRATEGY_NAME,    "Strategy with the entered name does not exist"},
             {TOO_MANY_STRATS,        "Too many strategies for the chosen mode"}
+    };
+    std::map<std::string, TMode> modeMap_{
+            {"--mode=detailed", DETAILED},
+            {"--mode=fast", FAST},
+            {"--mode=tournament", TOURNAMENT}
     };
 
     bool parseMatrix(std::ifstream &matrixFile);

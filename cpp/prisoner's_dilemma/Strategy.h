@@ -6,7 +6,7 @@
 #include <vector>
 
 typedef enum TChoice {
-    COOPERATE, DEFEND
+    COOP, DEF
 } TChoice;
 
 constexpr size_t combLen = 3;

@@ -24,9 +24,9 @@ TChoice MetaStrategy::getChoice() {
         std::cout << "1" << std::endl;
         int num = rand();
         if (num % 2 == 0) {
-            return COOPERATE;
+            return COOP;
         }
-        return DEFEND;
+        return DEF;
     }
     if (strategiesCounter_ >= configs.size()) {
         strategiesCounter_ = 0;
@@ -43,7 +43,7 @@ TChoice MetaStrategy::getChoice() {
     std::cout << "3" << std::endl;
     int num = rand();
     if (num % 2 == 0) {
-        return COOPERATE;
+        return COOP;
     }
-    return DEFEND;
+    return DEF;
 }

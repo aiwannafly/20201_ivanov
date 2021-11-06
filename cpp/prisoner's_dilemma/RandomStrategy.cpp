@@ -16,7 +16,7 @@ bool randB = Factory<Strategy, std::string, size_t, TChoiceMatrix &, TScoreMap &
 TChoice RandomStrategy::getChoice() {
     int randInt = rand();
     if (randInt % 2 == 0) {
-        return COOPERATE;
+        return COOP;
     }
-    return DEFEND;
+    return DEF;
 }

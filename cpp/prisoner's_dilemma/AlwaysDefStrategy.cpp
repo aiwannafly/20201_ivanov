@@ -16,5 +16,5 @@ bool defB = Factory<Strategy, std::string, size_t, TChoiceMatrix &, TScoreMap &,
 getInstance()->registerCreator(alwaysDefID, create);
 
 TChoice AlwaysDefStrategy::getChoice() {
-    return DEFEND;
+    return DEF;
 }

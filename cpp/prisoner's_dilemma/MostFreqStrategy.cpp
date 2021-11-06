@@ -22,26 +22,26 @@ TChoice MostFreqStrategy::getChoice() {
     size_t orderNumber = getOrderNumber();
     std::map<size_t, std::map<TChoice, size_t>> choiceCounts;
     for (size_t i = 0; i < 3; i++) {
-        choiceCounts[i][COOPERATE] = 0;
-        choiceCounts[i][DEFEND] = 0;
+        choiceCounts[i][COOP] = 0;
+        choiceCounts[i][DEF] = 0;
     }
     for (auto currentLine: history) {
         for (size_t j = 0; j < 3; j++) {
             choiceCounts[j][currentLine[j]] += 1;
         }
     }
-    std::array<TChoice, combLen> mostUsedChoices = {DEFEND, DEFEND, DEFEND};
+    std::array<TChoice, combLen> mostUsedChoices = {DEF, DEF, DEF};
     for (size_t i = 0; i < 3; i++) {
-        if (choiceCounts[i][COOPERATE] > choiceCounts[i][DEFEND]) {
-            mostUsedChoices[i] = COOPERATE;
+        if (choiceCounts[i][COOP] > choiceCounts[i][DEF]) {
+            mostUsedChoices[i] = COOP;
         }
     }
     std::array<TChoice, combLen> firstComb = mostUsedChoices;
-    firstComb[orderNumber] = DEFEND;
+    firstComb[orderNumber] = DEF;
     std::array<TChoice, combLen> secondComb = mostUsedChoices;
-    firstComb[orderNumber] = COOPERATE;
+    firstComb[orderNumber] = COOP;
     if (scoreMap[firstComb][orderNumber] > scoreMap[secondComb][orderNumber]) {
-        return DEFEND;
+        return DEF;
     }
-    return COOPERATE;
+    return COOP;
 }

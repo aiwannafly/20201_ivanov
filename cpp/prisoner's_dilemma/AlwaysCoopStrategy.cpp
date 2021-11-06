@@ -16,5 +16,5 @@ bool coopB = Factory<Strategy, std::string, size_t, TChoiceMatrix &, TScoreMap &
 getInstance()->registerCreator(alwaysCoopID, create);
 
 TChoice AlwaysCoopStrategy::getChoice() {
-    return COOPERATE;
+    return COOP;
 }
