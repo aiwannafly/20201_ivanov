@@ -12,3 +12,6 @@ size_t Strategy::getOrderNumber() const{
     return orderNumber_;
 }
 
+TConfigs Strategy::getConfigs() const {
+    return configs_;
+}

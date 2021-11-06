@@ -7,14 +7,14 @@
 
 namespace {
     Strategy *create(size_t orderNumber, TChoiceMatrix &history,
-                     TScoreMap &scoreMap) {
-        return new AlwaysCoopStrategy(orderNumber, history, scoreMap);
+                     TScoreMap &scoreMap, TConfigs &configs) {
+        return new AlwaysCoopStrategy(orderNumber, history, scoreMap, configs);
     }
 }
 
-bool coopB = Factory<Strategy, std::string, size_t, TChoiceMatrix&, TScoreMap&>::
+bool coopB = Factory<Strategy, std::string, size_t, TChoiceMatrix &, TScoreMap &, TConfigs &>::
 getInstance()->registerCreator(alwaysCoopID, create);
 
-TChoice AlwaysCoopStrategy::getChoice()  {
+TChoice AlwaysCoopStrategy::getChoice() {
     return COOPERATE;
 }

@@ -59,7 +59,7 @@ Runner::Runner(const std::vector<std::string> &params) {
     std::string stepsKey = stepsKeySeq;
     std::string configsKey = configsKeySeq;
     std::string matrixKey = matrixKeySeq;
-    for (const auto &param : params) {
+    for (const auto &param: params) {
         if (startsWith(param, modeKey)) {
             if (param == modeKey + detailedMode) {
                 mode_ = DETAILED;
@@ -79,6 +79,19 @@ Runner::Runner(const std::vector<std::string> &params) {
                 return;
             }
         } else if (startsWith(param, configsKey)) {
+            std::ifstream configsFile = std::ifstream(param.substr(configsKey.length()));
+            if (!configsFile.is_open()) {
+                status_ = CONFIGS_FILE_NOT_OPENED;
+                return;
+            }
+            while (true) {
+                std::string word;
+                configsFile >> word;
+                if (word.empty()) {
+                    break;
+                }
+                configs_.push_back(word);
+            }
         } else if (startsWith(param, matrixKey)) {
             std::ifstream matrixFile = std::ifstream(param.substr(matrixKey.length()));
             if (!matrixFile.is_open()) {
@@ -90,16 +103,7 @@ Runner::Runner(const std::vector<std::string> &params) {
                 return;
             }
         } else {
-            Strategy *strategy = Factory<Strategy, std::string, size_t, TChoiceMatrix &,
-                    TScoreMap &>::getInstance()->createProduct(
-                    param, strategiesCount_, choiceMatrix_, scoreMap_);
-            if (nullptr == strategy) {
-                status_ = WRONG_STRATEGY_NAME;
-                return;
-            }
             names_.push_back(param);
-            strategies_[param] = std::unique_ptr<Strategy>(strategy);
-            strategiesCount_++;
         }
     }
     if (names_.size() < 3) {
@@ -123,6 +127,18 @@ Runner::Runner(const std::vector<std::string> &params) {
             return;
         }
     }
+    strategiesCount_ = names_.size();
+    size_t counter = 0;
+    for (const auto &name: names_) {
+        strategies_[name] = std::unique_ptr<Strategy>(Factory<Strategy, std::string, size_t, TChoiceMatrix &,
+                TScoreMap &, TConfigs &>::getInstance()->createProduct(
+                name, counter, choiceMatrix_, scoreMap_, configs_));
+        counter++;
+        if (!strategies_[name]) {
+            status_ = WRONG_STRATEGY_NAME;
+            return;
+        }
+    }
 }
 
 void Runner::setMode(TMode mode) {
@@ -134,8 +150,8 @@ bool Runner::setStrategies(const std::vector<std::string> &strategyNames) {
     strategies_.clear();
     for (size_t i = 0; i < strategyNames.size(); i++) {
         Strategy *strategy = Factory<Strategy, std::string, size_t, TChoiceMatrix &,
-                TScoreMap &>::getInstance()->createProduct(
-                strategyNames[i], i, choiceMatrix_, scoreMap_);
+                TScoreMap &, TConfigs &>::getInstance()->createProduct(
+                strategyNames[i], i, choiceMatrix_, scoreMap_, configs_);
         if (nullptr == strategy) {
             status_ = WRONG_STRATEGY_NAME;
             return false;
@@ -153,6 +169,10 @@ void Runner::setStepsCount(size_t stepsCount) {
 
 bool Runner::setScoreMap(std::ifstream &matrixFile) {
     return parseMatrix(matrixFile);
+}
+
+void Runner::setConfigs(TConfigs &configs) {
+    configs_ = configs;
 }
 
 bool Runner::parseMatrix(std::ifstream &matrixFile) {
@@ -191,11 +211,9 @@ TStatus Runner::getStatus() {
 bool Runner::runTournament(std::ostream &stream) {
     assert(mode_ == TOURNAMENT);
     std::map<std::string, size_t> results;
-    std::cout << strategiesCount_ << std::endl;
     for (size_t i = 0; i < strategiesCount_; i++) {
         for (size_t j = i + 1; j < strategiesCount_; j++) {
             for (size_t k = j + 1; k < strategiesCount_; k++) {
-                std::cout << i << j << k << std::endl;
                 gameScores_ = {};
                 for (size_t step = 0; step < stepsCount_; step++) {
                     std::array<TChoice, combLen> choices = {};
@@ -304,7 +322,7 @@ void Runner::printGameResults(std::ostream &stream) {
         }
         stream << name << "\t|\t" << gameScores_[name] << std::endl;
     }
-    stream << "===========================================" << std::endl;
+    stream << "===============================================" << std::endl;
 }
 
 void Runner::printTotalResults(std::ostream &stream) {
@@ -323,7 +341,7 @@ void Runner::printTotalResults(std::ostream &stream) {
             stream << name << "\t|\t" << gameScores_[name] << std::endl;
         }
     }
-    stream << "===========================================" << std::endl;
+    stream << "==============================================" << std::endl;
 }
 
 void Runner::printErrorMessage(std::ostream &stream) {

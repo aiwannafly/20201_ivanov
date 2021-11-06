@@ -8,8 +8,8 @@ constexpr char mostFreqID[] = "freq";
 class MostFreqStrategy : public Strategy {
 public:
     MostFreqStrategy(size_t orderNumber, TChoiceMatrix &history,
-                     TScoreMap &scoreMap) : Strategy(orderNumber, history,
-            scoreMap) {};
+                     TScoreMap &scoreMap, TConfigs &configs) :
+                     Strategy(orderNumber, history,scoreMap, configs) {};
 
     ~MostFreqStrategy() override = default;
 

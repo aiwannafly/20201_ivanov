@@ -8,8 +8,8 @@ constexpr char alwaysCoopID[] = "coop";
 class AlwaysCoopStrategy : public Strategy {
 public:
     AlwaysCoopStrategy(size_t orderNumber, TChoiceMatrix &history,
-    TScoreMap &scoreMap) : Strategy(orderNumber, history,
-            scoreMap) {}
+    TScoreMap &scoreMap, TConfigs &configs) : Strategy(orderNumber, history,
+            scoreMap, configs) {}
 
     ~AlwaysCoopStrategy() override = default;
 

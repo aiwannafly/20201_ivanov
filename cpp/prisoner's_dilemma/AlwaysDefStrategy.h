@@ -8,8 +8,8 @@ constexpr char alwaysDefID[] = "def";
 class AlwaysDefStrategy : public Strategy{
 public:
     AlwaysDefStrategy(size_t orderNumber, TChoiceMatrix &history,
-                      TScoreMap &scoreMap) : Strategy(orderNumber, history,
-                                                      scoreMap) {};
+                      TScoreMap &scoreMap, TConfigs &configs) : Strategy(orderNumber, history,
+                                                                         scoreMap, configs) {};
     ~AlwaysDefStrategy() override = default;
 
     TChoice getChoice() override;

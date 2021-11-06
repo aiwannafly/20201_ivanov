@@ -2,17 +2,18 @@
 #define PRISONER_DILEMMA_RUNNER_H
 
 #include <fstream>
+#include <iostream>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
 #include "Strategy.h"
 
 typedef enum TStatus {
     OK, WRONG_MODE, WRONG_STEPS, WRONG_CONFIGS,
     MATRIX_FILE_NOT_OPENED, WRONG_MATRIX, NOT_ENOUGH_STRATS,
-    WRONG_STRATEGY_NAME, TOO_MANY_STRATS
+    WRONG_STRATEGY_NAME, TOO_MANY_STRATS, CONFIGS_FILE_NOT_OPENED
 } TStatus;
 
 typedef enum TMode {
@@ -39,6 +40,8 @@ public:
 
     bool setScoreMap(std::ifstream &matrixFile);
 
+    void setConfigs(TConfigs &configs);
+
 private:
     TMode mode_;
     std::vector<std::string> names_;
@@ -47,18 +50,19 @@ private:
     size_t strategiesCount_ = 0;
     size_t stepsCount_;
     TScoreMap scoreMap_;
+    TConfigs configs_;
     TChoiceMatrix choiceMatrix_;
     TStatus status_;
-    std::map<TStatus, std::string> errorMessages_ {
-            {OK, "Everything is alright"},
-            {WRONG_MODE, "Such mode does not exist"},
-            {WRONG_STEPS, "Wrong steps value, it's not a number"},
-            {WRONG_CONFIGS, "Wrong configs format"},
+    std::map<TStatus, std::string> errorMessages_{
+            {OK,                     "Everything is alright"},
+            {WRONG_MODE,             "Such mode does not exist"},
+            {WRONG_STEPS,            "Wrong steps value, it's not a number"},
+            {WRONG_CONFIGS,          "Wrong configs format"},
             {MATRIX_FILE_NOT_OPENED, "File with matrix could not be opened"},
-            {WRONG_MATRIX, "Score matrix has a wrong format"},
-            {NOT_ENOUGH_STRATS, "Too few strategies for the chosen mode"},
-            {WRONG_STRATEGY_NAME, "Strategy with the entered name does not exist"},
-            {TOO_MANY_STRATS, "Too many strategies for the chosen mode"}
+            {WRONG_MATRIX,           "Score matrix has a wrong format"},
+            {NOT_ENOUGH_STRATS,      "Too few strategies for the chosen mode"},
+            {WRONG_STRATEGY_NAME,    "Strategy with the entered name does not exist"},
+            {TOO_MANY_STRATS,        "Too many strategies for the chosen mode"}
     };
 
     bool parseMatrix(std::ifstream &matrixFile);

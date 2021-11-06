@@ -7,12 +7,12 @@
 
 namespace {
     Strategy *create(size_t orderNumber, TChoiceMatrix &history,
-                     TScoreMap &scoreMap) {
-        return new AlwaysDefStrategy(orderNumber, history, scoreMap);
+                     TScoreMap &scoreMap, TConfigs &configs) {
+        return new AlwaysDefStrategy(orderNumber, history, scoreMap, configs);
     }
 }
 
-bool defB = Factory<Strategy, std::string, size_t, TChoiceMatrix&, TScoreMap&>::
+bool defB = Factory<Strategy, std::string, size_t, TChoiceMatrix &, TScoreMap &, TConfigs &>::
 getInstance()->registerCreator(alwaysDefID, create);
 
 TChoice AlwaysDefStrategy::getChoice() {

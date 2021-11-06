@@ -8,12 +8,12 @@
 
 namespace {
     Strategy *create(size_t orderNumber, TChoiceMatrix &history,
-                     TScoreMap &scoreMap) {
-        return new MostFreqStrategy(orderNumber, history, scoreMap);
+                     TScoreMap &scoreMap, TConfigs &configs) {
+        return new MostFreqStrategy(orderNumber, history, scoreMap, configs);
     }
 }
 
-bool mostFreqB = Factory<Strategy, std::string, size_t, TChoiceMatrix&, TScoreMap&>::
+bool mostFreqB = Factory<Strategy, std::string, size_t, TChoiceMatrix &, TScoreMap &, TConfigs &>::
 getInstance()->registerCreator(mostFreqID, create);
 
 TChoice MostFreqStrategy::getChoice() {
@@ -25,7 +25,7 @@ TChoice MostFreqStrategy::getChoice() {
         choiceCounts[i][COOPERATE] = 0;
         choiceCounts[i][DEFEND] = 0;
     }
-    for (auto currentLine : history) {
+    for (auto currentLine: history) {
         for (size_t j = 0; j < 3; j++) {
             choiceCounts[j][currentLine[j]] += 1;
         }

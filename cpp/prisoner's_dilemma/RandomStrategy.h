@@ -8,7 +8,8 @@ constexpr char randomID[] = "random";
 class RandomStrategy : public Strategy {
 public:
     RandomStrategy(size_t orderNumber, TChoiceMatrix &history,
-                   TScoreMap &scoreMap) : Strategy(orderNumber, history,scoreMap) {};
+                   TScoreMap &scoreMap, TConfigs &configs) :
+            Strategy(orderNumber, history,scoreMap, configs) {};
 
     ~RandomStrategy() override = default;
 
