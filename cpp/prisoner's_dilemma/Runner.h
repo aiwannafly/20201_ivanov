@@ -34,7 +34,7 @@ public:
 
     void setMode(TMode mode);
 
-    bool setStrategies(const std::vector<std::string> &strategyNames);
+    bool setStrategies(const std::vector<std::string> &names);
 
     void setStepsCount(size_t stepsCount);
 
@@ -42,26 +42,31 @@ public:
 
     bool setConfigs(const std::string &fileName);
 
+    std::map<std::string, size_t> getGameScores();
+
+    void disablePrinting();
+
 private:
     TStatus status_ = OK;
+    bool printMode_ = true;
     TMode mode_ = DETAILED;
     std::vector<std::string> names_;
     std::map<std::string, std::unique_ptr<Strategy>> strategies_;
     std::map<std::string, size_t> gameScores_;
     size_t strategiesCount_ = 0;
     size_t stepsCount_ = 10;
-    TScoreMap scoreMap_ = {
-            {{COOP, COOP, COOP}, {7, 7, 7}},
-            {{COOP, COOP, DEF}, {3, 3, 9}},
-            {{COOP, DEF, COOP}, {3, 9, 3}},
-            {{DEF, COOP, COOP}, {9, 3, 3}},
-            {{COOP, DEF, DEF}, {0, 5, 5}},
-            {{DEF, COOP, DEF}, {5, 0, 5}},
-            {{DEF, DEF, COOP}, {5, 5, 0}},
-            {{DEF, DEF, DEF}, {1, 1, 1}}
-    };
     TConfigs configs_;
     TChoiceMatrix choiceMatrix_;
+    TScoreMap scoreMap_ = {
+            {{COOP, COOP, COOP}, {7, 7, 7}},
+            {{COOP, COOP, DEF},  {3, 3, 9}},
+            {{COOP, DEF,  COOP}, {3, 9, 3}},
+            {{DEF,  COOP, COOP}, {9, 3, 3}},
+            {{COOP, DEF,  DEF},  {0, 5, 5}},
+            {{DEF,  COOP, DEF},  {5, 0, 5}},
+            {{DEF,  DEF,  COOP}, {5, 5, 0}},
+            {{DEF,  DEF,  DEF},  {1, 1, 1}}
+    };
     std::map<TStatus, std::string> errorMessages_{
             {OK,                     "Everything is alright"},
             {WRONG_MODE,             "Such mode does not exist"},
@@ -74,9 +79,9 @@ private:
             {TOO_MANY_STRATS,        "Too many strategies for the chosen mode"}
     };
     std::map<std::string, TMode> modeMap_{
-            {"--mode=detailed", DETAILED},
-            {"--mode=fast", FAST},
-            {"--mode=tournament", TOURNAMENT}
+            {"detailed",   DETAILED},
+            {"fast",       FAST},
+            {"tournament", TOURNAMENT}
     };
 
     bool parseMatrix(std::ifstream &matrixFile);
@@ -88,6 +93,8 @@ private:
     void printGameResults(std::ostream &stream);
 
     void printTotalResults(std::ostream &stream);
+
+    void checkStatus();
 };
 
 #endif
