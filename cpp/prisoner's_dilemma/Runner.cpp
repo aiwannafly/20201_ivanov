@@ -13,7 +13,6 @@
 
 constexpr size_t combinationsCount = 8;
 constexpr char quitCommand[] = "quit";
-constexpr char defaultMatrixFileName[] = "default_matrix.txt";
 constexpr char modeKeySeq[] = "--mode=";
 constexpr char stepsKeySeq[] = "--steps=";
 constexpr char configsKeySeq[] = "--configs=";
@@ -136,7 +135,7 @@ bool Runner::setScoreMap(const std::string &fileName) {
     && status_ != OK) {
         return false;
     }
-    std::ifstream matrixFile = std::ifstream(defaultMatrixFileName);
+    std::ifstream matrixFile = std::ifstream(fileName);
     if (!matrixFile.is_open()) {
         status_ = MATRIX_FILE_NOT_OPENED;
         return false;

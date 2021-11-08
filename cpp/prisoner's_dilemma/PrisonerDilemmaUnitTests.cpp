@@ -33,10 +33,11 @@ TEST(PrisonerDilemma, Setters) {
     runner.setStrategies({"meta", "pred", "freq"});
     runner.setStepsCount(100);
     EXPECT_TRUE(runner.runGame(std::cout));
-}
-
-TEST(PrisonerDilemma, LargeTest) {
-    Runner runner;
+    runner.setScoreMap("ASFASksfajksaksjfbaklfas");
+    EXPECT_EQ(runner.getStatus(), MATRIX_FILE_NOT_OPENED);
+    EXPECT_FALSE(runner.setMode(TOURNAMENT));
+    runner.setScoreMap("default_matrix.txt");
+    EXPECT_EQ(runner.getStatus(), OK);
 }
 
 int RunTests(int argc, char *argv[]) {
