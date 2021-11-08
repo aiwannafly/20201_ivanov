@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "PrisonerDilemmaUnitTests.h"
 #include "Runner.h"
 
 int main(int argc, char *argv[]) {
@@ -8,6 +9,7 @@ int main(int argc, char *argv[]) {
      * TODO: add module tests
      * TODO: add std::ios::exceptions
      */
+    RunTests(argc, argv);
     std::vector<std::string> params;
     for (size_t i = 1; i < argc; i++) {
         params.emplace_back(argv[i]);

@@ -21,7 +21,6 @@ TChoice MetaStrategy::getChoice() {
     TChoiceMatrix choiceMatrix = getHistory();
     TScoreMap scoreMap = getScoreMap();
     if (configs.empty()) {
-        std::cout << "1" << std::endl;
         int num = rand();
         if (num % 2 == 0) {
             return COOP;
@@ -37,10 +36,8 @@ TChoice MetaStrategy::getChoice() {
                                             getOrderNumber(),choiceMatrix, scoreMap, configs));
     strategiesCounter_++;
     if (strategy) {
-        std::cout << "2" << std::endl;
         return strategy->getChoice();
     }
-    std::cout << "3" << std::endl;
     int num = rand();
     if (num % 2 == 0) {
         return COOP;

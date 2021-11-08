@@ -11,7 +11,7 @@
 #include "Strategy.h"
 
 typedef enum TStatus {
-    OK, WRONG_MODE, WRONG_STEPS, WRONG_CONFIGS,
+    OK, WRONG_MODE, WRONG_STEPS,
     MATRIX_FILE_NOT_OPENED, WRONG_MATRIX, NOT_ENOUGH_STRATS,
     WRONG_STRATEGY_NAME, TOO_MANY_STRATS, CONFIGS_FILE_NOT_OPENED
 } TStatus;
@@ -28,11 +28,11 @@ public:
 
     TStatus getStatus();
 
-    bool runGame(std::ostream &stream);
+    bool runGame(std::ostream &ostream);
 
     void printErrorMessage(std::ostream &stream);
 
-    void setMode(TMode mode);
+    bool setMode(TMode mode);
 
     bool setStrategies(const std::vector<std::string> &names);
 
@@ -47,6 +47,9 @@ public:
     void disablePrinting();
 
 private:
+    std::array<std::string, 6> availableStrategies_ = {
+            "random", "coop", "def", "freq", "pred", "meta"
+    };
     TStatus status_ = OK;
     bool printMode_ = true;
     TMode mode_ = DETAILED;
@@ -71,7 +74,6 @@ private:
             {OK,                     "Everything is alright"},
             {WRONG_MODE,             "Such mode does not exist"},
             {WRONG_STEPS,            "Wrong steps value, it's not a number"},
-            {WRONG_CONFIGS,          "Wrong configs format"},
             {MATRIX_FILE_NOT_OPENED, "File with matrix could not be opened"},
             {WRONG_MATRIX,           "Score matrix has a wrong format"},
             {NOT_ENOUGH_STRATS,      "Too few strategies for the chosen mode"},
@@ -84,6 +86,8 @@ private:
             {"tournament", TOURNAMENT}
     };
 
+    void initStrategies();
+
     bool parseMatrix(std::ifstream &matrixFile);
 
     bool runTournament(std::ostream &stream);
@@ -94,7 +98,7 @@ private:
 
     void printTotalResults(std::ostream &stream);
 
-    void checkStatus();
+    bool checkStrategiesCount();
 };
 
 #endif

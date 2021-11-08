@@ -1,5 +1,6 @@
 #include "Runner.h"
 
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <stdexcept>
@@ -56,12 +57,12 @@ Runner::Runner(const std::vector<std::string> &params) {
             }
         } else if (startsWith(param, configsKey)) {
             std::string fileName = param.substr(configsKey.length());
-            if(!setConfigs(fileName)) {
+            if (!setConfigs(fileName)) {
                 return;
             }
         } else if (startsWith(param, matrixKey)) {
             std::string fileName = param.substr(configsKey.length());
-            if(!setScoreMap(fileName)) {
+            if (!setScoreMap(fileName)) {
                 return;
             }
         } else {
@@ -71,29 +72,47 @@ Runner::Runner(const std::vector<std::string> &params) {
     setStrategies(names);
 }
 
-void Runner::setMode(TMode mode) {
+bool Runner::setMode(TMode mode) {
+    if (status_ != NOT_ENOUGH_STRATS && status_ != TOO_MANY_STRATS &&
+    status_ != OK) {
+        return false;
+    }
     mode_ = mode;
+    if (status_ == NOT_ENOUGH_STRATS || status_ == TOO_MANY_STRATS) {
+        if (checkStrategiesCount()) {
+            status_ = OK;
+        }
+    } else if (status_ == OK) {
+        checkStrategiesCount();
+    }
+    return true;
 }
 
 bool Runner::setStrategies(const std::vector<std::string> &names) {
-    assert(!scoreMap_.empty());
-    strategies_.clear();
-    for (size_t i = 0; i < names.size(); i++) {
-        Strategy *strategy = Factory<Strategy, std::string, size_t, TChoiceMatrix &,
-                TScoreMap &, TConfigs &>::getInstance()->createProduct(
-                names[i], i, choiceMatrix_, scoreMap_, configs_);
-        if (nullptr == strategy) {
+    if (status_ != NOT_ENOUGH_STRATS && status_ != TOO_MANY_STRATS &&
+        status_ != OK && status_ != WRONG_STRATEGY_NAME) {
+        return false;
+    }
+    for (const auto & name : names) {
+        if (std::find(availableStrategies_.begin(), availableStrategies_.end(), name) ==
+        availableStrategies_.end()) {
             status_ = WRONG_STRATEGY_NAME;
             return false;
         }
-        names_.push_back(names[i]);
-        strategies_[names[i]] = std::unique_ptr<Strategy>(strategy);
     }
+    names_ = names;
     strategiesCount_ = names_.size();
     if (WRONG_STRATEGY_NAME == status_) {
         status_ = OK;
     }
-    checkStatus();
+    if (OK == status_) {
+        checkStrategiesCount();
+    } else if (NOT_ENOUGH_STRATS == status_ || TOO_MANY_STRATS == status_) {
+        if (checkStrategiesCount()) {
+            status_ = OK;
+        }
+    }
+    strategies_.clear();
     return true;
 }
 
@@ -103,6 +122,9 @@ std::map<std::string, size_t> Runner::getGameScores() {
 
 void Runner::setStepsCount(size_t stepsCount) {
     stepsCount_ = stepsCount;
+    if (WRONG_STEPS == status_) {
+        status_ = OK;
+    }
 }
 
 void Runner::disablePrinting() {
@@ -110,6 +132,10 @@ void Runner::disablePrinting() {
 }
 
 bool Runner::setScoreMap(const std::string &fileName) {
+    if (status_ != WRONG_MATRIX && status_ != MATRIX_FILE_NOT_OPENED
+    && status_ != OK) {
+        return false;
+    }
     std::ifstream matrixFile = std::ifstream(defaultMatrixFileName);
     if (!matrixFile.is_open()) {
         status_ = MATRIX_FILE_NOT_OPENED;
@@ -118,6 +144,9 @@ bool Runner::setScoreMap(const std::string &fileName) {
     if (!parseMatrix(matrixFile)) {
         status_ = WRONG_MATRIX;
         return false;
+    }
+    if (WRONG_MATRIX == status_ || MATRIX_FILE_NOT_OPENED == status_) {
+        status_ = OK;
     }
     return true;
 }
@@ -135,6 +164,9 @@ bool Runner::setConfigs(const std::string &fileName) {
             break;
         }
         configs_.push_back(word);
+    }
+    if (CONFIGS_FILE_NOT_OPENED == status_) {
+        status_ = OK;
     }
     return true;
 }
@@ -174,10 +206,6 @@ TStatus Runner::getStatus() {
 
 bool Runner::runTournament(std::ostream &stream) {
     assert(mode_ == TOURNAMENT);
-    if (names_.size() < 4) {
-        status_ = NOT_ENOUGH_STRATS;
-        return false;
-    }
     std::map<std::string, size_t> results;
     for (size_t i = 0; i < strategiesCount_; i++) {
         for (size_t j = i + 1; j < strategiesCount_; j++) {
@@ -208,43 +236,47 @@ bool Runner::runTournament(std::ostream &stream) {
     return true;
 }
 
-void Runner::checkStatus() {
+bool Runner::checkStrategiesCount() {
     if (mode_ == TOURNAMENT) {
         if (names_.size() < 4) {
             status_ = NOT_ENOUGH_STRATS;
-        } else {
-            status_ = OK;
+            return false;
         }
     } else {
-        if (names_.size() == 3) {
-            status_ = OK;
-        } else {
-            if (names_.size() > 3) {
-                status_ = TOO_MANY_STRATS;
-            } else {
-                status_ = NOT_ENOUGH_STRATS;
-            }
+        if (names_.size() > 3) {
+            status_ = TOO_MANY_STRATS;
+            return false;
+        } else if (names_.size() < 3) {
+            status_ = NOT_ENOUGH_STRATS;
+            return false;
         }
+    }
+    return true;
+}
+
+void Runner::initStrategies() {
+    if (!strategies_.empty()) {
+        return;
+    }
+    size_t counter = 0;
+    for (const auto &name: names_) {
+        strategies_[name] = std::unique_ptr<Strategy>(
+                Factory<Strategy, std::string, size_t, TChoiceMatrix &, TScoreMap &, TConfigs &>
+                ::getInstance()->createProduct(name, counter, choiceMatrix_, scoreMap_, configs_));
+        assert(strategies_[name]);
     }
 }
 
-bool Runner::runGame(std::ostream &stream) {
+bool Runner::runGame(std::ostream &ostream) {
     if (OK != getStatus()) {
         return false;
     }
-    if (stream.fail()) {
+    if (ostream.fail()) {
         return false;
     }
+    initStrategies();
     if (mode_ == TOURNAMENT) {
-        return runTournament(stream);
-    }
-    if (names_.size() != 3) {
-        if (names_.size() > 3) {
-            status_ = TOO_MANY_STRATS;
-        } else {
-            status_ = NOT_ENOUGH_STRATS;
-        }
-        return false;
+        return runTournament(ostream);
     }
     size_t stepsCount = 0;
     while (true) {
@@ -268,10 +300,10 @@ bool Runner::runGame(std::ostream &stream) {
         gameScores_[names_[1]] += scores[1];
         gameScores_[names_[2]] += scores[2];
         if (mode_ == DETAILED) {
-            printStepResults(stream, scores, stepsCount);
+            printStepResults(ostream, scores, stepsCount);
         }
         if (mode_ == FAST && stepsCount == stepsCount_) {
-            printGameResults(stream);
+            printGameResults(ostream);
             break;
         }
     }
