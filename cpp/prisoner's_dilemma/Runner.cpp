@@ -73,7 +73,7 @@ Runner::Runner(const std::vector<std::string> &params) {
 
 bool Runner::setMode(TMode mode) {
     if (status_ != NOT_ENOUGH_STRATS && status_ != TOO_MANY_STRATS &&
-    status_ != OK) {
+        status_ != OK) {
         return false;
     }
     mode_ = mode;
@@ -92,9 +92,9 @@ bool Runner::setStrategies(const std::vector<std::string> &names) {
         status_ != OK && status_ != WRONG_STRATEGY_NAME) {
         return false;
     }
-    for (const auto & name : names) {
+    for (const auto &name: names) {
         if (std::find(availableStrategies_.begin(), availableStrategies_.end(), name) ==
-        availableStrategies_.end()) {
+            availableStrategies_.end()) {
             status_ = WRONG_STRATEGY_NAME;
             return false;
         }
@@ -132,15 +132,23 @@ void Runner::disablePrinting() {
 
 bool Runner::setScoreMap(const std::string &fileName) {
     if (status_ != WRONG_MATRIX && status_ != MATRIX_FILE_NOT_OPENED
-    && status_ != OK) {
+        && status_ != OK) {
         return false;
     }
-    std::ifstream matrixFile = std::ifstream(fileName);
-    if (!matrixFile.is_open()) {
+    std::ifstream matrixFile;
+    matrixFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    try {
+        matrixFile.open(fileName);
+    } catch (std::ifstream::failure &error) {
         status_ = MATRIX_FILE_NOT_OPENED;
         return false;
     }
-    if (!parseMatrix(matrixFile)) {
+    try {
+        if(!parseMatrix(matrixFile)) {
+            status_ = WRONG_MATRIX;
+            return false;
+        }
+    } catch (std::ifstream::failure &error) {
         status_ = WRONG_MATRIX;
         return false;
     }
@@ -151,18 +159,22 @@ bool Runner::setScoreMap(const std::string &fileName) {
 }
 
 bool Runner::setConfigs(const std::string &fileName) {
-    std::ifstream configsFile = std::ifstream(fileName);
-    if (!configsFile.is_open()) {
+    std::ifstream configsFile;
+    configsFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    try {
+        configsFile.open(fileName);
+    } catch (std::ifstream::failure &error) {
         status_ = CONFIGS_FILE_NOT_OPENED;
         return false;
     }
     while (true) {
-        std::string word;
-        configsFile >> word;
-        if (word.empty()) {
+        try {
+            std::string word;
+            configsFile >> word;
+            configs_.push_back(word);
+        } catch (std::ifstream::failure & e) {
             break;
         }
-        configs_.push_back(word);
     }
     if (CONFIGS_FILE_NOT_OPENED == status_) {
         status_ = OK;
@@ -186,13 +198,7 @@ bool Runner::parseMatrix(std::ifstream &matrixFile) {
         }
         std::array<size_t, combLen> scores = {};
         for (size_t j = 0; j < combLen; j++) {
-            std::string word;
-            matrixFile >> word;
-            try {
-                scores[j] = std::stol(word);
-            } catch (std::invalid_argument &e) {
-                return false;
-            }
+            matrixFile >> scores[j];
         }
         scoreMap_[combination] = scores;
     }
