@@ -6,12 +6,6 @@
 #include <string>
 
 #include "util.h"
-#include "util.cpp"
-
-constexpr char keyNotExistMsg[] = "The key does not exist in the flatmap.\\n";
-constexpr size_t initialCapacity = 1;
-constexpr size_t expandCoefficient = 2;
-constexpr int notFound = -1;
 
 struct TCell {
     TKey key;
@@ -19,6 +13,11 @@ struct TCell {
 };
 
 namespace {
+    constexpr char keyNotExistMsg[] = "The key does not exist in the flatmap.\\n";
+    constexpr size_t initialCapacity = 1;
+    constexpr size_t expandCoefficient = 2;
+    constexpr int notFound = -1;
+
     int CompareKeys(const TKey &key1, const TKey &key2) {
         return key2.compare(key1);
     }
@@ -55,8 +54,8 @@ FlatMap::FlatMap(FlatMap &&previous) noexcept {
     size_ = previous.size_;
     cells_ = previous.cells_;
     previous.cells_ = nullptr;
-    previous.capacity_ = 0;
     previous.size_ = 0;
+    previous.capacity_ = 0;
 }
 
 void FlatMap::Swap(FlatMap &another) {
@@ -90,8 +89,8 @@ FlatMap &FlatMap::operator=(FlatMap &&another) noexcept {
     size_ = another.size_;
     cells_ = another.cells_;
     another.cells_ = nullptr;
-    another.capacity_ = 0;
     another.size_ = 0;
+    another.capacity_ = 0;
     return *this;
 }
 
@@ -170,9 +169,8 @@ TValue &FlatMap::operator[](const TKey &key) {
     if (idx >= 0) {
         return cells_[idx].value;
     }
-    auto *value = new TValue;
-    this->Insert(key, *value);
-    return *value;
+    this->Insert(key, TValue());
+    return this->At(key);
 }
 
 TValue &FlatMap::At(const TKey &key) {
@@ -186,7 +184,7 @@ TValue &FlatMap::At(const TKey &key) {
 const TValue &FlatMap::At(const TKey &key) const {
     int idx = this->GetIdx(key);
     if (idx >= 0) {
-        return (const TValue &) cells_[idx].value;
+        return cells_[idx].value;
     }
     throw std::out_of_range(keyNotExistMsg);
 }
@@ -211,9 +209,6 @@ bool FlatMap::Empty() const {
 }
 
 bool operator==(const FlatMap &a, const FlatMap &b) {
-    if (a.capacity_ != b.capacity_) {
-        return false;
-    }
     if (a.size_ != b.size_) {
         return false;
     }
@@ -229,8 +224,5 @@ bool operator==(const FlatMap &a, const FlatMap &b) {
 }
 
 bool operator!=(const FlatMap &a, const FlatMap &b) {
-    if (a == b) {
-        return false;
-    }
-    return true;
+    return !(a == b);
 }

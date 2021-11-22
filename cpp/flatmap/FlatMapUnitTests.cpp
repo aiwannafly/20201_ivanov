@@ -153,12 +153,8 @@ TEST(FlatMap, GET_BY_IDX) {
     EXPECT_TRUE(map1.Insert("Dave", s1));
     bool cmpRes = CmpValues(&s1, &map1["Dave"]);
     EXPECT_TRUE(cmpRes);
-    auto *value1 = new TValue;
-    auto *value2 = &map1["Clara"];
-    cmpRes = CmpValues(value1, value2);
-    EXPECT_TRUE(cmpRes);
-    delete value1;
-    delete value2;
+    auto *defaultValue = &map1["UNKNOWN_KEY"];
+    EXPECT_TRUE(map1.Contains("UNKNOWN_KEY"));
 }
 
 TEST(FlatMap, At) {
@@ -170,6 +166,16 @@ TEST(FlatMap, At) {
     bool cmpRes = CmpValues(&s1, &map1.At("Dave"));
     EXPECT_TRUE(cmpRes);
     EXPECT_THROW(map1.At("John"), std::out_of_range);
+}
+
+TEST(FlatMap, RValueAssignment) {
+    FlatMap map1;
+    TValue s1 = {
+            70, 70
+    };
+    map1.Insert("JOHN", s1);
+    FlatMap map2 = std::move(map1);
+    EXPECT_TRUE(map2.Contains("JOHN"));
 }
 
 int RunTests(int argc, char *argv[]) {
