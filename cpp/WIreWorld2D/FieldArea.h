@@ -8,7 +8,16 @@
 #include <QPixmap>
 #include <QWidget>
 
-#include "WireWorldRunner.h"
+#ifndef TCELLTYPE
+#define TCELLTYPE
+enum TCellType {
+    EMPTY_CELL, ELECTRON_TAIL, ELECTRON_HEAD, CONDUCTOR
+};
+#endif
+
+//typedef enum TCellType TCellType;
+
+using TField = std::vector<std::vector<TCellType>>;
 
 enum TMOUSE_MODE {
     DRAW, MOVE
@@ -17,31 +26,27 @@ enum TMOUSE_MODE {
 class FieldArea : public QWidget {
 Q_OBJECT
 public:
-    FieldArea(QWidget *parent = nullptr);
+    FieldArea(size_t width, size_t height, size_t cellSize, QWidget *parent = nullptr);
 
     QSize minimumSizeHint() const override;
 
     QSize sizeHint() const override;
 
-    bool setField(const std::string &fileName);
-
-    bool proceedTick();
-
-    void run();
-
-    void stop();
-
-    bool isRun();
-
-    size_t getSteps() {
-        return runner_.getCountOfSteps();
-    };
-
-    void setColor(conditions cond) {
+    void setColor(TCellType cond) {
         drawCellType_ = cond;
     }
 
+    void setField(TField &field) {
+        cells_ = field;
+    };
+
+    TField &getField() {
+        return cells_;
+    }
+
     void setMouseMode(TMOUSE_MODE mode);
+
+//    bool getFieldFromFile(const std::string &fileName);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -55,14 +60,14 @@ protected:
     void mouseReleaseEvent(QMouseEvent* event) override;
 
 private:
+    size_t fwidth_ = 0;
+    size_t fheight_ = 0;
     int coordX_ = 0;
     int coordY_ = 0;
     QPoint oldPos_;
     QPoint moveDelta_;
     TMOUSE_MODE mouseMode_ = DRAW;
-    conditions drawCellType_ = ELECTRON_TAIL;
-    bool isRunning = false;
-    WireWorldRunner runner_;
+    TCellType drawCellType_ = ELECTRON_TAIL;
     qreal scale_ = 1;
     size_t cellSize_ = 10;
     TField cells_ = {};

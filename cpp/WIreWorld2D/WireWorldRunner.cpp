@@ -2,6 +2,16 @@
 
 #include "RLE.h"
 
+WireWorldRunner::WireWorldRunner(size_t width, size_t height) : fwidth_(width), fheight_(height){
+    for (size_t i = 0; i < height; i++) {
+        std::vector<TCellType> line;
+        for (size_t j = 0; j < width; j++) {
+            line.push_back(EMPTY_CELL);
+        }
+        field_.push_back(line);
+    }
+};
+
 TField &WireWorldRunner::getField() {
     return field_;
 }
@@ -13,11 +23,11 @@ size_t WireWorldRunner::getCountOfHeads(TField &field, int x, int y) {
             if (i == x && j == y) {
                 continue;
             }
-            if (i < 0 || i >= fheight) {
+            if (i < 0 || i >= fheight_) {
                 continue;
             }
 
-            if (j < 0 || j >= fwidth) {
+            if (j < 0 || j >= fwidth_) {
                 continue;
             }
 
@@ -32,8 +42,8 @@ size_t WireWorldRunner::getCountOfHeads(TField &field, int x, int y) {
 bool WireWorldRunner::proceedTick() {
     bool changed = false;
     TField cellsCopy(field_);
-    for (size_t i = yOffset_; i < yOffset_ + height_; i++) {
-        for (size_t j = xOffset_; j < xOffset_ + width_; j++) {
+    for (size_t i = yOffset_; i < yOffset_ + fheight_; i++) {
+        for (size_t j = xOffset_; j < xOffset_ + fwidth_; j++) {
             if (cellsCopy[i][j] == ELECTRON_HEAD) {
                 field_[i][j] = ELECTRON_TAIL;
             }
@@ -54,7 +64,7 @@ bool WireWorldRunner::proceedTick() {
     return changed;
 }
 
-enum conditions getEnumCondition(char ch) {
+enum TCellType getEnumCondition(char ch) {
     // turns char type condition into enum type
     switch (ch) {
         case 'A':
@@ -93,7 +103,7 @@ bool WireWorldRunner::setField(TField& field) {
 
 bool WireWorldRunner::getFieldFromFile(const std::string &fileName) {
     steps_ = 0;
-    field_.fill({});
+    field_.clear();
     std::ifstream fieldFile(fileName);
     int width = 0;
     int height = 0;
@@ -120,15 +130,15 @@ bool WireWorldRunner::getFieldFromFile(const std::string &fileName) {
             break;
         }
     }
-    if (height > fheight || width > fwidth) {
+    if (height > fheight_ || width > fwidth_) {
         return false;
     }
     std::string stringField;
     if (!getDecodedRLE(fieldFile, stringField, height, width)) {
         return false;
     }
-    xOffset_ = (fwidth - width) / 2;
-    yOffset_ = (fheight - height) / 2;
+    xOffset_ = (fwidth_ - width) / 2;
+    yOffset_ = (fheight_ - height) / 2;
     for (size_t i = 0; i < height; i++) {
         for (size_t j = 0; j < width; j++) {
             field_[i + yOffset_][j + xOffset_] =

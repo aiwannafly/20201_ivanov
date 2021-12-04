@@ -6,4 +6,6 @@
 
 bool getDecodedRLE(std::ifstream &file, std::string &decoded, int row, int col);
 
+
+
 #endif //WIREWORLD2D_RLE_H

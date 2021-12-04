@@ -4,10 +4,12 @@
 #include <QWidget>
 
 class FieldArea;
+class WireWorldFieldManager;
 class QLabel;
 class QPushButton;
 class QTimer;
 class QComboBox;
+class WireWorldRunner;
 
 class WireWorldWindow : public QWidget {
 Q_OBJECT
@@ -31,8 +33,10 @@ private slots:
     void colorChanged();
 
 private:
-    QTimer *timer_;
+    bool running_ = false;
+    WireWorldRunner *runner_;
     FieldArea *fieldArea_;
+    QTimer *runGameTimer_;
     QPushButton *runButton_;
     QPushButton *loadFieldButton_;
     QPushButton *clearFieldButton_;

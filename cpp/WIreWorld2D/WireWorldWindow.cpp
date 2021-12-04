@@ -4,6 +4,7 @@
 #include <QtWidgets>
 
 #include "FieldArea.h"
+#include "WireWorldRunner.h"
 
 constexpr char runIconName[] = "run.png";
 constexpr char stopIconName[] = "stop.png";
@@ -17,9 +18,13 @@ constexpr char nextButtonText[] = "&Next";
 constexpr char loadFieldButtonText[] = "&Load field";
 constexpr char clearFieldButtonText[] = "&Clear field";
 constexpr size_t timeUntilStart = 200;
+constexpr size_t cellSize = 10; //px
+constexpr size_t fieldHeight = 80;
+constexpr size_t fieldWidth = 80;
 
 WireWorldWindow::WireWorldWindow() {
-    fieldArea_ = new FieldArea;
+    fieldArea_ = new FieldArea(fieldWidth, fieldHeight, cellSize);
+    runner_ = new WireWorldRunner(fieldWidth, fieldHeight);
     runButton_ = new QPushButton(QIcon(runIconName), runButtonText);
     loadFieldButton_ = new QPushButton(loadFieldButtonText);
     clearFieldButton_ = new QPushButton(clearFieldButtonText);
@@ -27,7 +32,7 @@ WireWorldWindow::WireWorldWindow() {
     paintButton_ = new QPushButton(QIcon(paintIconName), paintButtonText);
     moveButton_ = new QPushButton(QIcon(moveIconName), moveButtonText);
     stepsLabel_ = new QLabel((std::string("Step №: ") +
-                              std::to_string(fieldArea_->getSteps())).data());
+                              std::to_string(runner_->getCountOfSteps())).data());
     colorComboBox_ = new QComboBox;
     colorComboBox_->addItem(tr("Empty"));
     colorComboBox_->addItem(tr("Electron tail"));
@@ -35,11 +40,9 @@ WireWorldWindow::WireWorldWindow() {
     colorComboBox_->addItem(tr("Conductor"));
     colorLabel_ = new QLabel(tr("&Set cell to draw:"));
     colorLabel_->setBuddy(colorComboBox_);
-
     auto *mainLayout = new QGridLayout;
-    timer_ = new QTimer(this);
-    connect(timer_, &QTimer::timeout, this, QOverload<>::of(&FieldArea::update));
-    timer_->start(timeUntilStart);
+    runGameTimer_ = new QTimer(this);
+    connect(runGameTimer_, &QTimer::timeout, this, QOverload<>::of(&WireWorldWindow::handleNextButton));
     mainLayout->setColumnStretch(0, 1);
     mainLayout->setColumnStretch(2, 1);
     mainLayout->addWidget(fieldArea_, 0, 0, 1, 5);
@@ -52,9 +55,7 @@ WireWorldWindow::WireWorldWindow() {
     mainLayout->addWidget(colorComboBox_, 2, 0);
     mainLayout->addWidget(paintButton_, 2, 1, Qt::AlignLeft);
     mainLayout->addWidget(moveButton_, 2, 2, Qt::AlignLeft);
-    connect(colorComboBox_, SIGNAL(activated(int)),
-            this, SLOT(colorChanged()));
-
+    connect(colorComboBox_, SIGNAL(activated(int)), this, SLOT(colorChanged()));
     connect(loadFieldButton_, SIGNAL (released()), this, SLOT (handleLoadFieldButton()));
     connect(runButton_, SIGNAL (released()), this, SLOT (handleRunButton()));
     connect(nextButton_, SIGNAL (released()), this, SLOT (handleNextButton()));
@@ -62,7 +63,7 @@ WireWorldWindow::WireWorldWindow() {
     connect(moveButton_, SIGNAL (released()), this, SLOT (handleMoveButton()));
     connect(paintButton_, SIGNAL (released()), this, SLOT (handleDrawButton()));
     setLayout(mainLayout);
-    setWindowTitle(tr("WIREWORLD 2D"));
+    setWindowTitle(tr("WireWorld 2D"));
 }
 
 void WireWorldWindow::handleLoadFieldButton() {
@@ -70,39 +71,46 @@ void WireWorldWindow::handleLoadFieldButton() {
                                                      "/home/zander/desktop/prog_labs/first_semester/WireWorld",
                                                      tr("Field Files (*.rle)"));
     std::string fileName = qfileName.toStdString();
-    if (!fieldArea_->setField(fileName)) {
+    if (!runner_->getFieldFromFile(fileName)) {
         QMessageBox::warning(this, "Error occurred", "Could not load field from the chosen file. Check if it can"
                                                    "not be opened or it does not have rle format.");
     }
+    fieldArea_->setField(runner_->getField());
 }
 
 void WireWorldWindow::colorChanged() {
     int colorId = colorComboBox_->currentIndex();
-    fieldArea_->setColor(static_cast<conditions>(colorId));
+    fieldArea_->setColor(static_cast<TCellType>(colorId));
 }
 
 void WireWorldWindow::handleNextButton() {
-    fieldArea_->proceedTick();
+    runner_->setField(fieldArea_->getField());
+    runner_->proceedTick();
     stepsLabel_->setText((std::string("Step №: ") +
-                         std::to_string(fieldArea_->getSteps())).data());
+                         std::to_string(runner_->getCountOfSteps())).data());
+    fieldArea_->setField(runner_->getField());
+    fieldArea_->update();
 }
 
 void WireWorldWindow::handleRunButton() {
-    if (fieldArea_->isRun()) {
+    if (running_) {
+        runGameTimer_->stop();
         runButton_->setText(runButtonText);
         runButton_->setIcon(QIcon(runIconName));
-        fieldArea_->stop();
+        running_ = false;
         stepsLabel_->setText((std::string("Step №: ") +
-                             std::to_string(fieldArea_->getSteps())).data());
+                             std::to_string(runner_->getCountOfSteps())).data());
         return;
     }
-    fieldArea_->run();
+    running_ = true;
+    runGameTimer_->start(timeUntilStart);
     runButton_->setText(stopButtonText);
     runButton_->setIcon(QIcon(stopIconName));
 }
 
 void WireWorldWindow::handleClearButton() {
-    fieldArea_->setField("field_empty.rle");
+    runner_->getFieldFromFile("field_empty.rle");
+    fieldArea_->setField(runner_->getField());
     stepsLabel_->setText("Step №: 0");
 }
 

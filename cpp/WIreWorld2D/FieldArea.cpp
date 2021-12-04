@@ -9,25 +9,29 @@ constexpr size_t maxScale = 10;
 constexpr int zoomCoef = 120;
 constexpr char drawCursorName[] = "cursortarget.png";
 
-FieldArea::FieldArea(QWidget *parent) : QWidget(parent) {
+FieldArea::FieldArea(size_t width, size_t height, size_t cellSize, QWidget *parent) :
+fwidth_(width), fheight_(height), cellSize_(cellSize), QWidget(parent) {
     setBackgroundRole(QPalette::AlternateBase);
     setAutoFillBackground(false);
-}
-
-bool FieldArea::isRun() {
-    return isRunning;
+    this->setCursor(QCursor(QPixmap(drawCursorName)));
+    for (size_t i = 0; i < height; i++) {
+        std::vector<TCellType> line;
+        for (size_t j = 0; j < width; j++) {
+            line.push_back(EMPTY_CELL);
+        }
+        cells_.push_back(line);
+    }
 }
 
 QSize FieldArea::minimumSizeHint() const {
-    return QSize(100, 100);
+    return {100, 100};
 }
 
 QSize FieldArea::sizeHint() const {
-    return QSize(fwidth * cellSize_, fheight * cellSize_);
+    return QSize(fwidth_ * cellSize_, fheight_ * cellSize_);
 }
 
-QColor getCellColor(enum conditions cond) {
-    // turns enum type condition into char type
+QColor getCellColor(enum TCellType cond) {
     switch (cond) {
         case ELECTRON_TAIL:
             return Qt::white;
@@ -46,8 +50,8 @@ void FieldArea::drawCell(QMouseEvent *event) {
     }
     size_t y = event->pos().y() / (cellSize_ * scale_);
     size_t x = event->pos().x() / (cellSize_ * scale_);
-    if (x + coordX_ >= fwidth) return;
-    if (y + coordY_ >= fheight) return;
+    if (x + coordX_ >= fwidth_) return;
+    if (y + coordY_ >= fheight_) return;
     cells_[x + coordY_][y + coordX_] = drawCellType_;
 }
 
@@ -77,15 +81,15 @@ void FieldArea::mousePressEvent(QMouseEvent *event) {
 void FieldArea::updateXY(int deltaX, int deltaY) {
     if (coordX_ + deltaX < 0) {
         coordX_ = 0;
-    } else if (coordX_ + deltaX > fwidth - fwidth / scale_) {
-        coordX_ = fwidth - fwidth / scale_;
+    } else if (coordX_ + deltaX > fwidth_ - fwidth_ / scale_) {
+        coordX_ = fwidth_ - fwidth_ / scale_;
     } else {
         coordX_ += deltaX;
     }
     if (coordY_ + deltaY < 0) {
         coordY_ = 0;
-    } else if (coordY_ + deltaY > fheight - fheight / scale_) {
-        coordY_ = fheight - fheight / scale_;
+    } else if (coordY_ + deltaY > fheight_ - fheight_ / scale_) {
+        coordY_ = fheight_ - fheight_ / scale_;
     } else {
         coordY_ += deltaY;
     }
@@ -111,47 +115,18 @@ void FieldArea::mouseReleaseEvent(QMouseEvent *event) {
     update();
 }
 
-void FieldArea::run() {
-    isRunning = true;
-}
-
-void FieldArea::stop() {
-    isRunning = false;
-}
-
-bool FieldArea::proceedTick() {
-    runner_.setField(cells_);
-    bool changed = runner_.proceedTick();
-    cells_ = runner_.getField();
-    this->update();
-    return changed;
-}
-
-bool FieldArea::setField(const std::string &fileName) {
-    bool status = runner_.getFieldFromFile(fileName);
-    if (status) {
-        cells_ = runner_.getField();
-        this->update();
-        return true;
-    }
-    return false;
-}
-
 void FieldArea::paintEvent(QPaintEvent *event) {
-    if (isRunning) {
-        proceedTick();
-    }
     QPainter painter(this);
     painter.scale(scale_, scale_);
     painter.setPen(QPen(Qt::black));
-    size_t scaledWidth = fwidth / scale_;
-    size_t scaledHeight = fheight / scale_;
+    size_t scaledWidth = qIntCast((fwidth_ / scale_));
+    size_t scaledHeight = qIntCast((fheight_ / scale_));
     for (size_t i = 0; i < scaledHeight; i++) {
-        if (i + coordY_ >= fheight) {
+        if (i + coordY_ >= fheight_) {
             continue;
         }
         for (size_t j = 0; j < scaledWidth; j++) {
-            if (j + coordX_ >= fwidth) {
+            if (j + coordX_ >= fwidth_) {
                 continue;
             }
             painter.setBrush(getCellColor(cells_[i + coordY_][j + coordX_]));
