@@ -79,16 +79,16 @@ WireWorldWindow::WireWorldWindow() {
     timer_->start(200);
     mainLayout->setColumnStretch(0, 1);
     mainLayout->setColumnStretch(2, 1);
-    mainLayout->addWidget(fieldArea_, 0, 0, 1, 4);
+    mainLayout->addWidget(fieldArea_, 0, 0, 1, 5);
     mainLayout->addWidget(runButton_, 1, 0, Qt::AlignLeft);
     mainLayout->addWidget(nextButton_, 1, 1, Qt::AlignLeft);
     mainLayout->addWidget(loadFieldButton_, 1, 2, Qt::AlignLeft);
     mainLayout->addWidget(clearFieldButton_, 1, 3, Qt::AlignLeft);
     mainLayout->addWidget(stepsLabel_, 1, 4, Qt::AlignLeft);
-    mainLayout->addWidget(colorLabel_, 1, 5, Qt::AlignLeft);
-    mainLayout->addWidget(colorComboBox_, 1, 5);
-    mainLayout->addWidget(drawButton_, 1, 6, Qt::AlignLeft);
-    mainLayout->addWidget(moveButton_, 1, 7, Qt::AlignLeft);
+    mainLayout->addWidget(colorLabel_, 2, 0, Qt::AlignLeft);
+    mainLayout->addWidget(colorComboBox_, 2, 0);
+    mainLayout->addWidget(drawButton_, 2, 1, Qt::AlignLeft);
+    mainLayout->addWidget(moveButton_, 2, 2, Qt::AlignLeft);
     connect(colorComboBox_, SIGNAL(activated(int)),
             this, SLOT(colorChanged()));
 

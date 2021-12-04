@@ -41,9 +41,7 @@ public:
         drawCellType_ = cond;
     }
 
-    void setMouseMode(TMOUSE_MODE mode) {
-        mouseMode_ = mode;
-    }
+    void setMouseMode(TMOUSE_MODE mode);
 
 protected:
     void paintEvent(QPaintEvent *event) override;

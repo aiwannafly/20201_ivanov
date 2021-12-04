@@ -7,6 +7,7 @@
 constexpr size_t minScale = 1;
 constexpr size_t maxScale = 10;
 constexpr int zoomCoef = 120;
+constexpr char drawCursorName[] = "cursortarget.png";
 
 FieldArea::FieldArea(QWidget *parent) : QWidget(parent) {
     setBackgroundRole(QPalette::AlternateBase);
@@ -45,11 +46,20 @@ void FieldArea::drawCell(QMouseEvent *event) {
     }
     size_t y = event->pos().y() / (cellSize_ * scale_);
     size_t x = event->pos().x() / (cellSize_ * scale_);
-    std::cout << x << " mouse coords " << y << std::endl;
     if (x + coordX_ >= fwidth) return;
     if (y + coordY_ >= fheight) return;
-    std::cout << coordX_ << " field coords " << coordY_ << std::endl;
     cells_[x + coordY_][y + coordX_] = drawCellType_;
+}
+
+void FieldArea::setMouseMode(TMOUSE_MODE mode) {
+    QCursor cursor;
+    if (mode == DRAW) {
+        cursor = QCursor(QPixmap(drawCursorName));
+    } else {
+        cursor = QCursor(Qt::PointingHandCursor);
+    }
+    this->setCursor(cursor);
+    mouseMode_ = mode;
 }
 
 void FieldArea::mousePressEvent(QMouseEvent *event) {
@@ -58,6 +68,7 @@ void FieldArea::mousePressEvent(QMouseEvent *event) {
         update();
         return;
     }
+    this->setCursor(Qt::ClosedHandCursor);
     if (event->button() == Qt::LeftButton) {
         oldPos_ = event->pos();
     }
@@ -92,6 +103,7 @@ void FieldArea::mouseReleaseEvent(QMouseEvent *event) {
     if (mouseMode_ != MOVE) {
         return;
     }
+    this->setCursor(Qt::PointingHandCursor);
     moveDelta_ = event->pos() - oldPos_;
     int deltaX = -moveDelta_.x() / (cellSize_ * scale_);
     int deltaY = -moveDelta_.y() / (cellSize_ * scale_);
