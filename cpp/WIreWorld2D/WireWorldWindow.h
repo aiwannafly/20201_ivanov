@@ -4,13 +4,9 @@
 #include <QWidget>
 
 class FieldArea;
-
 class QLabel;
-
 class QPushButton;
-
 class QTimer;
-
 class QComboBox;
 
 class WireWorldWindow : public QWidget {
@@ -41,7 +37,7 @@ private:
     QPushButton *loadFieldButton_;
     QPushButton *clearFieldButton_;
     QPushButton *nextButton_;
-    QPushButton *drawButton_;
+    QPushButton *paintButton_;
     QPushButton *moveButton_;
     QLabel *stepsLabel_;
     QComboBox *colorComboBox_;

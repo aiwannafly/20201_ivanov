@@ -3,11 +3,9 @@
 #include "WireWorldWindow.h"
 
 int main(int argc, char *argv[]) {
-    //TODO: add interface between runner and window
-    //TODO: add good zoomer
-    //TODO: add ability to move on the field
+    //TODO: add interface between runner and mainWindow
     QApplication app(argc, argv);
-    WireWorldWindow window;
-    window.show();
-    return app.exec();
+    WireWorldWindow mainWindow;
+    mainWindow.show();
+    return QApplication::exec();
 }

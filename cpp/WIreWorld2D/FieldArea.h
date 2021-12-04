@@ -8,7 +8,7 @@
 #include <QPixmap>
 #include <QWidget>
 
-#include "Runner.h"
+#include "WireWorldRunner.h"
 
 enum TMOUSE_MODE {
     DRAW, MOVE
@@ -34,7 +34,7 @@ public:
     bool isRun();
 
     size_t getSteps() {
-        return runner_.getSteps();
+        return runner_.getCountOfSteps();
     };
 
     void setColor(conditions cond) {
@@ -62,7 +62,7 @@ private:
     TMOUSE_MODE mouseMode_ = DRAW;
     conditions drawCellType_ = ELECTRON_TAIL;
     bool isRunning = false;
-    Runner runner_;
+    WireWorldRunner runner_;
     qreal scale_ = 1;
     size_t cellSize_ = 10;
     TField cells_ = {};

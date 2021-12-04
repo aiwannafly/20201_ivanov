@@ -128,7 +128,7 @@ bool FieldArea::proceedTick() {
 }
 
 bool FieldArea::setField(const std::string &fileName) {
-    bool status = runner_.setField(fileName);
+    bool status = runner_.getFieldFromFile(fileName);
     if (status) {
         cells_ = runner_.getField();
         this->update();
