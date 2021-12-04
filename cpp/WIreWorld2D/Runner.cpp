@@ -51,6 +51,7 @@ bool Runner::proceedTick() {
             }
         }
     }
+    steps_++;
     return changed;
 }
 
@@ -92,6 +93,8 @@ bool Runner::setField(TField& field) {
 }
 
 bool Runner::setField(const std::string &fileName) {
+    steps_ = 0;
+    cells_.fill({});
     std::ifstream fieldFile(fileName);
     int width = 0;
     int height = 0;

@@ -26,11 +26,16 @@ public:
 
     TField &getField();
 
+    size_t getSteps() {
+        return steps_;
+    }
+
 private:
+    size_t steps_ = 0;
     size_t xOffset_ = 0;
     size_t yOffset_ = 0;
-    size_t width_ = 0;
-    size_t height_ = 0;
+    size_t width_ = fwidth;
+    size_t height_ = fheight;
     TField cells_ = {};
 
     static size_t getCountOfHeads(TField &field,

@@ -10,6 +10,10 @@
 
 #include "Runner.h"
 
+enum TMOUSE_MODE {
+    DRAW, MOVE
+};
+
 class FieldArea : public QWidget {
 Q_OBJECT
 public:
@@ -29,6 +33,18 @@ public:
 
     bool isRun();
 
+    size_t getSteps() {
+        return runner_.getSteps();
+    };
+
+    void setColor(conditions cond) {
+        drawCellType_ = cond;
+    }
+
+    void setMouseMode(TMOUSE_MODE mode) {
+        mouseMode_ = mode;
+    }
+
 protected:
     void paintEvent(QPaintEvent *event) override;
 
@@ -38,14 +54,23 @@ protected:
 
     void mouseMoveEvent(QMouseEvent *event) override;
 
+    void mouseReleaseEvent(QMouseEvent* event) override;
+
 private:
+    int coordX_ = 0;
+    int coordY_ = 0;
+    QPoint oldPos_;
+    QPoint moveDelta_;
+    TMOUSE_MODE mouseMode_ = DRAW;
+    conditions drawCellType_ = ELECTRON_TAIL;
     bool isRunning = false;
     Runner runner_;
-    QPoint oldPos_ = {0, 0};
-    std::string fieldFile_;
     qreal scale_ = 1;
     size_t cellSize_ = 10;
     TField cells_ = {};
+
+    void updateXY(int deltaX, int deltaY);
+    void drawCell(QMouseEvent *event);
 };
 
 #endif //WIREWORLD2D_FIELDAREA_H

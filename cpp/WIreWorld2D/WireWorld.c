@@ -328,7 +328,16 @@ int proceedTick(const enum conditions** fieldCopy, enum conditions** field, int 
      */
     assert(NULL != field && NULL != fieldCopy);
     int isChanged = 0, heads;
-
+//    mapComboBox_ = new QComboBox;
+//    mapComboBox_->addItem(tr(""));
+//    mapComboBox_->addItem(tr("Field 1"));
+//    mapComboBox_->addItem(tr("Field 2"));
+//    mapComboBox_->addItem(tr("Field 3"));
+//    mapComboBox_->addItem(tr("Field 4"));
+//    mapLabel_ = new QLabel(tr("&Basic fields"));
+//    mapLabel_->setBuddy(mapComboBox_);
+//    connect(mapComboBox_, SIGNAL(activated(int)),
+//            this, SLOT(mapChanged()));
     for (int i = 0; i < row; i++) {
         for (int j = 0; j < col; j++) {
             if (fieldCopy[i][j] == ELECTRON_HEAD) {
