@@ -51,3 +51,86 @@ bool getDecodedRLE(std::ifstream &file, std::string &decoded, int row, int col) 
     }
     return true;
 }
+
+int extractSize(std::ifstream &fieldFile) {
+    if (!fieldFile.is_open()) {
+        return -1;
+    }
+    int ch;
+    while (!isdigit(ch = fieldFile.get())) {
+        if (ch != ' ' && ch != '=') {
+            return -1;
+        }
+    }
+    int size = 0;
+    do {
+        size *= 10;
+        size += ch - '0';
+    } while (isdigit(ch = fieldFile.get()));
+    return size;
+}
+
+enum TCellType getEnumCondition(char ch) {
+    // turns char type condition into enum type
+    switch (ch) {
+        case 'A':
+            return ELECTRON_HEAD;
+        case 'B':
+            return ELECTRON_TAIL;
+        case 'C':
+            return CONDUCTOR;
+        default:
+            return EMPTY_CELL;
+    }
+}
+
+bool getFieldFromFile(const std::string &fileName, TField *field,
+                      size_t maxWidth, size_t maxHeight,
+                      int &width, int &height) {
+    std::ifstream fieldFile(fileName);
+    width = 0;
+    height = 0;
+    if (!fieldFile.is_open()) {
+        return false;
+    }
+    while (!fieldFile.eof()) {
+        int ch = fieldFile.get();
+        if (ch == '#') {
+            while ((ch = fieldFile.get()) != '\n'){};
+        }
+        if (ch == 'x') {
+            width = extractSize(fieldFile);
+            if (width <= 0) {
+                return false;
+            }
+        } else if (ch == 'y') {
+            height = extractSize(fieldFile);
+            if (height <= 0) {
+                return false;
+            }
+        }
+        if (height > 0 && width > 0 && ch == '\n') {
+            break;
+        }
+    }
+    if (height > maxHeight || width > maxWidth) {
+        return false;
+    }
+    std::string stringField;
+    if (!getDecodedRLE(fieldFile, stringField, height, width)) {
+        return false;
+    }
+    size_t xOffset = (maxWidth - width) / 2;
+    size_t yOffset = (maxHeight - height) / 2;
+    for (size_t i = 0; i < maxHeight; i++) {
+        for (size_t j = 0; j < maxWidth; j++) {
+            field->at(i)[j] = EMPTY_CELL;
+        }
+    }
+    for (size_t i = 0; i < height; i++) {
+        for (size_t j = 0; j < width; j++) {
+            field->at(i + yOffset)[j + xOffset] = getEnumCondition(stringField[i * width + j]);
+        }
+    }
+    return true;
+}

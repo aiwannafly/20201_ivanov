@@ -15,8 +15,6 @@ enum TCellType {
 };
 #endif
 
-//typedef enum TCellType TCellType;
-
 using TField = std::vector<std::vector<TCellType>>;
 
 enum TMOUSE_MODE {
@@ -46,7 +44,7 @@ public:
 
     void setMouseMode(TMOUSE_MODE mode);
 
-//    bool getFieldFromFile(const std::string &fileName);
+    bool setFieldFromFile(const std::string &fileName);
 
 protected:
     void paintEvent(QPaintEvent *event) override;

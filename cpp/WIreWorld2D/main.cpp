@@ -1,13 +1,10 @@
 #include <QApplication>
 
-#include "WireWorldWindow.h"
-#include <array>
+#include "MainWindow.h"
 
 int main(int argc, char *argv[]) {
-    //TODO: add interface between runner and mainWindow
-    //fieldArea <-> WWInterface <-> Runner?
     QApplication app(argc, argv);
-    WireWorldWindow mainWindow;
+    MainWindow mainWindow;
     mainWindow.show();
     return QApplication::exec();
 }

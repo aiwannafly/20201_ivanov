@@ -4,6 +4,8 @@
 #include <QWheelEvent>
 #include <iostream>
 
+#include "RLE.h"
+
 constexpr size_t minScale = 1;
 constexpr size_t maxScale = 10;
 constexpr int zoomCoef = 120;
@@ -144,4 +146,16 @@ void FieldArea::wheelEvent(QWheelEvent *event) {
         scale_ = maxScale;
     }
     this->update();
+}
+
+bool FieldArea::setFieldFromFile(const std::string &fileName) {
+    int width = static_cast<int>(fwidth_);
+    int height = static_cast<int>(fheight_);
+    bool status = getFieldFromFile(fileName, &cells_, fwidth_, fheight_,
+                                   width, height);
+    this->update();
+    if (!status) {
+        return false;
+    }
+    return true;
 }

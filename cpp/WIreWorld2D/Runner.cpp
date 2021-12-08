@@ -2,23 +2,36 @@
 
 #include "RLE.h"
 
+Runner::Runner(size_t width, size_t height) : width_(width), height_(height){
+    for (size_t i = 0; i < height; i++) {
+        std::vector<TCellType> line;
+        for (size_t j = 0; j < width; j++) {
+            line.push_back(EMPTY_CELL);
+        }
+        field_.push_back(line);
+    }
+};
+
 TField &Runner::getField() {
-    return cells_;
+    return field_;
 }
 
-size_t Runner::getCountOfHeads(TField &field,
-                               int x, int y) {
+size_t Runner::getCountOfSteps() const {
+    return stepsCount_;
+}
+
+size_t Runner::getCountOfHeads(TField &field, int x, int y) {
     size_t count = 0;
     for (int i = x - 1; i <= x + 1; i++) {
         for (int j = y - 1; j <= y + 1; j++) {
             if (i == x && j == y) {
                 continue;
             }
-            if (i < 0 || i >= fheight) {
+            if (i < 0 || i >= height_) {
                 continue;
             }
 
-            if (j < 0 || j >= fwidth) {
+            if (j < 0 || j >= width_) {
                 continue;
             }
 
@@ -32,111 +45,46 @@ size_t Runner::getCountOfHeads(TField &field,
 
 bool Runner::proceedTick() {
     bool changed = false;
-    TField cellsCopy(cells_);
-    for (size_t i = yOffset_; i < yOffset_ + height_; i++) {
-        for (size_t j = xOffset_; j < xOffset_ + width_; j++) {
+    TField cellsCopy(field_);
+    for (size_t i = 0; i < height_; i++) {
+        for (size_t j = 0; j < width_; j++) {
             if (cellsCopy[i][j] == ELECTRON_HEAD) {
-                cells_[i][j] = ELECTRON_TAIL;
+                field_[i][j] = ELECTRON_TAIL;
             }
             else if (cellsCopy[i][j] == ELECTRON_TAIL) {
-                cells_[i][j] = CONDUCTOR;
+                field_[i][j] = CONDUCTOR;
             }
             else if (cellsCopy[i][j] == CONDUCTOR) {
                 size_t heads = getCountOfHeads(cellsCopy, static_cast<int>(i),
                                                static_cast<int>(j));
                 if (heads == 1 || heads == 2) {
-                    cells_[i][j] = ELECTRON_HEAD;
+                    field_[i][j] = ELECTRON_HEAD;
                     changed = true;
                 }
             }
         }
     }
-    steps_++;
+    stepsCount_++;
     return changed;
 }
 
-enum conditions getEnumCondition(char ch) {
-    // turns char type condition into enum type
-    switch (ch) {
-        case 'A':
-            return ELECTRON_HEAD;
-        case 'B':
-            return ELECTRON_TAIL;
-        case 'C':
-            return CONDUCTOR;
-        default:
-            return EMPTY_CELL;
-    }
-}
-
-int extractSize(std::ifstream &fieldFile) {
-    if (!fieldFile.is_open()) {
-        return -1;
-    }
-    int ch;
-    while (!isdigit(ch = fieldFile.get())) {
-        if (ch != ' ' && ch != '=') {
-            return -1;
-        }
-    }
-    int size = 0;
-    do {
-        size *= 10;
-        size += ch - '0';
-    } while (isdigit(ch = fieldFile.get()));
-    return size;
-}
-
 bool Runner::setField(TField& field) {
-    cells_ = field;
+    field_ = field;
     return true;
 }
 
-bool Runner::setField(const std::string &fileName) {
-    steps_ = 0;
-    cells_.fill({});
-    std::ifstream fieldFile(fileName);
-    int width = 0;
-    int height = 0;
-    if (!fieldFile.is_open()) {
+bool Runner::setFieldFromFile(const std::string &fileName) {
+    stepsCount_ = 0;
+    int width = static_cast<int>(width_);
+    int height = static_cast<int>(height_);
+    bool status = getFieldFromFile(fileName, &field_, width_, height_,
+                                   width, height);
+    if (!status) {
         return false;
     }
-    while (!fieldFile.eof()) {
-        int ch = fieldFile.get();
-        if (ch == '#') {
-            while ((ch = fieldFile.get()) != '\n'){};
-        }
-        if (ch == 'x') {
-            width = extractSize(fieldFile);
-            if (width <= 0) {
-                return false;
-            }
-        } else if (ch == 'y') {
-            height = extractSize(fieldFile);
-            if (height <= 0) {
-                return false;
-            }
-        }
-        if (height > 0 && width > 0 && ch == '\n') {
-            break;
-        }
-    }
-    if (height > fheight || width > fwidth) {
-        return false;
-    }
-    std::string stringField;
-    if (!getDecodedRLE(fieldFile, stringField, height, width)) {
-        return false;
-    }
-    xOffset_ = (fwidth - width) / 2;
-    yOffset_ = (fheight - height) / 2;
-    for (size_t i = 0; i < height; i++) {
-        for (size_t j = 0; j < width; j++) {
-            cells_[i + yOffset_][j + xOffset_] =
-                    getEnumCondition(stringField[i * width + j]);
-        }
-    }
-    width_ = width;
-    height_ = height;
     return true;
+}
+
+void Runner::clearSteps() {
+    stepsCount_ = 0;
 }

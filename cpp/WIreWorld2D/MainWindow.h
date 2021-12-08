@@ -1,5 +1,5 @@
-#ifndef WIREWORLD2D_WIREWORLDWINDOW_H
-#define WIREWORLD2D_WIREWORLDWINDOW_H
+#ifndef WIREWORLD2D_MAINWINDOW_H
+#define WIREWORLD2D_MAINWINDOW_H
 
 #include <QWidget>
 
@@ -9,12 +9,12 @@ class QLabel;
 class QPushButton;
 class QTimer;
 class QComboBox;
-class WireWorldRunner;
+class Runner;
 
-class WireWorldWindow : public QWidget {
+class MainWindow : public QWidget {
 Q_OBJECT
 public:
-    WireWorldWindow();
+    MainWindow();
 
 private slots:
 
@@ -32,9 +32,11 @@ private slots:
 
     void colorChanged();
 
+    void speedChanged();
+
 private:
     bool running_ = false;
-    WireWorldRunner *runner_;
+    Runner *runner_;
     FieldArea *fieldArea_;
     QTimer *runGameTimer_;
     QPushButton *runButton_;
@@ -46,6 +48,10 @@ private:
     QLabel *stepsLabel_;
     QComboBox *colorComboBox_;
     QLabel *colorLabel_;
+    QComboBox *speedComboBox_;
+    QLabel *speedLabel_;
+
+    void getNext();
 };
 
-#endif //WIREWORLD2D_WIREWORLDWINDOW_H
+#endif //WIREWORLD2D_MAINWINDOW_H
