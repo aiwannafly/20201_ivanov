@@ -52,6 +52,7 @@ private:
     QLabel *speedLabel_;
 
     void getNext();
+    void stopRunning();
 };
 
 #endif //WIREWORLD2D_MAINWINDOW_H

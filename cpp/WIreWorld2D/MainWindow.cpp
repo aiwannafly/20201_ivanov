@@ -19,12 +19,13 @@ constexpr char loadFieldButtonText[] = "&Load field";
 constexpr char clearFieldButtonText[] = "&Clear field";
 constexpr char emptyFieldName[] = "field_empty.rle";
 constexpr size_t timeUntilStart = 200;
-constexpr size_t cellSize = 10; //px
+constexpr size_t squareCellSize = 10; //px
 constexpr size_t fieldHeight = 80;
 constexpr size_t fieldWidth = 80;
+constexpr size_t basicInterval = 250;
 
 MainWindow::MainWindow() {
-    fieldArea_ = new FieldArea(fieldWidth, fieldHeight, cellSize);
+    fieldArea_ = new FieldArea(fieldWidth, fieldHeight, squareCellSize);
     runner_ = new Runner(fieldWidth, fieldHeight);
     runButton_ = new QPushButton(QIcon(runIconName), runButtonText);
     loadFieldButton_ = new QPushButton(loadFieldButtonText);
@@ -89,22 +90,27 @@ void MainWindow::handleLoadFieldButton() {
         QMessageBox::warning(this, "Error occurred", "Could not load field from the chosen file. Check if it can"
                                                      "not be opened or it does not have rle format.");
     }
+    if (running_) {
+        stopRunning();
+    }
     runner_->clearSteps();
 }
 
 void MainWindow::speedChanged() {
     int speedId = speedComboBox_->currentIndex();
+    double interval = basicInterval;
     if (0 == speedId) {
-        runGameTimer_->setInterval(1000);
+        interval *= 1;
     } else if (1 == speedId) {
-        runGameTimer_->setInterval(2000);
+        interval *= 2;
     } else if (2 == speedId) {
-        runGameTimer_->setInterval(750);
+        interval *= 0.75;
     } else if (3 == speedId) {
-        runGameTimer_->setInterval(500);
+        interval /= 2;
     } else {
-        runGameTimer_->setInterval(125);
+        interval /= 4;
     }
+    runGameTimer_->setInterval(static_cast<int>(interval));
 }
 
 void MainWindow::colorChanged() {
@@ -125,17 +131,21 @@ void MainWindow::handleNextButton() {
     getNext();
 }
 
+void MainWindow::stopRunning() {
+    fieldArea_->enableDrawing();
+    runGameTimer_->stop();
+    runButton_->setText(runButtonText);
+    runButton_->setIcon(QIcon(runIconName));
+    running_ = false;
+}
+
 void MainWindow::handleRunButton() {
     if (running_) {
-        runGameTimer_->stop();
-        runButton_->setText(runButtonText);
-        runButton_->setIcon(QIcon(runIconName));
-        running_ = false;
-        stepsLabel_->setText((std::string("Step №: ") +
-                              std::to_string(runner_->getCountOfSteps())).data());
+        stopRunning();
         return;
     }
     running_ = true;
+    fieldArea_->disableDrawing();
     runGameTimer_->start(timeUntilStart);
     runButton_->setText(stopButtonText);
     runButton_->setIcon(QIcon(stopIconName));
@@ -144,6 +154,7 @@ void MainWindow::handleRunButton() {
 void MainWindow::handleClearButton() {
     fieldArea_->setFieldFromFile(emptyFieldName);
     runner_->clearSteps();
+    stopRunning();
     stepsLabel_->setText("Step №: 0");
 }
 

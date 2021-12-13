@@ -1,8 +1,6 @@
 #ifndef WIREWORLD2D_FIELDAREA_H
 #define WIREWORLD2D_FIELDAREA_H
 
-#include <array>
-
 #include <QBrush>
 #include <QPen>
 #include <QPixmap>
@@ -24,27 +22,25 @@ enum TMOUSE_MODE {
 class FieldArea : public QWidget {
 Q_OBJECT
 public:
-    FieldArea(size_t width, size_t height, size_t cellSize, QWidget *parent = nullptr);
+    FieldArea(size_t width, size_t height, size_t cellSizePx, QWidget *parent = nullptr);
 
     QSize minimumSizeHint() const override;
 
     QSize sizeHint() const override;
 
-    void setColor(TCellType cond) {
-        drawCellType_ = cond;
-    }
+    void setColor(TCellType cond);
 
-    void setField(TField &field) {
-        cells_ = field;
-    };
+    void setField(TField &field);
 
-    TField &getField() {
-        return cells_;
-    }
+    TField &getField();
 
     void setMouseMode(TMOUSE_MODE mode);
 
     bool setFieldFromFile(const std::string &fileName);
+
+    void disableDrawing();
+
+    void enableDrawing();
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -58,6 +54,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent* event) override;
 
 private:
+    bool drawON_ = true;
     size_t fwidth_ = 0;
     size_t fheight_ = 0;
     int coordX_ = 0;
@@ -69,6 +66,7 @@ private:
     qreal scale_ = 1;
     size_t cellSize_ = 10;
     TField cells_ = {};
+    QColor lineColor_ = Qt::black;
 
     void updateXY(int deltaX, int deltaY);
     void drawCell(QMouseEvent *event);

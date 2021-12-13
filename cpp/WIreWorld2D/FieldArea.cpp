@@ -2,7 +2,6 @@
 
 #include <QPainter>
 #include <QWheelEvent>
-#include <iostream>
 
 #include "RLE.h"
 
@@ -10,9 +9,11 @@ constexpr size_t minScale = 1;
 constexpr size_t maxScale = 10;
 constexpr int zoomCoef = 120;
 constexpr char drawCursorName[] = "cursortarget.png";
+constexpr size_t minWidth = 100;
+constexpr size_t minHeight = 100;
 
-FieldArea::FieldArea(size_t width, size_t height, size_t cellSize, QWidget *parent) :
-fwidth_(width), fheight_(height), cellSize_(cellSize), QWidget(parent) {
+FieldArea::FieldArea(size_t width, size_t height, size_t cellSizePx, QWidget *parent) :
+        fwidth_(width), fheight_(height), cellSize_(cellSizePx), QWidget(parent) {
     setBackgroundRole(QPalette::AlternateBase);
     setAutoFillBackground(false);
     this->setCursor(QCursor(QPixmap(drawCursorName)));
@@ -26,11 +27,13 @@ fwidth_(width), fheight_(height), cellSize_(cellSize), QWidget(parent) {
 }
 
 QSize FieldArea::minimumSizeHint() const {
-    return {100, 100};
+    return {minWidth, minHeight};
 }
 
 QSize FieldArea::sizeHint() const {
-    return QSize(fwidth_ * cellSize_, fheight_ * cellSize_);
+    size_t widthPx = fwidth_ * cellSize_;
+    size_t heightPx = fheight_ * cellSize_;
+    return {static_cast<int>(widthPx), static_cast<int>(heightPx)};
 }
 
 QColor getCellColor(enum TCellType cond) {
@@ -46,12 +49,20 @@ QColor getCellColor(enum TCellType cond) {
     }
 }
 
+void FieldArea::disableDrawing() {
+    drawON_ = false;
+}
+
+void FieldArea::enableDrawing() {
+    drawON_ = true;
+}
+
 void FieldArea::drawCell(QMouseEvent *event) {
-    if (mouseMode_ != DRAW) {
+    if (mouseMode_ != DRAW || !drawON_) {
         return;
     }
-    size_t y = event->pos().y() / (cellSize_ * scale_);
-    size_t x = event->pos().x() / (cellSize_ * scale_);
+    size_t y = static_cast<size_t>(event->pos().y() / (static_cast<double>(cellSize_) * scale_));
+    size_t x = static_cast<size_t>(event->pos().x() / (static_cast<double>(cellSize_) * scale_));
     if (x + coordX_ >= fwidth_) return;
     if (y + coordY_ >= fheight_) return;
     cells_[x + coordY_][y + coordX_] = drawCellType_;
@@ -120,7 +131,7 @@ void FieldArea::mouseReleaseEvent(QMouseEvent *event) {
 void FieldArea::paintEvent(QPaintEvent *event) {
     QPainter painter(this);
     painter.scale(scale_, scale_);
-    painter.setPen(QPen(Qt::black));
+    painter.setPen(QPen(lineColor_));
     size_t scaledWidth = qIntCast((fwidth_ / scale_));
     size_t scaledHeight = qIntCast((fheight_ / scale_));
     for (size_t i = 0; i < scaledHeight; i++) {
@@ -136,6 +147,18 @@ void FieldArea::paintEvent(QPaintEvent *event) {
                              cellSize_, cellSize_);
         }
     }
+}
+
+void FieldArea::setColor(TCellType cond) {
+    drawCellType_ = cond;
+}
+
+void FieldArea::setField(TField &field) {
+    cells_ = field;
+};
+
+TField &FieldArea::getField() {
+    return cells_;
 }
 
 void FieldArea::wheelEvent(QWheelEvent *event) {
