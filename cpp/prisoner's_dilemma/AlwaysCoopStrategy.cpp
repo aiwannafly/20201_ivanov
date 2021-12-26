@@ -5,6 +5,8 @@
 #include "Factory.h"
 #include "Factory.cpp"
 
+constexpr char kAlwaysCoopID[] = "coop";
+
 namespace {
     Strategy *create(size_t orderNumber, TChoiceMatrix &history,
                      TScoreMap &scoreMap, TConfigs &configs) {
@@ -13,7 +15,7 @@ namespace {
 }
 
 bool coopB = Factory<Strategy, std::string, size_t, TChoiceMatrix &, TScoreMap &, TConfigs &>::
-getInstance()->registerCreator(alwaysCoopID, create);
+getInstance()->registerCreator(kAlwaysCoopID, create);
 
 TChoice AlwaysCoopStrategy::getChoice() {
     return COOP;

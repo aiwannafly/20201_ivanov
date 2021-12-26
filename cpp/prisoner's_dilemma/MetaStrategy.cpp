@@ -14,7 +14,6 @@ namespace {
 
 bool metaB = Factory<Strategy, std::string, size_t, TChoiceMatrix &, TScoreMap &, TConfigs &>
 ::getInstance()->registerCreator(metaID, create);
-#include <iostream>
 
 TChoice MetaStrategy::getChoice() {
     TConfigs configs = getConfigs();
@@ -30,6 +29,7 @@ TChoice MetaStrategy::getChoice() {
     if (strategiesCounter_ >= configs.size()) {
         strategiesCounter_ = 0;
     }
+    // std::make_unique + auto
     std::unique_ptr<Strategy> strategy = std::unique_ptr<Strategy>
             (Factory<Strategy, std::string, size_t,TChoiceMatrix &, TScoreMap &, TConfigs &>
              ::getInstance()->createProduct(configs[strategiesCounter_],
@@ -38,7 +38,7 @@ TChoice MetaStrategy::getChoice() {
     if (strategy) {
         return strategy->getChoice();
     }
-    int num = rand();
+    int num = rand(); // generators classes
     if (num % 2 == 0) {
         return COOP;
     }

@@ -5,15 +5,7 @@
 #include <string>
 #include <vector>
 
-typedef enum TChoice {
-    COOP, DEF
-} TChoice;
-
-constexpr size_t combLen = 3;
-
-typedef std::vector<std::array<TChoice, combLen>> TChoiceMatrix;
-typedef std::map<std::array<TChoice, combLen>, std::array<size_t, combLen>> TScoreMap;
-typedef std::vector<std::string> TConfigs;
+#include "StrategyTypesAndConstants.h"
 
 class Strategy {
 public:
@@ -37,7 +29,7 @@ public:
 private:
     size_t orderNumber_ = 0;
     TChoiceMatrix history_;
-    TScoreMap scoreMap_;
+    TScoreMap scoreMap_; //protected field
     TConfigs configs_;
 };
 

@@ -4,7 +4,7 @@
 #include <map>
 
 template<class Product, class Id, class ... Args>
-class Factory {
+class Factory { //put all in header
 public:
     typedef Product* (*Creator)(Args ...);
     static Factory *getInstance();

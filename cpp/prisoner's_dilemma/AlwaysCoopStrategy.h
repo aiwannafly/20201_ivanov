@@ -3,8 +3,6 @@
 
 #include "Strategy.h"
 
-constexpr char alwaysCoopID[] = "coop";
-
 class AlwaysCoopStrategy : public Strategy {
 public:
     AlwaysCoopStrategy(size_t orderNumber, TChoiceMatrix &history,
