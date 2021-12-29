@@ -3,16 +3,15 @@
 #include <string>
 
 #include "Factory.h"
-#include "Factory.cpp"
 
 namespace {
-    Strategy *create(size_t orderNumber, TChoiceMatrix &history,
+    Strategy *create(size_t orderNumber, TChoicesList &history,
                      TScoreMap &scoreMap, TConfigs &configs) {
         return new AlwaysDefStrategy(orderNumber, history, scoreMap, configs);
     }
 }
 
-bool defB = Factory<Strategy, std::string, size_t, TChoiceMatrix &, TScoreMap &, TConfigs &>::
+bool defB = Factory<Strategy, std::string, size_t, TChoicesList &, TScoreMap &, TConfigs &>::
 getInstance()->registerCreator(alwaysDefID, create);
 
 TChoice AlwaysDefStrategy::getChoice() {

@@ -120,6 +120,7 @@ void RunnerIO::printTotalResults(std::ostream &stream,
 
 void RunnerIO::printErrorMessage(std::ostream &stream, TStatus status) {
     if (status == OK) {
+        stream << "Everything is OK" << std::endl;
         return;
     }
     if (kErrorMessages.find(status) == kErrorMessages.end()) {

@@ -2,12 +2,13 @@
 #define PRISONER_DILEMMA_STRATEGYTYPESANDCONSTANTS_H
 
 constexpr size_t combLen = 3;
+constexpr char kConfigsLineEnd[] = "end";
 
 using TChoice =  enum TChoice {
     COOP, DEF
 };
-using TChoiceMatrix = std::vector<std::array<TChoice, combLen>>; //using
+using TChoicesList = std::vector<std::array<TChoice, combLen>>;
 using TScoreMap = std::map<std::array<TChoice, combLen>, std::array<size_t, combLen>>;
-using TConfigs = std::vector<std::string>;
+using TConfigs = std::string;
 
 #endif //PRISONER_DILEMMA_STRATEGYTYPESANDCONSTANTS_H

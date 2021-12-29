@@ -7,7 +7,7 @@ constexpr char randomID[] = "random";
 
 class RandomStrategy : public Strategy {
 public:
-    RandomStrategy(size_t orderNumber, TChoiceMatrix &history,
+    RandomStrategy(size_t orderNumber, TChoicesList &history,
                    TScoreMap &scoreMap, TConfigs &configs) :
             Strategy(orderNumber, history,scoreMap, configs) {};
 

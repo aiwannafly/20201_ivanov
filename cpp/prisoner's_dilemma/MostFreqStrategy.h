@@ -7,7 +7,7 @@ constexpr char mostFreqID[] = "freq";
 
 class MostFreqStrategy : public Strategy {
 public:
-    MostFreqStrategy(size_t orderNumber, TChoiceMatrix &history,
+    MostFreqStrategy(size_t orderNumber, TChoicesList &history,
                      TScoreMap &scoreMap, TConfigs &configs) :
                      Strategy(orderNumber, history,scoreMap, configs) {};
 
@@ -15,6 +15,5 @@ public:
 
     TChoice getChoice() override;
 };
-
 
 #endif //PRISONER_DILEMMA_MOSTFREQSTRATEGY_H

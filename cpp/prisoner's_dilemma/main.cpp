@@ -52,7 +52,7 @@ TRunnerData parseRunnerArgs(const std::vector<std::string> &params) {
         } else if (startsWith(param, stepsKey)) {
             std::string stepsCount = param.substr(stepsKey.length());
             try {
-                std::stol(stepsCount);
+                data.stepsCount = std::stol(stepsCount);
             } catch (std::invalid_argument &e) {
                 data.status = WRONG_STEPS;
                 return data;
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
     }
     Runner runner(data.mode, data.stepsCount, data.configsFileName,
                   data.scoreMapFileName, data.names);
-    if (OK == runner.runGame(std::cout)) {
+    if (runner.runGame(std::cout)) {
     } else {
         Runner::printErrorMessage(std::cout, runner.getStatus());
     }

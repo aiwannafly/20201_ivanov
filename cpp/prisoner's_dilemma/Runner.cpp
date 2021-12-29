@@ -6,7 +6,6 @@
 #include <memory>
 
 #include "Factory.h"
-#include "Factory.cpp"
 #include "RunnerIO.h"
 
 namespace {
@@ -22,20 +21,18 @@ namespace {
             {{DEF,  DEF,  DEF},  {1, 1, 1}}
     };
 
-    Strategy *getStrategy(const std::string &name, size_t counter, TChoiceMatrix &history,
+    Strategy *getStrategy(const std::string &name, size_t counter, TChoicesList &history,
                           TScoreMap &scoreMap, TConfigs &configs) {
-        return Factory<Strategy, std::string, size_t, TChoiceMatrix &, TScoreMap &, TConfigs &>
+        return Factory<Strategy, std::string, size_t, TChoicesList &, TScoreMap &, TConfigs &>
         ::getInstance()->createProduct(name, counter, history, scoreMap, configs);
     }
 }
 
 Runner::Runner(TMode mode, size_t stepsCount, const std::string &configsFileName,
                const std::string &scoreMapFileName, std::vector<std::string> &names) :
-        mode_(mode), strategyNames_(names), stepsCount_(stepsCount) {
+        gameMode_(mode), strategyNames_(names), stepsCount_(stepsCount) {
     if (!configsFileName.empty()) {
-        if (!setConfigsFromFile(configsFileName)) {
-            return;
-        }
+        configsFileName_ = configsFileName;
     }
     if (!scoreMapFileName.empty()) {
         if (!setScoreMapFromFile(scoreMapFileName)) {
@@ -48,28 +45,31 @@ TScoreMap Runner::getDefaultScoreMap() {
     return kDefaultScoreMap;
 }
 
-void Runner::setMode(TMode mode) {
-    mode_ = mode;
-}
-
-void Runner::setStrategies(const std::vector<std::string> &names) {
-    strategyNames_ = names;
-}
-
-void Runner::setStepsCount(size_t stepsCount) {
-    stepsCount_ = stepsCount;
-}
-
-void Runner::setPrintingMode(bool printing) {
-    printing_ = printing;
-}
-
 TStatus Runner::getStatus() {
     return status_;
 }
 
 void Runner::printErrorMessage(std::ostream &stream, TStatus status) {
     RunnerIO::printErrorMessage(stream, status);
+}
+
+void Runner::setMode(TMode mode) {
+    status_ = OK;
+    gameMode_ = mode;
+}
+
+void Runner::setStrategies(const std::vector<std::string> &names) {
+    status_ = OK;
+    strategyNames_ = names;
+}
+
+void Runner::setStepsCount(size_t stepsCount) {
+    status_ = OK;
+    stepsCount_ = stepsCount;
+}
+
+void Runner::setPrintingMode(bool printing) {
+    printing_ = printing;
 }
 
 bool Runner::setScoreMapFromFile(const std::string &fileName) {
@@ -90,32 +90,18 @@ bool Runner::setScoreMapFromFile(const std::string &fileName) {
         status_ = WRONG_MATRIX;
         return false;
     }
+    status_ = OK;
     return true;
 }
 
 bool Runner::setConfigsFromFile(const std::string &fileName) {
-    std::ifstream configsFile;
-    configsFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    try {
-        configsFile.open(fileName);
-    } catch (std::ifstream::failure &error) {
-        status_ = CONFIGS_FILE_NOT_OPENED;
-        return false;
-    }
-    while (true) {
-        try {
-            std::string word;
-            configsFile >> word;
-            configs_.push_back(word);
-        } catch (std::ifstream::failure &e) {
-            break;
-        }
-    }
+    configsFileName_ = fileName;
+    status_ = OK;
     return true;
 }
 
 bool Runner::checkStrategiesCount() {
-    if (mode_ == TOURNAMENT) {
+    if (gameMode_ == TOURNAMENT) {
         if (strategyNames_.size() < 4) {
             status_ = NOT_ENOUGH_STRATEGIES;
             return false;
@@ -139,7 +125,7 @@ bool Runner::initStrategies() {
     size_t counter = 0;
     for (const auto &name: strategyNames_) {
         strategies_[name] = std::unique_ptr<Strategy>(getStrategy
-                (name, counter, history_, scoreMap_, configs_));
+                (name, counter, history_, scoreMap_, configsFileName_));
         if (!strategies_[name]) {
             status_ = WRONG_STRATEGY_NAME;
             return false;
@@ -150,7 +136,7 @@ bool Runner::initStrategies() {
 }
 
 bool Runner::runTournament(std::ostream &stream) {
-    if (mode_ != TOURNAMENT) {
+    if (gameMode_ != TOURNAMENT) {
         return false;
     }
     std::map<std::string, size_t> results;
@@ -183,12 +169,12 @@ bool Runner::runTournament(std::ostream &stream) {
     return true;
 }
 
-bool Runner::runDefaultGame(std::ostream &stream) {
+bool Runner::runDefaultGame(std::ostream &ostream, std::istream &istream) {
     size_t stepsCount = 0;
     while (true) {
-        if (mode_ == DETAILED) {
+        if (gameMode_ == DETAILED) {
             std::string command;
-            std::cin >> command;
+            istream >> command;
             if (kQuitCommand == command) {
                 break;
             }
@@ -205,13 +191,13 @@ bool Runner::runDefaultGame(std::ostream &stream) {
         gameScores_[strategyNames_[0]] += scores[0];
         gameScores_[strategyNames_[1]] += scores[1];
         gameScores_[strategyNames_[2]] += scores[2];
-        if (mode_ == DETAILED) {
-            RunnerIO::printStepResults(stream, scores, stepsCount,
+        if (gameMode_ == DETAILED) {
+            RunnerIO::printStepResults(ostream, scores, stepsCount,
                                        strategyNames_, choices, gameScores_,
                                        printing_);
         }
-        if (mode_ == FAST && stepsCount == stepsCount_) {
-            RunnerIO::printGameResults(stream, stepsCount_, strategyNames_, gameScores_,
+        if (gameMode_ == FAST && stepsCount == stepsCount_) {
+            RunnerIO::printGameResults(ostream, stepsCount_, strategyNames_, gameScores_,
                                        printing_);
             break;
         }
@@ -220,7 +206,7 @@ bool Runner::runDefaultGame(std::ostream &stream) {
     return true;
 }
 
-bool Runner::runGame(std::ostream &ostream) {
+bool Runner::runGame(std::ostream &ostream, std::istream &istream) {
     if (OK != getStatus()) {
         return false;
     }
@@ -228,19 +214,18 @@ bool Runner::runGame(std::ostream &ostream) {
         status_ = OUTPUT_STREAM_FAILURE;
         return false;
     }
-    bool status = checkStrategiesCount();
+    strategies_.clear();
+    bool status = initStrategies();
     if (!status) {
         return false;
     }
-    if (strategies_.empty()) {
-        status = initStrategies();
-        if (!status) {
-            return false;
-        }
+    status = checkStrategiesCount();
+    if (!status) {
+        return false;
     }
-    if (mode_ == TOURNAMENT) {
+    if (gameMode_ == TOURNAMENT) {
         return runTournament(ostream);
     } else {
-        return runDefaultGame(ostream);
+        return runDefaultGame(ostream, istream);
     }
 }

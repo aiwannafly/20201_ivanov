@@ -1,45 +1,65 @@
 #include "MetaStrategy.h"
 
+#include <experimental/random>
 #include <memory>
 
 #include "Factory.h"
-#include "Factory.cpp"
 
 namespace {
-    Strategy *create(size_t orderNumber, TChoiceMatrix &history,
+    Strategy *create(size_t orderNumber, TChoicesList &history,
                      TScoreMap &scoreMap, TConfigs &configs) {
         return new MetaStrategy(orderNumber, history, scoreMap, configs);
     }
 }
 
-bool metaB = Factory<Strategy, std::string, size_t, TChoiceMatrix &, TScoreMap &, TConfigs &>
+bool metaB = Factory<Strategy, std::string, size_t, TChoicesList &, TScoreMap &, TConfigs &>
 ::getInstance()->registerCreator(metaID, create);
 
+MetaStrategy::MetaStrategy(size_t orderNumber, TChoicesList &history,
+                           TScoreMap &scoreMap, TConfigs &configsFileName) : Strategy(orderNumber, history,
+                                                                                      scoreMap, configsFileName) {
+    std::ifstream configsFile;
+    configsFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    try {
+        configsFile.open(configsFileName);
+    } catch (std::ifstream::failure &error) {
+        return; // got no params
+    }
+    std::string currentWord;
+    while (currentWord != metaID) {
+        configsFile >> currentWord;
+    }
+    while (true) {
+        configsFile >> currentWord;
+        if (currentWord == kConfigsLineEnd) {
+            break;
+        }
+        strategiesNames_.push_back(currentWord);
+    }
+}
+
 TChoice MetaStrategy::getChoice() {
-    TConfigs configs = getConfigs();
-    TChoiceMatrix choiceMatrix = getHistory();
-    TScoreMap scoreMap = getScoreMap();
-    if (configs.empty()) {
-        int num = rand();
-        if (num % 2 == 0) {
+    if (strategiesNames_.empty()) {
+        // then we use the "random" strategy
+        int num = std::experimental::randint(0, 1);
+        if (num == 0) {
             return COOP;
         }
         return DEF;
     }
-    if (strategiesCounter_ >= configs.size()) {
+    if (strategiesCounter_ >= strategiesNames_.size()) {
         strategiesCounter_ = 0;
     }
-    // std::make_unique + auto
-    std::unique_ptr<Strategy> strategy = std::unique_ptr<Strategy>
-            (Factory<Strategy, std::string, size_t,TChoiceMatrix &, TScoreMap &, TConfigs &>
-             ::getInstance()->createProduct(configs[strategiesCounter_],
-                                            getOrderNumber(),choiceMatrix, scoreMap, configs));
+    auto strategy = std::unique_ptr<Strategy>(Factory<Strategy, std::string, size_t,
+            TChoicesList &, TScoreMap &, TConfigs &>::getInstance()->createProduct(
+            strategiesNames_[strategiesCounter_], orderNumber_, history_,
+            scoreMap_, configsFileName_));
     strategiesCounter_++;
     if (strategy) {
         return strategy->getChoice();
     }
-    int num = rand(); // generators classes
-    if (num % 2 == 0) {
+    int num = std::experimental::randint(0, 1);
+    if (num == 0) {
         return COOP;
     }
     return DEF;

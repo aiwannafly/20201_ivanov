@@ -5,8 +5,8 @@
 
 class AlwaysCoopStrategy : public Strategy {
 public:
-    AlwaysCoopStrategy(size_t orderNumber, TChoiceMatrix &history,
-    TScoreMap &scoreMap, TConfigs &configs) : Strategy(orderNumber, history,
+    AlwaysCoopStrategy(size_t orderNumber, TChoicesList &history,
+                       TScoreMap &scoreMap, TConfigs &configs) : Strategy(orderNumber, history,
             scoreMap, configs) {}
 
     ~AlwaysCoopStrategy() override = default;

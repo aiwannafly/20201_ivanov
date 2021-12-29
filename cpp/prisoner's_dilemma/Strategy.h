@@ -1,6 +1,7 @@
 #ifndef PRISONER_DILEMMA_STRATEGY_H
 #define PRISONER_DILEMMA_STRATEGY_H
 
+#include <fstream>
 #include <map>
 #include <string>
 #include <vector>
@@ -9,28 +10,20 @@
 
 class Strategy {
 public:
-    Strategy(size_t orderNumber, TChoiceMatrix &history,
+    Strategy(size_t orderNumber, TChoicesList &history,
              TScoreMap &scoreMap, TConfigs &configs)
             : orderNumber_(orderNumber), history_(history),
-              scoreMap_(scoreMap), configs_(configs) {};
+              scoreMap_(scoreMap), configsFileName_(configs) {};
 
     virtual ~Strategy() = default;
 
     virtual TChoice getChoice() = 0;
 
-    TChoiceMatrix getHistory() const;
-
-    TScoreMap getScoreMap() const;
-
-    TConfigs getConfigs() const;
-
-    size_t getOrderNumber() const;
-
-private:
+protected:
     size_t orderNumber_ = 0;
-    TChoiceMatrix history_;
-    TScoreMap scoreMap_; //protected field
-    TConfigs configs_;
+    TChoicesList history_;
+    TScoreMap scoreMap_;
+    TConfigs configsFileName_;
 };
 
 #endif //PRISONER_DILEMMA_STRATEGY_H

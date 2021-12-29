@@ -4,39 +4,47 @@
 
 #include "Runner.h"
 
+namespace {
+    constexpr char kInputFileName[] = "5steps_input";
+
+    bool runFromFile(Runner &runner) {
+        std::ifstream input(kInputFileName);
+        return runner.runGame(std::cout, input);
+    }
+}
+
 TEST(PrisonerDilemma, Setters) {
     Runner runner;
-    runner.setPrintingMode();
+    runner.setPrintingMode(false);
     runner.setStrategies({"Bob", "Eva"});
+    EXPECT_FALSE(runFromFile(runner));
     EXPECT_EQ(runner.getStatus(), WRONG_STRATEGY_NAME);
     runner.setStrategies({"random", "coop"});
+    EXPECT_FALSE(runFromFile(runner));
     EXPECT_EQ(runner.getStatus(), NOT_ENOUGH_STRATEGIES);
     runner.setStrategies({"random", "coop", "def"});
-    runner.printErrorMessage(std::cout);
-    EXPECT_EQ(runner.getStatus(), OK);
+    runner.setMode(DETAILED);
+    EXPECT_TRUE(runFromFile(runner));
+    EXPECT_EQ(OK, runner.getStatus());
     runner.setMode(TOURNAMENT);
-    EXPECT_FALSE(runner.runGame(std::cout));
+    EXPECT_FALSE(runFromFile(runner));
     EXPECT_EQ(runner.getStatus(), NOT_ENOUGH_STRATEGIES);
     runner.setMode(FAST);
     EXPECT_EQ(runner.getStatus(), OK);
-    EXPECT_TRUE(runner.runGame(std::cout));
+    EXPECT_TRUE(runFromFile(runner));
     runner.setStrategies({"pred", "freq", "coop", "def"});
+    EXPECT_FALSE(runFromFile(runner));
     EXPECT_EQ(runner.getStatus(), TOO_MANY_STRATEGIES);
     runner.setMode(TOURNAMENT);
-    EXPECT_EQ(runner.getStatus(), OK);
-    EXPECT_TRUE(runner.runGame(std::cout));
-    runner.setConfigsFromFile("somethingveryveryweird.com");
-    EXPECT_EQ(runner.getStatus(), CONFIGS_FILE_NOT_OPENED);
+    EXPECT_TRUE(runFromFile(runner));
     runner.setConfigsFromFile("configs.txt");
     EXPECT_EQ(runner.getStatus(), OK);
     runner.setMode(FAST);
     runner.setStrategies({"meta", "pred", "freq"});
-    runner.setStepsCount(100);
-    // add test for detailed mode
-    EXPECT_TRUE(runner.runGame(std::cout));
+    runner.setStepsCount(1000);
+    EXPECT_TRUE(runFromFile(runner));
     runner.setScoreMapFromFile("ASFASksfajksaksjfbaklfas");
     EXPECT_EQ(runner.getStatus(), MATRIX_FILE_NOT_OPENED);
-    EXPECT_FALSE(runner.setMode(TOURNAMENT));
     runner.setScoreMapFromFile("default_matrix.txt");
     EXPECT_EQ(runner.getStatus(), OK);
 }

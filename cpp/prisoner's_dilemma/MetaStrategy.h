@@ -7,9 +7,8 @@ constexpr char metaID[] = "meta";
 
 class MetaStrategy : public Strategy {
 public:
-    MetaStrategy(size_t orderNumber, TChoiceMatrix &history,
-                       TScoreMap &scoreMap, TConfigs &configs) : Strategy(orderNumber, history,
-                                                                          scoreMap, configs) {}
+    MetaStrategy(size_t orderNumber, TChoicesList &history,
+                 TScoreMap &scoreMap, TConfigs &configsFileName);
 
     ~MetaStrategy() override = default;
 
@@ -17,6 +16,7 @@ public:
 
 private:
     size_t strategiesCounter_ = 0;
+    std::vector<std::string> strategiesNames_;
 };
 
 #endif //PRISONER_DILEMMA_METASTRATEGY_H

@@ -1,16 +1,15 @@
 #include "RandomStrategy.h"
 
 #include "Factory.h"
-#include "Factory.cpp"
 
 namespace {
-    Strategy *create(size_t orderNumber, TChoiceMatrix &history,
+    Strategy *create(size_t orderNumber, TChoicesList &history,
                      TScoreMap &scoreMap, TConfigs &configs) {
         return new RandomStrategy(orderNumber, history, scoreMap, configs);
     }
 }
 
-bool randB = Factory<Strategy, std::string, size_t, TChoiceMatrix &, TScoreMap &, TConfigs &>
+bool randB = Factory<Strategy, std::string, size_t, TChoicesList &, TScoreMap &, TConfigs &>
 ::getInstance()->registerCreator(randomID, create);
 
 TChoice RandomStrategy::getChoice() {
