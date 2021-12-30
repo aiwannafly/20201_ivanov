@@ -3,36 +3,41 @@
 #include <QGridLayout>
 #include <QtWidgets>
 
-#include "FieldArea.h"
+#include "FieldWidget.h"
 #include "Runner.h"
 
-constexpr char runIconName[] = "run.png";
-constexpr char stopIconName[] = "stop.png";
-constexpr char moveIconName[] = "move.jpg";
-constexpr char paintIconName[] = "paint.png";
-constexpr char runButtonText[] = "&Run";
-constexpr char stopButtonText[] = "&Stop";
-constexpr char paintButtonText[] = "&Paint";
-constexpr char moveButtonText[] = "&Move";
-constexpr char nextButtonText[] = "&Next";
-constexpr char loadFieldButtonText[] = "&Load field";
-constexpr char clearFieldButtonText[] = "&Clear field";
-constexpr char emptyFieldName[] = "field_empty.rle";
-constexpr size_t timeUntilStart = 200;
-constexpr size_t squareCellSize = 10; //px
-constexpr size_t fieldHeight = 80;
-constexpr size_t fieldWidth = 80;
-constexpr size_t basicInterval = 250;
+namespace {
+    constexpr char kRunIconName[] = "run.png";
+    constexpr char kStopIconName[] = "stop.png";
+    constexpr char kMoveIconName[] = "move.jpg";
+    constexpr char kPaintIconName[] = "paint.png";
+    constexpr char kRunButtonText[] = "&Run";
+    constexpr char kStopButtonText[] = "&Stop";
+    constexpr char kPaintButtonText[] = "&Paint";
+    constexpr char kMoveButtonText[] = "&Move";
+    constexpr char kNextButtonText[] = "&Next";
+    constexpr char kLoadFieldButtonText[] = "&Load field";
+    constexpr char kClearFieldButtonText[] = "&Clear field";
+    constexpr char kEmptyFieldName[] = "field_empty.rle";
+    constexpr size_t kTimeUntilStart = 200;
+    constexpr size_t kSquareCellSizePx = 10;
+    constexpr size_t kFieldHeight = 80; // squares
+    constexpr size_t kFieldWidth = 80;  // squares
+    constexpr size_t kDefaultInterval = 250;
+    constexpr char kMainWindowName[] = "WIREWORLD 2D";
+}
 
 MainWindow::MainWindow() {
-    fieldArea_ = new FieldArea(fieldWidth, fieldHeight, squareCellSize);
-    runner_ = new Runner(fieldWidth, fieldHeight);
-    runButton_ = new QPushButton(QIcon(runIconName), runButtonText);
-    loadFieldButton_ = new QPushButton(loadFieldButtonText);
-    clearFieldButton_ = new QPushButton(clearFieldButtonText);
-    nextButton_ = new QPushButton(nextButtonText);
-    paintButton_ = new QPushButton(QIcon(paintIconName), paintButtonText);
-    moveButton_ = new QPushButton(QIcon(moveIconName), moveButtonText);
+    field_ = new TField(kFieldHeight, kFieldWidth);
+    fieldWidget_ = new FieldWidget(kFieldWidth, kFieldHeight, kSquareCellSizePx,
+                                   field_);
+    runner_ = new Runner(kFieldWidth, kFieldHeight, field_);
+    runButton_ = new QPushButton(QIcon(kRunIconName), kRunButtonText);
+    loadFieldButton_ = new QPushButton(kLoadFieldButtonText);
+    clearFieldButton_ = new QPushButton(kClearFieldButtonText);
+    nextButton_ = new QPushButton(kNextButtonText);
+    paintButton_ = new QPushButton(QIcon(kPaintIconName), kPaintButtonText);
+    moveButton_ = new QPushButton(QIcon(kMoveIconName), kMoveButtonText);
     stepsLabel_ = new QLabel((std::string("Step №: ") +
                               std::to_string(runner_->getCountOfSteps())).data());
     colorComboBox_ = new QComboBox;
@@ -50,14 +55,13 @@ MainWindow::MainWindow() {
     speedComboBox_->addItem(tr("x8"));
     speedLabel_ = new QLabel(tr("&Set speed"));
     speedLabel_->setBuddy(speedComboBox_);
-
     auto *mainLayout = new QGridLayout;
     runGameTimer_ = new QTimer(this);
     connect(runGameTimer_, &QTimer::timeout, this, QOverload<>::of(&MainWindow::getNext));
     runGameTimer_->setInterval(500);
     mainLayout->setColumnStretch(0, 1);
     mainLayout->setColumnStretch(2, 1);
-    mainLayout->addWidget(fieldArea_, 0, 0, 1, 5);
+    mainLayout->addWidget(fieldWidget_, 0, 0, 1, 5);
     mainLayout->addWidget(runButton_, 1, 0, Qt::AlignLeft);
     mainLayout->addWidget(nextButton_, 1, 1, Qt::AlignLeft);
     mainLayout->addWidget(loadFieldButton_, 1, 2, Qt::AlignLeft);
@@ -78,15 +82,14 @@ MainWindow::MainWindow() {
     connect(moveButton_, SIGNAL (released()), this, SLOT (handleMoveButton()));
     connect(paintButton_, SIGNAL (released()), this, SLOT (handleDrawButton()));
     setLayout(mainLayout);
-    setWindowTitle(tr("WireWorld 2D"));
+    setWindowTitle(tr(kMainWindowName));
 }
 
 void MainWindow::handleLoadFieldButton() {
     QString qfileName = QFileDialog::getOpenFileName(this, tr("Open field"),
-                                                     "/home/zander/desktop/prog_labs/first_semester/WireWorld",
-                                                     tr("Field Files (*.rle)"));
+                                                     "/", tr("Field Files (*.rle)"));
     std::string fileName = qfileName.toStdString();
-    if (!fieldArea_->setFieldFromFile(fileName)) {
+    if (!fieldWidget_->setFieldFromFile(fileName)) {
         QMessageBox::warning(this, "Error occurred", "Could not load field from the chosen file. Check if it can"
                                                      "not be opened or it does not have rle format.");
     }
@@ -98,7 +101,7 @@ void MainWindow::handleLoadFieldButton() {
 
 void MainWindow::speedChanged() {
     int speedId = speedComboBox_->currentIndex();
-    double interval = basicInterval;
+    double interval = kDefaultInterval;
     if (0 == speedId) {
         interval *= 1;
     } else if (1 == speedId) {
@@ -115,16 +118,14 @@ void MainWindow::speedChanged() {
 
 void MainWindow::colorChanged() {
     int colorId = colorComboBox_->currentIndex();
-    fieldArea_->setColor(static_cast<TCellType>(colorId));
+    fieldWidget_->setColor(static_cast<TCell>(colorId));
 }
 
 void MainWindow::getNext() {
-    runner_->setField(fieldArea_->getField());
     runner_->proceedTick();
     stepsLabel_->setText((std::string("Step №: ") +
                           std::to_string(runner_->getCountOfSteps())).data());
-    fieldArea_->setField(runner_->getField());
-    fieldArea_->update();
+    fieldWidget_->update();
 }
 
 void MainWindow::handleNextButton() {
@@ -132,10 +133,10 @@ void MainWindow::handleNextButton() {
 }
 
 void MainWindow::stopRunning() {
-    fieldArea_->enableDrawing();
+    fieldWidget_->enableDrawing();
     runGameTimer_->stop();
-    runButton_->setText(runButtonText);
-    runButton_->setIcon(QIcon(runIconName));
+    runButton_->setText(kRunButtonText);
+    runButton_->setIcon(QIcon(kRunIconName));
     running_ = false;
 }
 
@@ -145,23 +146,23 @@ void MainWindow::handleRunButton() {
         return;
     }
     running_ = true;
-    fieldArea_->disableDrawing();
-    runGameTimer_->start(timeUntilStart);
-    runButton_->setText(stopButtonText);
-    runButton_->setIcon(QIcon(stopIconName));
+    fieldWidget_->disableDrawing();
+    runGameTimer_->start(kTimeUntilStart);
+    runButton_->setText(kStopButtonText);
+    runButton_->setIcon(QIcon(kStopIconName));
 }
 
 void MainWindow::handleClearButton() {
-    fieldArea_->setFieldFromFile(emptyFieldName);
+    fieldWidget_->setFieldFromFile(kEmptyFieldName);
     runner_->clearSteps();
     stopRunning();
     stepsLabel_->setText("Step №: 0");
 }
 
 void MainWindow::handleDrawButton() {
-    fieldArea_->setMouseMode(DRAW);
+    fieldWidget_->setMouseMode(DRAW);
 }
 
 void MainWindow::handleMoveButton() {
-    fieldArea_->setMouseMode(MOVE);
+    fieldWidget_->setMouseMode(MOVE);
 }

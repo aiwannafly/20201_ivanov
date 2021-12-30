@@ -70,7 +70,7 @@ int extractSize(std::ifstream &fieldFile) {
     return size;
 }
 
-enum TCellType getEnumCondition(char ch) {
+enum TCell getEnumCondition(char ch) {
     // turns char type condition into enum type
     switch (ch) {
         case 'A':
@@ -124,12 +124,12 @@ bool getFieldFromFile(const std::string &fileName, TField *field,
     size_t yOffset = (maxHeight - height) / 2;
     for (size_t i = 0; i < maxHeight; i++) {
         for (size_t j = 0; j < maxWidth; j++) {
-            field->at(i)[j] = EMPTY_CELL;
+            field->set(i, j, EMPTY_CELL);
         }
     }
     for (size_t i = 0; i < height; i++) {
         for (size_t j = 0; j < width; j++) {
-            field->at(i + yOffset)[j + xOffset] = getEnumCondition(stringField[i * width + j]);
+            field->set(i + yOffset, j + xOffset, getEnumCondition(stringField[i * width + j]));
         }
     }
     return true;

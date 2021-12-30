@@ -3,16 +3,8 @@
 
 #include <fstream>
 #include <string>
-#include <vector>
 
-#ifndef TCELLTYPE
-#define TCELLTYPE
-enum TCellType {
-    EMPTY_CELL, ELECTRON_TAIL, ELECTRON_HEAD, CONDUCTOR
-};
-#endif
-
-using TField = std::vector<std::vector<TCellType>>;
+#include "WireWorldFieldTypes.h"
 
 bool getDecodedRLE(std::ifstream &file, std::string &decoded, int row, int col);
 

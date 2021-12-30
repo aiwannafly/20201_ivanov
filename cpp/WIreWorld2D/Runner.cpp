@@ -2,17 +2,8 @@
 
 #include "RLE.h"
 
-Runner::Runner(size_t width, size_t height) : width_(width), height_(height){
-    for (size_t i = 0; i < height; i++) {
-        std::vector<TCellType> line;
-        for (size_t j = 0; j < width; j++) {
-            line.push_back(EMPTY_CELL);
-        }
-        field_.push_back(line);
-    }
-};
 
-TField &Runner::getField() {
+TField *Runner::getField() const {
     return field_;
 }
 
@@ -35,7 +26,7 @@ size_t Runner::getCountOfHeads(TField &field, int x, int y) {
                 continue;
             }
 
-            if (field[i][j] == ELECTRON_HEAD) {
+            if (field(i, j) == ELECTRON_HEAD) {
                 count++;
             }
         }
@@ -45,20 +36,20 @@ size_t Runner::getCountOfHeads(TField &field, int x, int y) {
 
 bool Runner::proceedTick() {
     bool changed = false;
-    TField cellsCopy(field_);
+    TField cellsCopy(*field_);
     for (size_t i = 0; i < height_; i++) {
         for (size_t j = 0; j < width_; j++) {
-            if (cellsCopy[i][j] == ELECTRON_HEAD) {
-                field_[i][j] = ELECTRON_TAIL;
+            if (cellsCopy(i, j) == ELECTRON_HEAD) {
+                field_->set(i, j, ELECTRON_TAIL);
             }
-            else if (cellsCopy[i][j] == ELECTRON_TAIL) {
-                field_[i][j] = CONDUCTOR;
+            else if (cellsCopy(i, j) == ELECTRON_TAIL) {
+                field_->set(i, j, CONDUCTOR);
             }
-            else if (cellsCopy[i][j] == CONDUCTOR) {
+            else if (cellsCopy(i, j) == CONDUCTOR) {
                 size_t heads = getCountOfHeads(cellsCopy, static_cast<int>(i),
                                                static_cast<int>(j));
                 if (heads == 1 || heads == 2) {
-                    field_[i][j] = ELECTRON_HEAD;
+                    field_->set(i, j, ELECTRON_HEAD);
                     changed = true;
                 }
             }
@@ -68,7 +59,7 @@ bool Runner::proceedTick() {
     return changed;
 }
 
-bool Runner::setField(TField& field) {
+bool Runner::setField(TField *field) {
     field_ = field;
     return true;
 }
@@ -77,7 +68,7 @@ bool Runner::setFieldFromFile(const std::string &fileName) {
     stepsCount_ = 0;
     int width = static_cast<int>(width_);
     int height = static_cast<int>(height_);
-    bool status = getFieldFromFile(fileName, &field_, width_, height_,
+    bool status = getFieldFromFile(fileName, field_, width_, height_,
                                    width, height);
     if (!status) {
         return false;

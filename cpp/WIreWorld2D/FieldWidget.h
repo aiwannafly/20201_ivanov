@@ -1,38 +1,34 @@
-#ifndef WIREWORLD2D_FIELDAREA_H
-#define WIREWORLD2D_FIELDAREA_H
+#ifndef WIREWORLD2D_FIELDWIDGET_H
+#define WIREWORLD2D_FIELDWIDGET_H
 
 #include <QBrush>
 #include <QPen>
 #include <QPixmap>
 #include <QWidget>
 
-#ifndef TCELLTYPE
-#define TCELLTYPE
-enum TCellType {
-    EMPTY_CELL, ELECTRON_TAIL, ELECTRON_HEAD, CONDUCTOR
-};
-#endif
-
-using TField = std::vector<std::vector<TCellType>>;
+#include "WireWorldFieldTypes.h"
 
 enum TMOUSE_MODE {
     DRAW, MOVE
 };
 
-class FieldArea : public QWidget {
+class FieldWidget : public QWidget {
 Q_OBJECT
 public:
-    FieldArea(size_t width, size_t height, size_t cellSizePx, QWidget *parent = nullptr);
+    FieldWidget(size_t width, size_t height, size_t cellSizePx, QWidget *parent = nullptr);
+
+    FieldWidget(size_t width, size_t height, size_t cellSizePx, TField *field,
+                QWidget *parent = nullptr);
 
     QSize minimumSizeHint() const override;
 
     QSize sizeHint() const override;
 
-    void setColor(TCellType cond);
+    void setColor(TCell cond);
 
-    void setField(TField &field);
+    void setField(TField *field);
 
-    TField &getField();
+    TField *getField();
 
     void setMouseMode(TMOUSE_MODE mode);
 
@@ -62,14 +58,14 @@ private:
     QPoint oldPos_;
     QPoint moveDelta_;
     TMOUSE_MODE mouseMode_ = DRAW;
-    TCellType drawCellType_ = ELECTRON_TAIL;
+    TCell drawCellType_ = ELECTRON_TAIL;
     qreal scale_ = 1;
     size_t cellSize_ = 10;
-    TField cells_ = {};
+    TField *field_;
     QColor lineColor_ = Qt::black;
 
     void updateXY(int deltaX, int deltaY);
     void drawCell(QMouseEvent *event);
 };
 
-#endif //WIREWORLD2D_FIELDAREA_H
+#endif //WIREWORLD2D_FIELDWIDGET_H

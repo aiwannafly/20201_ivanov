@@ -3,8 +3,9 @@
 
 #include <QWidget>
 
-class FieldArea;
-class WireWorldFieldManager;
+#include "WireWorldFieldTypes.h"
+
+class FieldWidget;
 class QLabel;
 class QPushButton;
 class QTimer;
@@ -12,32 +13,26 @@ class QComboBox;
 class Runner;
 
 class MainWindow : public QWidget {
-Q_OBJECT
+    Q_OBJECT
 public:
     MainWindow();
 
-private slots:
-
+private
+slots:
     void handleLoadFieldButton();
-
     void handleRunButton();
-
     void handleClearButton();
-
     void handleNextButton();
-
     void handleDrawButton();
-
     void handleMoveButton();
-
     void colorChanged();
-
     void speedChanged();
 
 private:
     bool running_ = false;
+    TField *field_;
     Runner *runner_;
-    FieldArea *fieldArea_;
+    FieldWidget *fieldWidget_;
     QTimer *runGameTimer_;
     QPushButton *runButton_;
     QPushButton *loadFieldButton_;
@@ -52,6 +47,7 @@ private:
     QLabel *speedLabel_;
 
     void getNext();
+
     void stopRunning();
 };
 
