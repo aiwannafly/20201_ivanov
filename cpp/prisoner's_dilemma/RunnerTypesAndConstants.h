@@ -3,13 +3,13 @@
 
 #include "StrategyTypesAndConstants.h"
 
-using TStatus =  enum TStatus {
+enum class TStatus {
     OK, WRONG_MODE, WRONG_STEPS,
     MATRIX_FILE_NOT_OPENED, WRONG_MATRIX, NOT_ENOUGH_STRATEGIES,
     WRONG_STRATEGY_NAME, TOO_MANY_STRATEGIES, OUTPUT_STREAM_FAILURE
 };
 
-using TMode = enum TMode {
+enum class TMode {
     DETAILED, FAST, TOURNAMENT
 };
 

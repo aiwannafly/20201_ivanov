@@ -10,14 +10,31 @@
 
 class Strategy {
 public:
-    Strategy(size_t orderNumber, TChoicesList &history,
-             TScoreMap &scoreMap, TConfigs &configs)
-            : orderNumber_(orderNumber), history_(history),
-              scoreMap_(scoreMap), configsFileName_(configs) {};
+    Strategy() = default;
+
+    Strategy(const Strategy &s) = delete;
+
+    void operator=(const Strategy &s) = delete;
 
     virtual ~Strategy() = default;
 
     virtual TChoice getChoice() = 0;
+
+    virtual void setConfigsFileName(const std::string &configsFileName) {
+        configsFileName_ = configsFileName;
+    }
+
+    void setHistory(const TChoicesList &history) {
+        history_ = history;
+    }
+
+    void setScoreMap(const TScoreMap &scoreMap) {
+        scoreMap_ = scoreMap;
+    }
+
+    void setOrderNumber(size_t orderNumber) {
+        orderNumber_ = orderNumber;
+    }
 
 protected:
     size_t orderNumber_ = 0;

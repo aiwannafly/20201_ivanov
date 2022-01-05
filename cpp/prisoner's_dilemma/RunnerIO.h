@@ -24,7 +24,6 @@ namespace RunnerIO {
                            const std::vector<std::string> &strategyNames,
                            std::map<std::string, size_t> &totalScores, bool printing);
 
-    void printErrorMessage(std::ostream &stream, TStatus status);
 }
 
 #endif //PRISONER_DILEMMA_RUNNERIO_H

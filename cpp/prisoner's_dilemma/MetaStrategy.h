@@ -7,12 +7,13 @@ constexpr char metaID[] = "meta";
 
 class MetaStrategy : public Strategy {
 public:
-    MetaStrategy(size_t orderNumber, TChoicesList &history,
-                 TScoreMap &scoreMap, TConfigs &configsFileName);
+    MetaStrategy() = default;
 
     ~MetaStrategy() override = default;
 
     TChoice getChoice() override;
+
+    void setConfigsFileName(const std::string &configsFileName) override;
 
 private:
     size_t strategiesCounter_ = 0;

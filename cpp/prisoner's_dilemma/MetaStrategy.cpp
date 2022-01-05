@@ -6,18 +6,15 @@
 #include "Factory.h"
 
 namespace {
-    Strategy *create(size_t orderNumber, TChoicesList &history,
-                     TScoreMap &scoreMap, TConfigs &configs) {
-        return new MetaStrategy(orderNumber, history, scoreMap, configs);
+    Strategy *create() {
+        return new MetaStrategy();
     }
 }
 
-bool metaB = Factory<Strategy, std::string, size_t, TChoicesList &, TScoreMap &, TConfigs &>
-::getInstance()->registerCreator(metaID, create);
+bool metaB = Factory<Strategy, std::string>::getInstance()->
+registerCreator(metaID, create);
 
-MetaStrategy::MetaStrategy(size_t orderNumber, TChoicesList &history,
-                           TScoreMap &scoreMap, TConfigs &configsFileName) : Strategy(orderNumber, history,
-                                                                                      scoreMap, configsFileName) {
+void MetaStrategy::setConfigsFileName(const std::string &configsFileName) {
     std::ifstream configsFile;
     configsFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     try {
@@ -43,9 +40,9 @@ TChoice MetaStrategy::getChoice() {
         // then we use the "random" strategy
         int num = std::experimental::randint(0, 1);
         if (num == 0) {
-            return COOP;
+            return TChoice::COOP;
         }
-        return DEF;
+        return TChoice::DEF;
     }
     if (strategiesCounter_ >= strategiesNames_.size()) {
         strategiesCounter_ = 0;
@@ -60,7 +57,7 @@ TChoice MetaStrategy::getChoice() {
     }
     int num = std::experimental::randint(0, 1);
     if (num == 0) {
-        return COOP;
+        return TChoice::COOP;
     }
-    return DEF;
+    return TChoice::DEF;
 }

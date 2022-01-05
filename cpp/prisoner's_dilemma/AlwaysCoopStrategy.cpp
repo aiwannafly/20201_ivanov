@@ -7,15 +7,14 @@
 constexpr char kAlwaysCoopID[] = "coop";
 
 namespace {
-    Strategy *create(size_t orderNumber, TChoicesList &history,
-                     TScoreMap &scoreMap, TConfigs &configs) {
-        return new AlwaysCoopStrategy(orderNumber, history, scoreMap, configs);
+    Strategy *create() {
+        return new AlwaysCoopStrategy();
     }
 }
 
-bool coopB = Factory<Strategy, std::string, size_t, TChoicesList &, TScoreMap &, TConfigs &>::
-getInstance()->registerCreator(kAlwaysCoopID, create);
+bool coopB = Factory<Strategy, std::string>::getInstance()->
+registerCreator(kAlwaysCoopID, create);
 
 TChoice AlwaysCoopStrategy::getChoice() {
-    return COOP;
+    return TChoice::COOP;
 }

@@ -6,38 +6,37 @@
 #include "Factory.h"
 
 namespace {
-    Strategy *create(size_t orderNumber, TChoicesList &history,
-                     TScoreMap &scoreMap, TConfigs &configs) {
-        return new MostFreqStrategy(orderNumber, history, scoreMap, configs);
+    Strategy *create() {
+        return new MostFreqStrategy();
     }
 }
 
-bool mostFreqB = Factory<Strategy, std::string, size_t, TChoicesList &, TScoreMap &, TConfigs &>::
+bool mostFreqB = Factory<Strategy, std::string>::
 getInstance()->registerCreator(mostFreqID, create);
 
 TChoice MostFreqStrategy::getChoice() {
     std::map<size_t, std::map<TChoice, size_t>> choiceCounts;
     for (size_t i = 0; i < 3; i++) {
-        choiceCounts[i][COOP] = 0;
-        choiceCounts[i][DEF] = 0;
+        choiceCounts[i][TChoice::COOP] = 0;
+        choiceCounts[i][TChoice::DEF] = 0;
     }
     for (auto currentLine: history_) {
         for (size_t j = 0; j < 3; j++) {
             choiceCounts[j][currentLine[j]] += 1;
         }
     }
-    std::array<TChoice, combLen> mostUsedChoices = {DEF, DEF, DEF};
+    std::array<TChoice, combLen> mostUsedChoices = {TChoice::DEF, TChoice::DEF, TChoice::DEF};
     for (size_t i = 0; i < 3; i++) {
-        if (choiceCounts[i][COOP] > choiceCounts[i][DEF]) {
-            mostUsedChoices[i] = COOP;
+        if (choiceCounts[i][TChoice::COOP] > choiceCounts[i][TChoice::DEF]) {
+            mostUsedChoices[i] = TChoice::COOP;
         }
     }
-    std::array<TChoice, combLen> firstComb = mostUsedChoices;
-    firstComb[orderNumber_] = DEF;
-    std::array<TChoice, combLen> secondComb = mostUsedChoices;
-    firstComb[orderNumber_] = COOP;
-    if (scoreMap_[firstComb][orderNumber_] > scoreMap_[secondComb][orderNumber_]) {
-        return DEF;
+    mostUsedChoices[orderNumber_] = TChoice::DEF;
+    size_t defScore = scoreMap_[mostUsedChoices][orderNumber_];
+    mostUsedChoices[orderNumber_] = TChoice::COOP;
+    size_t coopScore = scoreMap_[mostUsedChoices][orderNumber_];
+    if (defScore > coopScore) {
+        return TChoice::DEF;
     }
-    return COOP;
+    return TChoice::COOP;
 }

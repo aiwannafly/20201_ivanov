@@ -40,6 +40,10 @@ public:
 
     Runner() = default;
 
+    Runner(const Runner &) = delete;
+
+    void operator=(const Runner &) = delete;
+
     bool runGame(std::ostream &ostream = std::cout, std::istream &istream = std::cin);
 
     TStatus getStatus();
@@ -54,18 +58,15 @@ public:
 
     bool setConfigsFromFile(const std::string &fileName);
 
-    static void printErrorMessage(std::ostream &stream, TStatus status);
-
     void setPrintingMode(bool printing);
 
 private:
-    TStatus status_ = OK;
+    TStatus status_ = TStatus::OK;
     bool printing_ = true;
-    TMode gameMode_ = DETAILED;
+    TMode gameMode_ = TMode::DETAILED;
     std::vector<std::string> strategyNames_;
     std::map<std::string, std::unique_ptr<Strategy>> strategies_;
     std::map<std::string, size_t> gameScores_;
-    size_t strategiesCount_ = 0;
     size_t stepsCount_ = 10;
     std::string configsFileName_;
     TChoicesList history_;

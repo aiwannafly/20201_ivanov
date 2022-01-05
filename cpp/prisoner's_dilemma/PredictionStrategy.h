@@ -7,9 +7,7 @@ constexpr char predictionID[] = "pred";
 
 class PredictionStrategy : public Strategy {
 public:
-    PredictionStrategy(size_t orderNumber, TChoicesList &history,
-                       TScoreMap &scoreMap, TConfigs &configs) :
-            Strategy(orderNumber, history,scoreMap, configs) {};
+    PredictionStrategy() = default;
 
     ~PredictionStrategy() override = default;
 

@@ -2,20 +2,21 @@
 
 #include "Factory.h"
 
+#include <experimental/random>
+
 namespace {
-    Strategy *create(size_t orderNumber, TChoicesList &history,
-                     TScoreMap &scoreMap, TConfigs &configs) {
-        return new RandomStrategy(orderNumber, history, scoreMap, configs);
+    Strategy *create() {
+        return new RandomStrategy();
     }
 }
 
-bool randB = Factory<Strategy, std::string, size_t, TChoicesList &, TScoreMap &, TConfigs &>
+bool randB = Factory<Strategy, std::string>
 ::getInstance()->registerCreator(randomID, create);
 
 TChoice RandomStrategy::getChoice() {
-    int randInt = rand();
-    if (randInt % 2 == 0) {
-        return COOP;
+    int randInt = std::experimental::randint(0, 1);
+    if (randInt == 0) {
+        return TChoice::COOP;
     }
-    return DEF;
+    return TChoice::DEF;
 }

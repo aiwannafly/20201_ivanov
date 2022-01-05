@@ -7,10 +7,22 @@ namespace {
     constexpr char kStepsKeySeq[] = "--steps=";
     constexpr char kConfigsKeySeq[] = "--configs=";
     constexpr char kMatrixKeySeq[] = "--matrix=";
+    const std::map<TStatus, std::string> kErrorMessages{
+            {TStatus::OK,                     "Everything is alright.\n"},
+            {TStatus::WRONG_MODE,             "Such mode does not exist.\n"
+                                              "Available modes: default, fast, tournament.\n"},
+            {TStatus::WRONG_STEPS,            "Wrong steps value, it's not a number.\n"},
+            {TStatus::MATRIX_FILE_NOT_OPENED, "File with matrix could not be opened.\n"},
+            {TStatus::WRONG_MATRIX,           "Score matrix has a wrong format.\n"},
+            {TStatus::NOT_ENOUGH_STRATEGIES,  "Too few strategies for the chosen mode.\n"},
+            {TStatus::WRONG_STRATEGY_NAME,    "Strategy with the entered name does not exist.\n"},
+            {TStatus::TOO_MANY_STRATEGIES,    "Too many strategies for the chosen mode.\n"},
+            {TStatus::OUTPUT_STREAM_FAILURE, "Output stream failure.\n"}
+    };
 
-    using TRunnerData = struct TRunnerData {
-        TStatus status = OK;
-        TMode mode = DETAILED;
+    struct TRunnerData {
+        TStatus status = TStatus::OK;
+        TMode mode = TMode::DETAILED;
         size_t stepsCount = 10;
         std::string configsFileName;
         std::string scoreMapFileName;
@@ -28,6 +40,18 @@ namespace {
         }
         return true;
     }
+
+    void printErrorMessage(std::ostream &stream, TStatus status) {
+        if (status == TStatus::OK) {
+            stream << "Everything is OK" << std::endl;
+            return;
+        }
+        if (kErrorMessages.find(status) == kErrorMessages.end()) {
+            stream << "Unknown error" << std::endl;
+        } else {
+            stream << kErrorMessages.at(status) << std::endl;
+        }
+    }
 }
 
 TRunnerData parseRunnerArgs(const std::vector<std::string> &params) {
@@ -37,15 +61,15 @@ TRunnerData parseRunnerArgs(const std::vector<std::string> &params) {
     std::string configsKey = kConfigsKeySeq;
     std::string matrixKey = kMatrixKeySeq;
     std::map<std::string, TMode> modeMap{
-            {"detailed",   DETAILED},
-            {"fast",       FAST},
-            {"tournament", TOURNAMENT}
+            {"detailed",   TMode::DETAILED},
+            {"fast",       TMode::FAST},
+            {"tournament", TMode::TOURNAMENT}
     };
     for (const auto &param: params) {
         if (startsWith(param, modeKey)) {
             std::string modeName = param.substr(modeKey.length());
             if (modeMap.find(modeName) == modeMap.end()) {
-                data.status = WRONG_MODE;
+                data.status = TStatus::WRONG_MODE;
                 return data;
             }
             data.mode = modeMap[modeName];
@@ -54,7 +78,7 @@ TRunnerData parseRunnerArgs(const std::vector<std::string> &params) {
             try {
                 data.stepsCount = std::stol(stepsCount);
             } catch (std::invalid_argument &e) {
-                data.status = WRONG_STEPS;
+                data.status = TStatus::WRONG_STEPS;
                 return data;
             }
         } else if (startsWith(param, configsKey)) {
@@ -68,7 +92,7 @@ TRunnerData parseRunnerArgs(const std::vector<std::string> &params) {
         }
     }
     if (data.names.size() < 3) {
-        data.status = NOT_ENOUGH_STRATEGIES;
+        data.status = TStatus::NOT_ENOUGH_STRATEGIES;
     }
     return data;
 }
@@ -79,15 +103,15 @@ int main(int argc, char *argv[]) {
         params.emplace_back(argv[i]);
     }
     TRunnerData data = parseRunnerArgs(params);
-    if (data.status != OK) {
-        Runner::printErrorMessage(std::cout, data.status);
+    if (data.status != TStatus::OK) {
+        printErrorMessage(std::cout, data.status);
         return EXIT_FAILURE;
     }
     Runner runner(data.mode, data.stepsCount, data.configsFileName,
                   data.scoreMapFileName, data.names);
     if (runner.runGame(std::cout)) {
     } else {
-        Runner::printErrorMessage(std::cout, runner.getStatus());
+        printErrorMessage(std::cout, runner.getStatus());
     }
     return EXIT_SUCCESS;
 }

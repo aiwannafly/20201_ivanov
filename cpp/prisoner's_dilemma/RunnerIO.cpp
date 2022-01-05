@@ -3,21 +3,6 @@
 #include <array>
 #include <vector>
 
-namespace {
-    std::map<TStatus, std::string> kErrorMessages{
-            {OK,                     "Everything is alright.\n"},
-            {WRONG_MODE,             "Such mode does not exist.\n "
-                                     "Available mods: default, fast, tournament.\n"},
-            {WRONG_STEPS,            "Wrong steps value, it's not a number.\n"},
-            {MATRIX_FILE_NOT_OPENED, "File with matrix could not be opened.\n"},
-            {WRONG_MATRIX,           "Score matrix has a wrong format.\n"},
-            {NOT_ENOUGH_STRATEGIES,  "Too few strategies for the chosen mode.\n"},
-            {WRONG_STRATEGY_NAME,    "Strategy with the entered name does not exist.\n"},
-            {TOO_MANY_STRATEGIES,    "Too many strategies for the chosen mode.\n"},
-            {OUTPUT_STREAM_FAILURE, "Output stream failure.\n"}
-    };
-}
-
 bool RunnerIO::parseMatrix(std::ifstream &matrixFile, TScoreMap *scoreMap) {
     for (size_t i = 0; i < 2*2*2; i++) {
         std::array<TChoice, combLen> combination = {};
@@ -25,9 +10,9 @@ bool RunnerIO::parseMatrix(std::ifstream &matrixFile, TScoreMap *scoreMap) {
             std::string word;
             matrixFile >> word;
             if (word == "C" || word == "С") {
-                combination[j] = COOP;
+                combination[j] = TChoice::COOP;
             } else if (word == "D") {
-                combination[j] = DEF;
+                combination[j] = TChoice::DEF;
             } else {
                 return false;
             }
@@ -49,8 +34,8 @@ void RunnerIO::printStepResults(std::ostream &stream, std::array<size_t, combLen
         return;
     }
     std::map<TChoice, std::string> choiceMap;
-    choiceMap[COOP] = "C";
-    choiceMap[DEF] = "D";
+    choiceMap[TChoice::COOP] = "C";
+    choiceMap[TChoice::DEF] = "D";
     stream << "=================== ROUND №" <<
            stepNumber << " ==============" << std::endl;
     stream << "    NAMES    |";
@@ -116,16 +101,4 @@ void RunnerIO::printTotalResults(std::ostream &stream,
         }
     }
     stream << "==============================================" << std::endl;
-}
-
-void RunnerIO::printErrorMessage(std::ostream &stream, TStatus status) {
-    if (status == OK) {
-        stream << "Everything is OK" << std::endl;
-        return;
-    }
-    if (kErrorMessages.find(status) == kErrorMessages.end()) {
-        stream << "Unknown error" << std::endl;
-    } else {
-        stream << kErrorMessages[status] << std::endl;
-    }
 }
