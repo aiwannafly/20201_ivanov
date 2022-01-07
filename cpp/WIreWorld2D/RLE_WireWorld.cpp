@@ -1,4 +1,4 @@
-#include "RLE.h"
+#include "RLE_WireWorld.h"
 
 #include <array>
 #include <algorithm>
@@ -70,17 +70,17 @@ int extractSize(std::ifstream &fieldFile) {
     return size;
 }
 
-enum TCell getEnumCondition(char ch) {
+enum TWireWorldCell getEnumCondition(char ch) {
     // turns char type condition into enum type
     switch (ch) {
         case 'A':
-            return ELECTRON_HEAD;
+            return TWireWorldCell::ELECTRON_HEAD;
         case 'B':
-            return ELECTRON_TAIL;
+            return TWireWorldCell::ELECTRON_TAIL;
         case 'C':
-            return CONDUCTOR;
+            return TWireWorldCell::CONDUCTOR;
         default:
-            return EMPTY_CELL;
+            return TWireWorldCell::EMPTY_CELL;
     }
 }
 
@@ -124,7 +124,7 @@ bool getFieldFromFile(const std::string &fileName, TField *field,
     size_t yOffset = (maxHeight - height) / 2;
     for (size_t i = 0; i < maxHeight; i++) {
         for (size_t j = 0; j < maxWidth; j++) {
-            field->set(i, j, EMPTY_CELL);
+            field->set(i, j, TWireWorldCell::EMPTY_CELL);
         }
     }
     for (size_t i = 0; i < height; i++) {

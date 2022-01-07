@@ -1,5 +1,5 @@
-#ifndef WIREWORLD2D_RLE_H
-#define WIREWORLD2D_RLE_H
+#ifndef WIREWORLD2D_RLE_WIREWORLD_H
+#define WIREWORLD2D_RLE_WIREWORLD_H
 
 #include <fstream>
 #include <string>
@@ -12,4 +12,4 @@ bool getFieldFromFile(const std::string &fileName, TField *field,
                       size_t maxWidth, size_t maxHeight,
                       int &width, int &height);
 
-#endif //WIREWORLD2D_RLE_H
+#endif //WIREWORLD2D_RLE_WIREWORLD_H

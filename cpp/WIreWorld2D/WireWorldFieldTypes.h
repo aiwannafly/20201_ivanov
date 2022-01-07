@@ -1,12 +1,13 @@
 #ifndef WIREWORLD2D_WIREWORLDFIELDTYPES_H
 #define WIREWORLD2D_WIREWORLDFIELDTYPES_H
 
-#include "Field.h"
+#include "VectorField.h"
 
-enum TCell {
-    EMPTY_CELL, ELECTRON_TAIL, ELECTRON_HEAD, CONDUCTOR
+enum class TWireWorldCell {
+    EMPTY_CELL, ELECTRON_TAIL, ELECTRON_HEAD,
+    CONDUCTOR
 };
 
-using TField = Field<TCell>;
+using TField = VectorField<TWireWorldCell>;
 
 #endif //WIREWORLD2D_WIREWORLDFIELDTYPES_H

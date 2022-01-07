@@ -3,52 +3,45 @@
 #include <QPainter>
 #include <QWheelEvent>
 
-#include "RLE.h"
+namespace {
+    constexpr char kDrawCursorName[] = "icons/cursortarget.png";
+    constexpr size_t kMinScale = 1;
+    constexpr size_t kMaxScale = 10;
+    constexpr int kZoomCoef = 120;
+    constexpr size_t kMinWidth = 100;
+    constexpr size_t kMinHeight = 100;
 
-constexpr size_t minScale = 1;
-constexpr size_t maxScale = 10;
-constexpr int zoomCoef = 120;
-constexpr char drawCursorName[] = "cursortarget.png";
-constexpr size_t minWidth = 100;
-constexpr size_t minHeight = 100;
-
-FieldWidget::FieldWidget(size_t width, size_t height, size_t cellSizePx, QWidget *parent) :
-        fwidth_(width), fheight_(height), cellSize_(cellSizePx), QWidget(parent) {
-    setBackgroundRole(QPalette::AlternateBase);
-    setAutoFillBackground(false);
-    field_ = new TField(height, width);
-    this->setCursor(QCursor(QPixmap(drawCursorName)));
+    const QColor GRAY = {11, 11, 11};
+    const auto kPointCursor = Qt::PointingHandCursor;
+    const auto kCaptureCursor = Qt::ClosedHandCursor;
 }
 
-FieldWidget::FieldWidget(size_t width, size_t height, size_t cellSizePx, TField *field,
-                         QWidget *parent): fwidth_(width), fheight_(height), cellSize_(cellSizePx),
-        field_(field), QWidget(parent)  {
-    setBackgroundRole(QPalette::AlternateBase);
-    setAutoFillBackground(false);
-    this->setCursor(QCursor(QPixmap(drawCursorName)));
+FieldWidget::FieldWidget(size_t width, size_t height, size_t cellSizePx, QWidget *parent) :
+        fieldWidth_(width), fieldHeight_(height), lengthOfSquarePx_(cellSizePx),
+        game_(height, width), QWidget(parent) {
+    QPalette palette;
+    palette.setColor(QPalette::Window, GRAY);
+    setPalette(palette);
+    setAutoFillBackground(true);
+    this->setCursor(QCursor(QPixmap(kDrawCursorName)));
 }
 
 QSize FieldWidget::minimumSizeHint() const {
-    return {minWidth, minHeight};
+    return {kMinWidth, kMinHeight};
 }
 
 QSize FieldWidget::sizeHint() const {
-    size_t widthPx = fwidth_ * cellSize_;
-    size_t heightPx = fheight_ * cellSize_;
-    return {static_cast<int>(widthPx), static_cast<int>(heightPx)};
+    int widthPx = static_cast<int>(fieldWidth_ * lengthOfSquarePx_);
+    int heightPx = static_cast<int>(fieldHeight_ * lengthOfSquarePx_);
+    return {widthPx, heightPx};
 }
 
-QColor getCellColor(enum TCell cond) {
-    switch (cond) {
-        case ELECTRON_TAIL:
-            return Qt::white;
-        case ELECTRON_HEAD:
-            return Qt::blue;
-        case CONDUCTOR:
-            return {255, 153, 51}; //orange
-        default:
-            return {32, 32, 32}; //gray
-    }
+void FieldWidget::updateGameField() {
+    game_.proceedTick();
+}
+
+std::vector<QColor> FieldWidget::getColors() {
+    return game_.getColors();
 }
 
 void FieldWidget::disableDrawing() {
@@ -59,128 +52,126 @@ void FieldWidget::enableDrawing() {
     drawON_ = true;
 }
 
-void FieldWidget::drawCell(QMouseEvent *event) {
-    if (mouseMode_ != DRAW || !drawON_) {
-        return;
+void FieldWidget::updateXY(int deltaX, int deltaY) {
+    if (leftTop_.x + deltaX < 0) {
+        leftTop_.x = 0;
+    } else if (leftTop_.x + deltaX > fieldWidth_ - fieldWidth_ / scale_) {
+        leftTop_.x = fieldWidth_ - fieldWidth_ / scale_;
+    } else {
+        leftTop_.x += deltaX;
     }
-    size_t y = static_cast<size_t>(event->pos().y() / (static_cast<double>(cellSize_) * scale_));
-    size_t x = static_cast<size_t>(event->pos().x() / (static_cast<double>(cellSize_) * scale_));
-    if (x + coordX_ >= fwidth_) return;
-    if (y + coordY_ >= fheight_) return;
-    field_->set(x + coordY_, y + coordX_, drawCellType_);
+    if (leftTop_.y + deltaY < 0) {
+        leftTop_.y = 0;
+    } else if (leftTop_.y + deltaY > fieldHeight_ - fieldHeight_ / scale_) {
+        leftTop_.y = fieldHeight_ - fieldHeight_ / scale_;
+    } else {
+        leftTop_.y += deltaY;
+    }
 }
 
-void FieldWidget::setMouseMode(TMOUSE_MODE mode) {
-    QCursor cursor;
-    if (mode == DRAW) {
-        cursor = QCursor(QPixmap(drawCursorName));
-    } else {
-        cursor = QCursor(Qt::PointingHandCursor);
+void FieldWidget::drawCell(size_t eventX, size_t eventY) {
+    if (!drawON_) {
+        return;
     }
-    this->setCursor(cursor);
-    mouseMode_ = mode;
+    size_t y = static_cast<size_t>(eventY /
+            (static_cast<double>(lengthOfSquarePx_) * scale_));
+    size_t x = static_cast<size_t>(eventX /
+            (static_cast<double>(lengthOfSquarePx_) * scale_));
+    if (x + leftTop_.x >= fieldWidth_) {
+        return;
+    }
+    if (y + leftTop_.y >= fieldHeight_) {
+        return;
+    }
+    game_.set(x + leftTop_.y, y + leftTop_.x, game_.getCellType(drawColor_));
 }
 
 void FieldWidget::mousePressEvent(QMouseEvent *event) {
-    if (mouseMode_ == DRAW) {
-        drawCell(event);
+    oldPos_ = event->pos();
+    if (event->buttons() == Qt::LeftButton) {
+        this->setCursor(QCursor(QPixmap(kDrawCursorName)));
+        drawCell(event->position().x(), event->position().y());
         update();
         return;
     }
-    this->setCursor(Qt::ClosedHandCursor);
-    if (event->button() == Qt::LeftButton) {
-        oldPos_ = event->pos();
-    }
+    this->setCursor(kCaptureCursor);
 }
 
-void FieldWidget::updateXY(int deltaX, int deltaY) {
-    if (coordX_ + deltaX < 0) {
-        coordX_ = 0;
-    } else if (coordX_ + deltaX > fwidth_ - fwidth_ / scale_) {
-        coordX_ = fwidth_ - fwidth_ / scale_;
-    } else {
-        coordX_ += deltaX;
+int sign(int n) {
+    if (n >= 0) {
+        return 1;
     }
-    if (coordY_ + deltaY < 0) {
-        coordY_ = 0;
-    } else if (coordY_ + deltaY > fheight_ - fheight_ / scale_) {
-        coordY_ = fheight_ - fheight_ / scale_;
-    } else {
-        coordY_ += deltaY;
-    }
+    return -1;
 }
 
 void FieldWidget::mouseMoveEvent(QMouseEvent *event) {
-    if (mouseMode_ != DRAW) {
+    moveDelta_ = event->pos() - oldPos_;
+    if (event->buttons() != Qt::LeftButton) {
+        int deltaX = -moveDelta_.x() / (lengthOfSquarePx_ * scale_);
+        int deltaY = -moveDelta_.y() / (lengthOfSquarePx_ * scale_);
+        if (moveCounter_ == scale_) {
+            updateXY(sign(deltaY), sign(deltaX));
+            update();
+            moveCounter_ = 0;
+        }
+        moveCounter_++;
         return;
     }
-    drawCell(event);
+    drawCell(event->position().x() + sign(moveDelta_.x() * scale_ * lengthOfSquarePx_),
+             event->position().y() + sign(moveDelta_.y() * scale_ * lengthOfSquarePx_));
+    drawCell(event->position().x(), event->position().y());
     update();
 }
 
 void FieldWidget::mouseReleaseEvent(QMouseEvent *event) {
-    if (mouseMode_ != MOVE) {
+    if (event->buttons() == Qt::LeftButton) {
         return;
     }
-    this->setCursor(Qt::PointingHandCursor);
-    moveDelta_ = event->pos() - oldPos_;
-    int deltaX = -moveDelta_.x() / (cellSize_ * scale_);
-    int deltaY = -moveDelta_.y() / (cellSize_ * scale_);
-    updateXY(deltaY, deltaX);
-    update();
+    this->setCursor(kPointCursor);
 }
 
 void FieldWidget::paintEvent(QPaintEvent *event) {
     QPainter painter(this);
     painter.scale(scale_, scale_);
     painter.setPen(QPen(lineColor_));
-    size_t scaledWidth = qIntCast((fwidth_ / scale_));
-    size_t scaledHeight = qIntCast((fheight_ / scale_));
+    size_t scaledWidth = qIntCast(fieldWidth_ / scale_);
+    size_t scaledHeight = qIntCast(fieldHeight_ / scale_);
+    size_t widthPx = lengthOfSquarePx_ * fieldWidth_;
+    size_t heightPx = lengthOfSquarePx_ * fieldHeight_;
     for (size_t i = 0; i < scaledHeight; i++) {
-        if (i + coordY_ >= fheight_) {
+        if (i + leftTop_.y >= fieldHeight_) {
             continue;
         }
+        painter.drawLine(0, i * lengthOfSquarePx_, widthPx, i * lengthOfSquarePx_);
+        painter.drawLine(i * lengthOfSquarePx_, 0, i * lengthOfSquarePx_, heightPx);
         for (size_t j = 0; j < scaledWidth; j++) {
-            if (j + coordX_ >= fwidth_) {
+            if (j + leftTop_.x >= fieldWidth_) {
                 continue;
             }
-            painter.setBrush(getCellColor(field_->get(i + coordY_, j + coordX_)));
-            painter.drawRect(i * cellSize_, j * cellSize_,
-                             cellSize_, cellSize_);
+            if (game_.getCellColor(game_.get(i + leftTop_.y, j + leftTop_.x)) == Qt::black) {
+                continue;
+            }
+            painter.setBrush(game_.getCellColor(game_.get(i + leftTop_.y, j + leftTop_.x)));
+            painter.drawRect(i * lengthOfSquarePx_, j * lengthOfSquarePx_,
+                             lengthOfSquarePx_, lengthOfSquarePx_);
         }
     }
 }
 
-void FieldWidget::setColor(TCell cond) {
-    drawCellType_ = cond;
-}
-
-void FieldWidget::setField(TField *field) {
-    field_ = field;
-};
-
-TField *FieldWidget::getField() {
-    return field_;
+void FieldWidget::setColor(QColor color) {
+    drawColor_ = color;
 }
 
 void FieldWidget::wheelEvent(QWheelEvent *event) {
-    scale_ += (event->angleDelta().y() / zoomCoef);
-    if (scale_ < minScale) {
-        scale_ = minScale;
-    } else if (scale_ > maxScale) {
-        scale_ = maxScale;
+    scale_ += static_cast<double>(event->angleDelta().y()) / kZoomCoef;
+    if (scale_ < kMinScale) {
+        scale_ = kMinScale;
+    } else if (scale_ > kMaxScale) {
+        scale_ = kMaxScale;
     }
     this->update();
 }
 
 bool FieldWidget::setFieldFromFile(const std::string &fileName) {
-    int width = static_cast<int>(fwidth_);
-    int height = static_cast<int>(fheight_);
-    bool status = getFieldFromFile(fileName, field_, fwidth_, fheight_,
-                                   width, height);
-    this->update();
-    if (!status) {
-        return false;
-    }
-    return true;
+    return game_.setFieldFromFile(fileName);
 }

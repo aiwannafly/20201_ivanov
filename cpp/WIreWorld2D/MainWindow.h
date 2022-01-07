@@ -3,14 +3,12 @@
 
 #include <QWidget>
 
-#include "WireWorldFieldTypes.h"
-
 class FieldWidget;
 class QLabel;
 class QPushButton;
 class QTimer;
 class QComboBox;
-class Runner;
+class RunnerWireWorld;
 
 class MainWindow : public QWidget {
     Q_OBJECT
@@ -23,24 +21,17 @@ slots:
     void handleRunButton();
     void handleClearButton();
     void handleNextButton();
-    void handleDrawButton();
-    void handleMoveButton();
     void colorChanged();
     void speedChanged();
 
 private:
     bool running_ = false;
-    TField *field_;
-    Runner *runner_;
     FieldWidget *fieldWidget_;
     QTimer *runGameTimer_;
     QPushButton *runButton_;
     QPushButton *loadFieldButton_;
     QPushButton *clearFieldButton_;
     QPushButton *nextButton_;
-    QPushButton *paintButton_;
-    QPushButton *moveButton_;
-    QLabel *stepsLabel_;
     QComboBox *colorComboBox_;
     QLabel *colorLabel_;
     QComboBox *speedComboBox_;
@@ -49,6 +40,12 @@ private:
     void getNext();
 
     void stopRunning();
+
+    void initButtons();
+
+    void initColorComboBox();
+
+    void initSpeedComboBox();
 };
 
 #endif //WIREWORLD2D_MAINWINDOW_H
