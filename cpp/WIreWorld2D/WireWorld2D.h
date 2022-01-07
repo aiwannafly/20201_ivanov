@@ -1,31 +1,37 @@
 #ifndef WIREWORLD2D_WIREWORLD2D_H
 #define WIREWORLD2D_WIREWORLD2D_H
 
+#include <string>
+
 #include "Game2D.h"
-#include "RunnerWireWorld.h"
+#include "WireWorldFieldTypes.h"
 
-class WireWorld2D: public Game2D<TWireWorldCell> {
+class WireWorld2D : public Game2D<TWireWorldCell> {
 public:
-    WireWorld2D(size_t height, size_t width) : runner_(height, width){};
+    WireWorld2D(size_t height, size_t width) : width_(width), height_(height){
+        field_ = new TField(height, width);
+    };
 
-    TWireWorldCell get(size_t i, size_t j) override {
-        return runner_.getField()->get(i, j);
-    }
+    ~WireWorld2D() = default;
 
-    void set(size_t i, size_t j, TWireWorldCell value) override {
-        runner_.getField()->set(i, j, value);
-    }
+    void set(size_t i, size_t j, TWireWorldCell value) override;
 
-    bool setFieldFromFile(const std::string &fileName) override {
-        return runner_.setFieldFromFile(fileName);
-    }
+    TWireWorldCell get(size_t i, size_t j) override;
 
-    bool proceedTick() override {
-        return runner_.proceedTick();
-    }
+    bool proceedTick() override;
+
+    bool setFieldFromFile(const std::string &fileName) override;
+
+    bool setField(TField *field);
+
+    TField *getField() const;
 
 private:
-    RunnerWireWorld runner_;
+    size_t width_ = 0;
+    size_t height_ = 0;
+    TField *field_;
+
+    size_t getCountOfHeads(TField &field, int x, int y);
 };
 
 #endif //WIREWORLD2D_WIREWORLD2D_H

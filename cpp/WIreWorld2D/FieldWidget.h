@@ -6,6 +6,7 @@
 #include <QPixmap>
 #include <QWidget>
 
+#include "GameLifeQt2D.h"
 #include "WireWorldQt2D.h"
 
 class FieldWidget : public QWidget {
@@ -45,7 +46,7 @@ private:
         int x;
         int y;
     } leftTop_ = {0, 0};
-    WireWorldQt2D game_;
+    GameLifeQt2D game_;
     bool drawON_ = true;
     size_t fieldWidth_ = 0;
     size_t fieldHeight_ = 0;

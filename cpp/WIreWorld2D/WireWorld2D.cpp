@@ -1,13 +1,21 @@
-#include "RunnerWireWorld.h"
+#include "WireWorld2D.h"
 
 #include "RLE_WireWorld.h"
 
 
-TField *RunnerWireWorld::getField() const {
+TField *WireWorld2D::getField() const {
     return field_;
 }
 
-size_t RunnerWireWorld::getCountOfHeads(TField &field, int x, int y) {
+void WireWorld2D::set(size_t i, size_t j, TWireWorldCell value) {
+    field_->set(i, j, value);
+}
+
+TWireWorldCell WireWorld2D::get(size_t i, size_t j) {
+    return field_->get(i, j);
+}
+
+size_t WireWorld2D::getCountOfHeads(TField &field, int x, int y) {
     size_t count = 0;
     for (int i = x - 1; i <= x + 1; i++) {
         for (int j = y - 1; j <= y + 1; j++) {
@@ -30,7 +38,7 @@ size_t RunnerWireWorld::getCountOfHeads(TField &field, int x, int y) {
     return count;
 }
 
-bool RunnerWireWorld::proceedTick() {
+bool WireWorld2D::proceedTick() {
     bool changed = false;
     TField cellsCopy(*field_);
     for (size_t i = 0; i < height_; i++) {
@@ -54,12 +62,12 @@ bool RunnerWireWorld::proceedTick() {
     return changed;
 }
 
-bool RunnerWireWorld::setField(TField *field) {
+bool WireWorld2D::setField(TField *field) {
     field_ = field;
     return true;
 }
 
-bool RunnerWireWorld::setFieldFromFile(const std::string &fileName) {
+bool WireWorld2D::setFieldFromFile(const std::string &fileName) {
     int width = static_cast<int>(width_);
     int height = static_cast<int>(height_);
     bool status = getFieldFromFile(fileName, field_, width_, height_,

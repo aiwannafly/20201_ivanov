@@ -4,6 +4,7 @@
 #include <QColor>
 #include <vector>
 
+#include "Game2DQt.h"
 #include "WireWorld2D.h"
 
 namespace {
@@ -12,14 +13,14 @@ namespace {
     const QColor ORANGE = {255, 153, 51};
     const QColor BLACK = Qt::black;
 
-    const std::vector<QColor> COLORS = {WHITE, BLUE, ORANGE, BLACK};
+    const std::vector<QColor> COLORS = {WHITE, BLUE, ORANGE};
 }
 
-class WireWorldQt2D : public WireWorld2D {
+class WireWorldQt2D : public WireWorld2D, public Game2DQt<TWireWorldCell> {
 public:
     WireWorldQt2D(size_t height, size_t width): WireWorld2D(height, width){};
 
-    QColor getCellColor(TWireWorldCell cond) {
+    QColor getCellColor(TWireWorldCell cond) override {
         switch (cond) {
             case TWireWorldCell::ELECTRON_TAIL:
                 return WHITE;
@@ -32,7 +33,7 @@ public:
         }
     }
 
-    TWireWorldCell getCellType(QColor color) {
+    TWireWorldCell getCellType(QColor color) override {
         if (color == WHITE) {
             return TWireWorldCell::ELECTRON_TAIL;
         } else if (color == BLUE) {
@@ -43,7 +44,7 @@ public:
         return TWireWorldCell::EMPTY_CELL;
     }
 
-    std::vector<QColor> getColors() {
+    std::vector<QColor> getColors() override {
         return COLORS;
     }
 };

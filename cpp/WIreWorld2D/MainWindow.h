@@ -8,7 +8,7 @@ class QLabel;
 class QPushButton;
 class QTimer;
 class QComboBox;
-class RunnerWireWorld;
+class WireWorld2D;
 
 class MainWindow : public QWidget {
     Q_OBJECT
