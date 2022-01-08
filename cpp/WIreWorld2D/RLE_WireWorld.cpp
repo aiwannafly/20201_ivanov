@@ -3,6 +3,8 @@
 #include <array>
 #include <algorithm>
 
+#include "WireWorld.h"
+
 bool getDecodedRLE(std::ifstream &file, std::string &decoded, int row, int col) {
     if (row <= 0 || col <= 0) {
         return false;
@@ -70,21 +72,21 @@ int extractSize(std::ifstream &fieldFile) {
     return size;
 }
 
-enum TWireWorldCell getEnumCondition(char ch) {
+int getIntCondition(char ch) {
     // turns char type condition into enum type
     switch (ch) {
         case 'A':
-            return TWireWorldCell::ELECTRON_HEAD;
+            return WireWorld::ELECTRON_HEAD;
         case 'B':
-            return TWireWorldCell::ELECTRON_TAIL;
+            return WireWorld::ELECTRON_TAIL;
         case 'C':
-            return TWireWorldCell::CONDUCTOR;
+            return WireWorld::CONDUCTOR;
         default:
-            return TWireWorldCell::EMPTY_CELL;
+            return WireWorld::EMPTY_CELL;
     }
 }
 
-bool getFieldFromFile(const std::string &fileName, TField *field,
+bool getFieldFromFile(const std::string &fileName, VectorField<int> *field,
                       size_t maxWidth, size_t maxHeight,
                       int &width, int &height) {
     std::ifstream fieldFile(fileName);
@@ -124,12 +126,12 @@ bool getFieldFromFile(const std::string &fileName, TField *field,
     size_t yOffset = (maxHeight - height) / 2;
     for (size_t i = 0; i < maxHeight; i++) {
         for (size_t j = 0; j < maxWidth; j++) {
-            field->set(i, j, TWireWorldCell::EMPTY_CELL);
+            field->set(i, j, WireWorld::EMPTY_CELL);
         }
     }
     for (size_t i = 0; i < height; i++) {
         for (size_t j = 0; j < width; j++) {
-            field->set(i + yOffset, j + xOffset, getEnumCondition(stringField[i * width + j]));
+            field->set(i + yOffset, j + xOffset, getIntCondition(stringField[i * width + j]));
         }
     }
     return true;

@@ -4,11 +4,11 @@
 #include <fstream>
 #include <string>
 
-#include "WireWorldFieldTypes.h"
+#include "VectorField.h"
 
 bool getDecodedRLE(std::ifstream &file, std::string &decoded, int row, int col);
 
-bool getFieldFromFile(const std::string &fileName, TField *field,
+bool getFieldFromFile(const std::string &fileName, VectorField<int> *field,
                       size_t maxWidth, size_t maxHeight,
                       int &width, int &height);
 

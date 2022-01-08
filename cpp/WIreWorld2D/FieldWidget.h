@@ -6,8 +6,8 @@
 #include <QPixmap>
 #include <QWidget>
 
-#include "GameLifeQt2D.h"
-#include "WireWorldQt2D.h"
+#include "GameLifeQt.h"
+#include "WireWorldQt.h"
 
 class FieldWidget : public QWidget {
 Q_OBJECT
@@ -19,6 +19,8 @@ public:
     [[nodiscard]] QSize sizeHint() const override;
 
     void setColor(QColor color);
+
+    bool setGame(const std::string &gameName);
 
     bool setFieldFromFile(const std::string &fileName);
 
@@ -46,7 +48,7 @@ private:
         int x;
         int y;
     } leftTop_ = {0, 0};
-    GameLifeQt2D game_;
+    GameQt *game_ = nullptr;
     bool drawON_ = true;
     size_t fieldWidth_ = 0;
     size_t fieldHeight_ = 0;

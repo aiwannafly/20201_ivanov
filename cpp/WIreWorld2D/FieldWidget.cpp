@@ -3,6 +3,8 @@
 #include <QPainter>
 #include <QWheelEvent>
 
+#include "Factory.h"
+
 namespace {
     constexpr char kDrawCursorName[] = "icons/cursortarget.png";
     constexpr size_t kMinScale = 1;
@@ -17,12 +19,13 @@ namespace {
 }
 
 FieldWidget::FieldWidget(size_t width, size_t height, size_t cellSizePx, QWidget *parent) :
-        fieldWidth_(width), fieldHeight_(height), lengthOfSquarePx_(cellSizePx),
-        game_(height, width), QWidget(parent) {
+        fieldWidth_(width), fieldHeight_(height), lengthOfSquarePx_(cellSizePx), QWidget(parent) {
     QPalette palette;
     palette.setColor(QPalette::Window, GRAY);
     setPalette(palette);
     setAutoFillBackground(true);
+    setGame("Game Life");
+    assert(game_);
     this->setCursor(QCursor(QPixmap(kDrawCursorName)));
 }
 
@@ -37,11 +40,11 @@ QSize FieldWidget::sizeHint() const {
 }
 
 void FieldWidget::updateGameField() {
-    game_.proceedTick();
+    game_->proceedTick();
 }
 
 std::vector<QColor> FieldWidget::getColors() {
-    return game_.getColors();
+    return game_->getColors();
 }
 
 void FieldWidget::disableDrawing() {
@@ -50,6 +53,16 @@ void FieldWidget::disableDrawing() {
 
 void FieldWidget::enableDrawing() {
     drawON_ = true;
+}
+
+bool FieldWidget::setGame(const std::string &gameName) {
+    GameQt *game = Factory<GameQt, std::string, size_t, size_t>::getInstance()
+    ->createProduct(gameName, fieldHeight_, fieldWidth_);
+    if (!game) {
+        return false;
+    }
+    game_ = game;
+    return true;
 }
 
 void FieldWidget::updateXY(int deltaX, int deltaY) {
@@ -83,7 +96,7 @@ void FieldWidget::drawCell(size_t eventX, size_t eventY) {
     if (y + leftTop_.y >= fieldHeight_) {
         return;
     }
-    game_.set(x + leftTop_.y, y + leftTop_.x, game_.getCellType(drawColor_));
+    game_->set(x + leftTop_.y, y + leftTop_.x, game_->getCellType(drawColor_));
 }
 
 void FieldWidget::mousePressEvent(QMouseEvent *event) {
@@ -148,10 +161,10 @@ void FieldWidget::paintEvent(QPaintEvent *event) {
             if (j + leftTop_.x >= fieldWidth_) {
                 continue;
             }
-            if (game_.getCellColor(game_.get(i + leftTop_.y, j + leftTop_.x)) == Qt::black) {
+            if (game_->getCellColor(game_->get(i + leftTop_.y, j + leftTop_.x)) == Qt::black) {
                 continue;
             }
-            painter.setBrush(game_.getCellColor(game_.get(i + leftTop_.y, j + leftTop_.x)));
+            painter.setBrush(game_->getCellColor(game_->get(i + leftTop_.y, j + leftTop_.x)));
             painter.drawRect(i * lengthOfSquarePx_, j * lengthOfSquarePx_,
                              lengthOfSquarePx_, lengthOfSquarePx_);
         }
@@ -173,5 +186,5 @@ void FieldWidget::wheelEvent(QWheelEvent *event) {
 }
 
 bool FieldWidget::setFieldFromFile(const std::string &fileName) {
-    return game_.setFieldFromFile(fileName);
+    return game_->setFieldFromFile(fileName);
 }

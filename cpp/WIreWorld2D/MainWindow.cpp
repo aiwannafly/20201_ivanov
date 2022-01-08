@@ -3,6 +3,7 @@
 #include <QGridLayout>
 #include <QtWidgets>
 
+#include "GamesIDs.h"
 #include "FieldWidget.h"
 
 namespace {
@@ -38,20 +39,28 @@ void MainWindow::initButtons() {
     connect(nextButton_, SIGNAL (released()), this, SLOT (handleNextButton()));
 }
 
-void MainWindow::initColorComboBox() {
-    if (!fieldWidget_) {
+void MainWindow::setColors() {
+    if (!colorComboBox_) {
         return;
     }
+    colorComboBox_->clear();
     std::vector<QColor> colors = fieldWidget_->getColors();
     auto icons = std::vector<QPixmap>(
             colors.size(),QPixmap(kSquareCellSizePx, kSquareCellSizePx));
-    colorComboBox_ = new QComboBox;
     for (size_t i = 0; i < colors.size(); i++) {
         QPainter painter(&icons[i]);
         painter.fillRect(0, 0, kSquareCellSizePx, kSquareCellSizePx, colors[i]);
         std::string label = std::string("Color ") + std::to_string(i + 1);
         colorComboBox_->addItem(QIcon(icons[i]), tr(label.data()));
     }
+}
+
+void MainWindow::initColorComboBox() {
+    if (!fieldWidget_) {
+        return;
+    }
+    colorComboBox_ = new QComboBox;
+    setColors();
     colorLabel_ = new QLabel(tr("&Set cell to draw:"));
     colorLabel_->setBuddy(colorComboBox_);
     connect(colorComboBox_, SIGNAL(activated(int)), this, SLOT(colorChanged()));
@@ -69,11 +78,22 @@ void MainWindow::initSpeedComboBox() {
     connect(speedComboBox_, SIGNAL(activated(int)), this, SLOT(speedChanged()));
 }
 
+void MainWindow::initGameComboBox() {
+    gameComboBox_ = new QComboBox;
+    for (const std::string &name: GamesIDs::GAMES_IDS) {
+        gameComboBox_->addItem(tr(name.data()));
+    }
+    gameLabel_ = new QLabel(tr("&Set game"));
+    gameLabel_->setBuddy(gameComboBox_);
+    connect(gameComboBox_, SIGNAL(activated(int)), this, SLOT(gameChanged()));
+}
+
 MainWindow::MainWindow() {
     fieldWidget_ = new FieldWidget(kFieldWidth, kFieldHeight, kSquareCellSizePx);
     initButtons();
     initColorComboBox();
     initSpeedComboBox();
+    initGameComboBox();
     auto *mainLayout = new QGridLayout;
     runGameTimer_ = new QTimer(this);
     connect(runGameTimer_, &QTimer::timeout, this, QOverload<>::of(&MainWindow::getNext));
@@ -87,8 +107,10 @@ MainWindow::MainWindow() {
     mainLayout->addWidget(clearFieldButton_, 1, 3, Qt::AlignLeft);
     mainLayout->addWidget(colorLabel_, 2, 0, Qt::AlignLeft);
     mainLayout->addWidget(colorComboBox_, 2, 0);
-    mainLayout->addWidget(speedLabel_, 2, 3, Qt::AlignLeft);
-    mainLayout->addWidget(speedComboBox_, 2, 3);
+    mainLayout->addWidget(speedLabel_, 2, 1, Qt::AlignLeft);
+    mainLayout->addWidget(speedComboBox_, 2, 1);
+    mainLayout->addWidget(gameLabel_, 2, 2, Qt::AlignLeft);
+    mainLayout->addWidget(gameComboBox_, 2, 2);
     setLayout(mainLayout);
     setWindowTitle(tr(kMainWindowName));
 }
@@ -104,6 +126,16 @@ void MainWindow::handleLoadFieldButton() {
     if (running_) {
         stopRunning();
     }
+}
+
+void MainWindow::gameChanged() {
+    handleClearButton();
+    int gameId = gameComboBox_->currentIndex();
+    bool status = fieldWidget_->setGame(GamesIDs::GAMES_IDS[gameId]);
+    if (!status) {
+        QMessageBox::warning(this, "Error occurred", "Could not run the chosen game");
+    }
+    setColors();
 }
 
 void MainWindow::speedChanged() {
