@@ -10,7 +10,7 @@ namespace {
     constexpr char kDrawCursorName[] = "icons/cursortarget.png";
     constexpr size_t kMinScale = 1;
     constexpr size_t kMaxScale = 10;
-    constexpr int kZoomCoef = 120 * 2;
+    constexpr int kZoomCoef = 180;
     constexpr size_t kMinWidth = 100;
     constexpr size_t kMinHeight = 100;
     constexpr size_t kLightLineFreq = 10;
@@ -210,11 +210,32 @@ void FieldWidget::paintEvent(QPaintEvent *event) {
 }
 
 void FieldWidget::wheelEvent(QWheelEvent *event) {
+    coords fieldPlace = {};
+    double oldX = event->position().x();
+    double oldY = event->position().y();
+    fieldPlace.col = leftTop_.col + oldX / (scale_ * cellSizePx_);
+    fieldPlace.row = leftTop_.row + oldY / (scale_ * cellSizePx_);
     scale_ += static_cast<double>(event->angleDelta().y()) / kZoomCoef;
     if (scale_ < kMinScale) {
         scale_ = kMinScale;
     } else if (scale_ > kMaxScale) {
         scale_ = kMaxScale;
+    }
+    size_t xOffset = oldX / (scale_ * cellSizePx_);
+    size_t yOffset = oldY / (scale_ * cellSizePx_);
+    if (fieldPlace.col >= xOffset) {
+        leftTop_.col = fieldPlace.col - xOffset;
+    }
+    if (fieldPlace.row >= yOffset) {
+        leftTop_.row = fieldPlace.row - yOffset;
+    }
+    size_t scaledWidth = qIntCast(this->size().width() / (scale_ * cellSizePx_));
+    size_t scaledHeight = qIntCast(this->size().height() / (scale_ * cellSizePx_));
+    if (leftTop_.col + scaledWidth >= width_) {
+        leftTop_.col = width_ - scaledWidth;
+    }
+    if (leftTop_.row + scaledHeight >= height_) {
+        leftTop_.row = height_ - scaledHeight;
     }
     this->update();
 }
