@@ -1,9 +1,8 @@
 #include "GameLifeQt.h"
 
+#include "GamesIDs.h"
 #include "GameQt.h"
 #include "Factory.h"
-
-constexpr char GAME_LIFE_ID[] = "Game Life";
 
 namespace {
     GameQt *create(size_t height, size_t width) {
@@ -11,5 +10,5 @@ namespace {
     }
 
     bool gameLife = Factory<GameQt, std::string, size_t, size_t>::getInstance()
-    ->registerCreator(GAME_LIFE_ID, create);
+    ->registerCreator(GamesIDs::GAME_LIFE_ID, create);
 }

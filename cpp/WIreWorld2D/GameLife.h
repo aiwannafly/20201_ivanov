@@ -8,7 +8,7 @@
 
 class GameLife : Game {
 public:
-    GameLife(size_t height, size_t width) : height_(height), width_(width) {
+    GameLife(size_t width, size_t height) : width_(width), height_(height) {
         field_ = new VectorField<int>(height, width);
     }
 
@@ -22,9 +22,7 @@ public:
 
     bool proceedTick() override;
 
-    bool setFieldFromFile(const std::string &fileName) override {
-        return true;
-    }
+    bool setFieldFromFile(const std::string &fileName) override;
 
     static constexpr int DEAD = 0;
     static constexpr int ALIVE = 1;

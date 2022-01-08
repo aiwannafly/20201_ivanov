@@ -12,6 +12,10 @@
 class FieldWidget : public QWidget {
 Q_OBJECT
 public:
+    enum class drawMode {
+        DRAW, ERASE, NO_DRAW
+    };
+
     FieldWidget(size_t width, size_t height, size_t cellSizePx, QWidget *parent = nullptr);
 
     [[nodiscard]] QSize minimumSizeHint() const override;
@@ -24,9 +28,11 @@ public:
 
     bool setFieldFromFile(const std::string &fileName);
 
-    void disableDrawing();
+    void setDrawMode(drawMode mode);
 
-    void enableDrawing();
+    drawMode getDrawMode() const;
+
+    void clear();
 
     void updateGameField();
 
@@ -45,23 +51,23 @@ protected:
 
 private:
     struct coords {
-        int x;
-        int y;
+        int col;
+        int row;
     } leftTop_ = {0, 0};
     GameQt *game_ = nullptr;
-    bool drawON_ = true;
-    size_t fieldWidth_ = 0;
-    size_t fieldHeight_ = 0;
+    drawMode mode_;
+    size_t width_ = 0;
+    size_t height_ = 0;
     QPoint oldPos_;
     QPoint moveDelta_;
     qreal scale_ = 1;
-    size_t lengthOfSquarePx_ = 10;
-    QColor drawColor_ = Qt::white;
+    size_t cellSizePx_ = 10;
+    QColor drawColor_;
     QColor lineColor_ = {33, 33, 33};
-    size_t moveCounter_ = 0;
 
-    void updateXY(int deltaX, int deltaY);
-    void drawCell(size_t eventX, size_t eventY);
+    void updateLeftTop(int deltaCol, int deltaRow);
+    void drawCell(double eventX, double eventY);
+    bool checkFieldCoords(size_t row, size_t col) const;
 };
 
 #endif //WIREWORLD2D_FIELDWIDGET_H

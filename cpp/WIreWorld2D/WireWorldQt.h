@@ -18,7 +18,7 @@ namespace {
 
 class WireWorldQt : public GameQt, public WireWorld {
 public:
-    WireWorldQt(size_t height, size_t width): WireWorld(height, width){};
+    WireWorldQt(size_t width, size_t height): WireWorld(width, height) {};
 
     void set(size_t i, size_t j, int state) override {
         WireWorld::set(i, j, state);
@@ -63,6 +63,7 @@ public:
     std::vector<QColor> getColors() override {
         return WIREWORLD_COLORS;
     }
+
 };
 
 #endif //WIREWORLD2D_WIREWORLDQT_H

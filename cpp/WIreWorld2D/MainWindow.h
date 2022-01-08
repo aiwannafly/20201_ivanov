@@ -21,6 +21,7 @@ slots:
     void handleRunButton();
     void handleClearButton();
     void handleNextButton();
+    void handleEraseButton();
     void colorChanged();
     void speedChanged();
     void gameChanged();
@@ -33,6 +34,7 @@ private:
     QPushButton *loadFieldButton_;
     QPushButton *clearFieldButton_;
     QPushButton *nextButton_;
+    QPushButton *eraseButton_;
     QComboBox *colorComboBox_;
     QLabel *colorLabel_;
     QComboBox *speedComboBox_;

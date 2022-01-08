@@ -1,9 +1,8 @@
 #include "WireWorldQt.h"
 
+#include "GamesIDs.h"
 #include "GameQt.h"
 #include "Factory.h"
-
-constexpr char WIREWORLD_ID[] = "WireWorld";
 
 namespace {
     GameQt *create(size_t height, size_t width) {
@@ -11,5 +10,5 @@ namespace {
     }
 
     bool wireWorld = Factory<GameQt, std::string, size_t, size_t>::getInstance()
-            ->registerCreator(WIREWORLD_ID, create);
+            ->registerCreator(GamesIDs::WIREWORLD_ID, create);
 }

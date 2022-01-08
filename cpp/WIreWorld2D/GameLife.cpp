@@ -1,9 +1,19 @@
 #include "GameLife.h"
 
+#include "ParserRLE.h"
+
 namespace {
     constexpr size_t kAliveCountForDead = 3;
     constexpr size_t kAliveCountForAlive1 = 2;
     constexpr size_t kAliveCountForAlive2 = 3;
+    constexpr size_t kOffset = 10;
+
+    int getIntCondition(char ch) {
+        if (ch == 'o') {
+            return GameLife::ALIVE;
+        }
+        return GameLife::DEAD;
+    }
 }
 
 size_t GameLife::getCountOfAlive(VectorField<int> &field, int x, int y) const {
@@ -47,4 +57,19 @@ bool GameLife::proceedTick() {
         }
     }
     return changed;
+}
+
+bool GameLife::setFieldFromFile(const std::string &fileName) {
+    Field<int> *field = new VectorField<int>(width_, height_);
+    ParserRLE<int> parser = ParserRLE<int>(fileName, getIntCondition);
+    bool status = parser.parse(field);
+    if (!status) {
+        return false;
+    }
+    for (size_t i = 0; i < height_; i++) {
+        for (size_t j = 0; j < width_; j++) {
+            field_->set(i + kOffset, j + kOffset, field->get(i, j));
+        }
+    }
+    return true;
 }

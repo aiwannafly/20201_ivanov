@@ -8,8 +8,8 @@
 
 class WireWorld : public Game {
 public:
-    WireWorld(size_t height, size_t width) : width_(width), height_(height){
-        field_ = new VectorField<int>(height, width);
+    WireWorld(size_t width, size_t height) : height_(height), width_(width) {
+        field_ = new VectorField<int>(width, height);
     };
 
     ~WireWorld() = default;

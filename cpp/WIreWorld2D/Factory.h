@@ -6,7 +6,7 @@
 template<class Product, class Id, class ... Args>
 class Factory {
 public:
-    typedef Product* (*Creator)(Args ...);
+    using Creator = Product* (*)(Args ...);
     static Factory *getInstance() {
         static Factory f;
         return &f;

@@ -1,6 +1,23 @@
 #include "WireWorld.h"
 
-#include "RLE_WireWorld.h"
+#include "ParserRLE.h"
+
+namespace {
+    int getIntCondition(char ch) {
+        switch (ch) {
+            case 'A':
+                return WireWorld::ELECTRON_HEAD;
+            case 'B':
+                return WireWorld::ELECTRON_TAIL;
+            case 'C':
+                return WireWorld::CONDUCTOR;
+            default:
+                return WireWorld::EMPTY_CELL;
+        }
+    }
+
+    constexpr size_t kOffset = 5;
+}
 
 void WireWorld::set(size_t i, size_t j, int state) {
     field_->set(i, j, state);
@@ -17,14 +34,10 @@ size_t WireWorld::getCountOfHeads(VectorField<int> &field, int x, int y) const {
             if (i == x && j == y) {
                 continue;
             }
-            if (i < 0 || i >= height_) {
+            if (i < 0 || i >= height_ ||
+            j < 0 || j >= width_) {
                 continue;
             }
-
-            if (j < 0 || j >= width_) {
-                continue;
-            }
-
             if (field(i, j) == WireWorld::ELECTRON_HEAD) {
                 count++;
             }
@@ -58,12 +71,16 @@ bool WireWorld::proceedTick() {
 }
 
 bool WireWorld::setFieldFromFile(const std::string &fileName) {
-    int width = static_cast<int>(width_);
-    int height = static_cast<int>(height_);
-    bool status = getFieldFromFile(fileName, field_, width_, height_,
-                                   width, height);
+    Field<int> *field = new VectorField<int>(width_, height_);
+    ParserRLE<int> parser = ParserRLE<int>(fileName, getIntCondition);
+    bool status = parser.parse(field);
     if (!status) {
         return false;
+    }
+    for (size_t i = 0; i < height_; i++) {
+        for (size_t j = 0; j < width_; j++) {
+            field_->set(i + kOffset, j + kOffset, field->get(i, j));
+        }
     }
     return true;
 }

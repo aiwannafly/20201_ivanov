@@ -12,6 +12,7 @@ public:
     virtual int getCellType(QColor color) = 0;
 
     virtual std::vector<QColor> getColors() = 0;
+
 };
 
 #endif //WIREWORLD2D_GAMEQT_H

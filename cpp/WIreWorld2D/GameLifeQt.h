@@ -4,13 +4,9 @@
 #include "GameQt.h"
 #include "GameLife.h"
 
-namespace {
-    const std::vector<QColor> GAMELIFE_COLORS = {Qt::green};
-}
-
 class GameLifeQt : public GameLife, public GameQt {
 public:
-    GameLifeQt(size_t height, size_t width): GameLife(height, width) {};
+    GameLifeQt(size_t width, size_t height): GameLife(width, height) {};
 
     void set(size_t i, size_t j, int state) override {
         GameLife::set(i, j, state);
@@ -43,8 +39,9 @@ public:
     }
 
     std::vector<QColor> getColors() override {
-        return GAMELIFE_COLORS;
+        return {Qt::green};
     }
+
 };
 
 #endif //WIREWORLD2D_GAMELIFEQT_H

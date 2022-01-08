@@ -9,28 +9,33 @@
 template <class TCell>
 class VectorField : public Field<TCell> {
 public:
-    VectorField(size_t height, size_t width) : height_(height), width_(width) {
+    VectorField(size_t width, size_t height) : width_(width), height_(height) {
         field_ = std::vector<std::vector<TCell>>(height, std::vector<TCell>(width));
     };
 
     ~VectorField() = default;
 
-    TCell operator()(size_t x, size_t y) {
-        assert(y < height_);
-        assert(x < width_);
-        return field_[y][x];
+    TCell operator()(size_t i, size_t j) {
+//        assert(i < height_);
+//        assert(j < width_);
+        if (i < height_ && j < width_) {
+            return field_[i][j];
+        }
+        return TCell();
     }
 
-    void set(size_t x, size_t y, TCell value) {
-        assert(y < height_);
-        assert(x < width_);
-        field_[y][x] = value;
+    void set(size_t i, size_t j, TCell value) {
+        if (i >= height_ || j >= width_) {
+            return;
+        }
+        field_[i][j] = value;
     }
 
-    TCell get(size_t x, size_t y) {
-        assert(y < height_);
-        assert(x < width_);
-        return field_[y][x];
+    TCell get(size_t i, size_t j) {
+        if (i < height_ && j < width_) {
+            return field_[i][j];
+        }
+        return TCell();
     }
 
 private:

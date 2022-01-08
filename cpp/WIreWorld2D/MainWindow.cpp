@@ -9,21 +9,29 @@
 namespace {
     constexpr char kRunIconName[] = "icons/run.png";
     constexpr char kStopIconName[] = "icons/stop.png";
+    constexpr char kEraseIconName[] = "icons/eraser.png";
+    constexpr char kClearIconName[] = "icons/clear.png";
+    constexpr char kLoadIconName[] = "icons/load.png";
+    constexpr char kNextIconName[] = "icons/next.png";
+    constexpr char kSpeedIconName[] = "icons/speed.png";
+    constexpr char kWireWorldIconName[] = "icons/wireworld.png";
+    constexpr char kGameLifeIconName[] = "icons/gamelife.png";
+    constexpr char kGameIconName[] = "icons/game.png";
 
     constexpr char kRunButtonText[] = "&Run";
     constexpr char kStopButtonText[] = "&Stop";
     constexpr char kNextButtonText[] = "&Next";
+    constexpr char kEraseButtonText[] = "&Erase";
 
     constexpr char kLoadFieldButtonText[] = "&Load field";
     constexpr char kClearFieldButtonText[] = "&Clear field";
 
-    constexpr char kEmptyFieldName[] = "fields/field_empty.rle";
-
     constexpr size_t kTimeUntilStart = 200;
     constexpr size_t kSquareCellSizePx = 10;
-    constexpr size_t kFieldHeight = 400; // squares
-    constexpr size_t kFieldWidth = 400;  // squares
+    constexpr size_t kFieldHeight = 120;
+    constexpr size_t kFieldWidth = 160;
     constexpr size_t kDefaultInterval = 250;
+    constexpr double kIntervals[] = {2, 1, 0.75, 0.5, 0.25};
 
     constexpr char kMainWindowName[] = "CELLULAR AUTOMATION 2D";
 }
@@ -31,12 +39,14 @@ namespace {
 void MainWindow::initButtons() {
     runButton_ = new QPushButton(QIcon(kRunIconName), kRunButtonText);
     connect(runButton_, SIGNAL (released()), this, SLOT (handleRunButton()));
-    loadFieldButton_ = new QPushButton(kLoadFieldButtonText);
+    loadFieldButton_ = new QPushButton(QIcon(kLoadIconName), kLoadFieldButtonText);
     connect(loadFieldButton_, SIGNAL (released()), this, SLOT (handleLoadFieldButton()));
-    clearFieldButton_ = new QPushButton(kClearFieldButtonText);
+    clearFieldButton_ = new QPushButton(QIcon(kClearIconName), kClearFieldButtonText);
     connect(clearFieldButton_, SIGNAL (released()), this, SLOT (handleClearButton()));
-    nextButton_ = new QPushButton(kNextButtonText);
+    nextButton_ = new QPushButton(QIcon(kNextIconName), kNextButtonText);
     connect(nextButton_, SIGNAL (released()), this, SLOT (handleNextButton()));
+    eraseButton_ = new QPushButton(QIcon(kEraseIconName), kEraseButtonText);
+    connect(eraseButton_, SIGNAL (released()), this, SLOT (handleEraseButton()));
 }
 
 void MainWindow::setColors() {
@@ -68,11 +78,12 @@ void MainWindow::initColorComboBox() {
 
 void MainWindow::initSpeedComboBox() {
     speedComboBox_ = new QComboBox;
-    speedComboBox_->addItem(tr("x1"));
-    speedComboBox_->addItem(tr("x0.5"));
-    speedComboBox_->addItem(tr("x1.5"));
-    speedComboBox_->addItem(tr("x2"));
-    speedComboBox_->addItem(tr("x8"));
+    QIcon speedIcon = QIcon(kSpeedIconName);
+    speedComboBox_->addItem(speedIcon, tr("x0.5"));
+    speedComboBox_->addItem(speedIcon, tr("x1"));
+    speedComboBox_->addItem(speedIcon, tr("x1.5"));
+    speedComboBox_->addItem(speedIcon, tr("x2"));
+    speedComboBox_->addItem(speedIcon, tr("x8"));
     speedLabel_ = new QLabel(tr("&Set speed"));
     speedLabel_->setBuddy(speedComboBox_);
     connect(speedComboBox_, SIGNAL(activated(int)), this, SLOT(speedChanged()));
@@ -80,8 +91,14 @@ void MainWindow::initSpeedComboBox() {
 
 void MainWindow::initGameComboBox() {
     gameComboBox_ = new QComboBox;
-    for (const std::string &name: GamesIDs::GAMES_IDS) {
-        gameComboBox_->addItem(tr(name.data()));
+    for (const std::string &name: GamesIDs::GAMES_NAMES) {
+        auto icon = QIcon(kGameIconName);
+        if (name == GamesIDs::WIREWORLD_ID) {
+            icon = QIcon(kWireWorldIconName);
+        } else if (name == GamesIDs::GAME_LIFE_ID) {
+            icon = QIcon(kGameLifeIconName);
+        }
+        gameComboBox_->addItem(icon, tr(name.data()));
     }
     gameLabel_ = new QLabel(tr("&Set game"));
     gameLabel_->setBuddy(gameComboBox_);
@@ -97,20 +114,21 @@ MainWindow::MainWindow() {
     auto *mainLayout = new QGridLayout;
     runGameTimer_ = new QTimer(this);
     connect(runGameTimer_, &QTimer::timeout, this, QOverload<>::of(&MainWindow::getNext));
-    runGameTimer_->setInterval(500);
-    mainLayout->setColumnStretch(0, 1);
-    mainLayout->setColumnStretch(2, 1);
+    runGameTimer_->setInterval(kIntervals[1]);
+//    mainLayout->setColumnStretch(0, 1);
+//    mainLayout->setColumnStretch(2, 1);
     mainLayout->addWidget(fieldWidget_, 0, 0, 1, 5);
-    mainLayout->addWidget(runButton_, 1, 0, Qt::AlignLeft);
-    mainLayout->addWidget(nextButton_, 1, 1, Qt::AlignLeft);
-    mainLayout->addWidget(loadFieldButton_, 1, 2, Qt::AlignLeft);
-    mainLayout->addWidget(clearFieldButton_, 1, 3, Qt::AlignLeft);
-    mainLayout->addWidget(colorLabel_, 2, 0, Qt::AlignLeft);
+    mainLayout->addWidget(runButton_, 1, 0);
+    mainLayout->addWidget(nextButton_, 1, 1);
+    mainLayout->addWidget(loadFieldButton_, 1, 2);
+    mainLayout->addWidget(clearFieldButton_, 1, 3);
+    mainLayout->addWidget(colorLabel_, 2, 0);
     mainLayout->addWidget(colorComboBox_, 2, 0);
-    mainLayout->addWidget(speedLabel_, 2, 1, Qt::AlignLeft);
-    mainLayout->addWidget(speedComboBox_, 2, 1);
-    mainLayout->addWidget(gameLabel_, 2, 2, Qt::AlignLeft);
-    mainLayout->addWidget(gameComboBox_, 2, 2);
+    mainLayout->addWidget(eraseButton_, 2, 1);
+    mainLayout->addWidget(speedLabel_, 2, 2);
+    mainLayout->addWidget(speedComboBox_, 2, 2);
+    mainLayout->addWidget(gameLabel_, 2, 3);
+    mainLayout->addWidget(gameComboBox_, 2, 3);
     setLayout(mainLayout);
     setWindowTitle(tr(kMainWindowName));
 }
@@ -120,18 +138,23 @@ void MainWindow::handleLoadFieldButton() {
                                                      "/", tr("VectorField Files (*.rle)"));
     std::string fileName = qfileName.toStdString();
     if (!fieldWidget_->setFieldFromFile(fileName)) {
-        QMessageBox::warning(this, "Error occurred", "Could not load field from the chosen file. Check if it can"
+        QMessageBox::warning(this, "Error occurred", "Could not load field from the chosen file_. Check if it can"
                                                      "not be opened or it does not have rle format.");
     }
+    fieldWidget_->update();
     if (running_) {
         stopRunning();
     }
 }
 
 void MainWindow::gameChanged() {
-    handleClearButton();
+    if (running_) {
+        stopRunning();
+    }
+    fieldWidget_->clear();
+    fieldWidget_->update();
     int gameId = gameComboBox_->currentIndex();
-    bool status = fieldWidget_->setGame(GamesIDs::GAMES_IDS[gameId]);
+    bool status = fieldWidget_->setGame(GamesIDs::GAMES_NAMES[gameId]);
     if (!status) {
         QMessageBox::warning(this, "Error occurred", "Could not run the chosen game");
     }
@@ -140,24 +163,18 @@ void MainWindow::gameChanged() {
 
 void MainWindow::speedChanged() {
     int speedId = speedComboBox_->currentIndex();
-    double interval = kDefaultInterval;
-    if (0 == speedId) {
-        interval *= 1;
-    } else if (1 == speedId) {
-        interval *= 2;
-    } else if (2 == speedId) {
-        interval *= 0.75;
-    } else if (3 == speedId) {
-        interval /= 2;
-    } else {
-        interval /= 4;
-    }
+    double interval = kDefaultInterval * kIntervals[speedId];
     runGameTimer_->setInterval(static_cast<int>(interval));
 }
 
 void MainWindow::colorChanged() {
     int colorId = colorComboBox_->currentIndex();
     auto colors = fieldWidget_->getColors();
+    auto mode = fieldWidget_->getDrawMode();
+    if (mode == FieldWidget::drawMode::NO_DRAW) {
+        return;
+    }
+    fieldWidget_->setDrawMode(FieldWidget::drawMode::DRAW);
     fieldWidget_->setColor(colors[colorId]);
 }
 
@@ -171,7 +188,7 @@ void MainWindow::handleNextButton() {
 }
 
 void MainWindow::stopRunning() {
-    fieldWidget_->enableDrawing();
+    fieldWidget_->setDrawMode(FieldWidget::drawMode::DRAW);
     runGameTimer_->stop();
     runButton_->setText(kRunButtonText);
     runButton_->setIcon(QIcon(kRunIconName));
@@ -184,13 +201,22 @@ void MainWindow::handleRunButton() {
         return;
     }
     running_ = true;
-    fieldWidget_->disableDrawing();
+    fieldWidget_->setDrawMode(FieldWidget::drawMode::NO_DRAW);
     runGameTimer_->start(kTimeUntilStart);
     runButton_->setText(kStopButtonText);
     runButton_->setIcon(QIcon(kStopIconName));
 }
 
+void MainWindow::handleEraseButton() {
+    auto mode = fieldWidget_->getDrawMode();
+    if (mode == FieldWidget::drawMode::NO_DRAW) {
+        return;
+    }
+    fieldWidget_->setDrawMode(FieldWidget::drawMode::ERASE);
+}
+
 void MainWindow::handleClearButton() {
-    fieldWidget_->setFieldFromFile(kEmptyFieldName);
+    fieldWidget_->clear();
+    fieldWidget_->update();
     stopRunning();
 }
