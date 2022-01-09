@@ -17,6 +17,7 @@ namespace {
 
     const QColor LIGHT_GRAY = {66, 66, 66};
     const QColor GRAY = {11, 11, 11};
+    const QColor EMPTY_COLOR = Qt::black;
     const auto kPointCursor = Qt::PointingHandCursor;
     const auto kCaptureCursor = Qt::ClosedHandCursor;
 
@@ -60,7 +61,7 @@ QSize FieldWidget::sizeHint() const {
 void FieldWidget::clear() {
     for (size_t row = 0; row < height_; row++) {
         for (size_t col = 0; col < width_; col++) {
-            int emptyCell = game_->getCellType(Qt::black);
+            int emptyCell = game_->getCellType(EMPTY_COLOR);
             game_->set(row, col, emptyCell);
         }
     }
@@ -84,19 +85,19 @@ void FieldWidget::setColor(QColor color) {
 void FieldWidget::setDrawMode(drawMode mode) {
     mode_ = mode;
     if (mode_ == drawMode::ERASE) {
-        drawColor_ = Qt::black;
+        drawColor_ = EMPTY_COLOR;
     } else {
         drawColor_ = game_->getColors()[0];
     }
 }
 
 bool FieldWidget::setGame(const std::string &gameName) {
-    GameQt *game = Factory<GameQt, std::string, size_t, size_t>::getInstance()
-    ->createProduct(gameName, height_, width_);
+    auto *game = Factory<GameQt, std::string, size_t, size_t>::getInstance()
+                                            ->createProduct(gameName, height_, width_);
     if (!game) {
         return false;
     }
-    game_ = game;
+    game_ = std::unique_ptr<GameQt>(game);
     drawColor_ = game_->getColors()[0];
     return true;
 }
@@ -199,7 +200,7 @@ void FieldWidget::paintEvent(QPaintEvent *event) {
             if (col + leftTop_.col >= width_) {
                 continue;
             }
-            if (game_->getCellColor(game_->get(row + leftTop_.row, col + leftTop_.col)) == Qt::black) {
+            if (game_->getCellColor(game_->get(row + leftTop_.row, col + leftTop_.col)) == EMPTY_COLOR) {
                 continue;
             }
             painter.setBrush(game_->getCellColor(game_->get(row + leftTop_.row, col + leftTop_.col)));

@@ -28,19 +28,16 @@ slots:
 
 private:
     bool running_ = false;
-    FieldWidget *fieldWidget_;
-    QTimer *runGameTimer_;
-    QPushButton *runButton_;
-    QPushButton *loadFieldButton_;
-    QPushButton *clearFieldButton_;
-    QPushButton *nextButton_;
-    QPushButton *eraseButton_;
-    QComboBox *colorComboBox_;
-    QLabel *colorLabel_;
-    QComboBox *speedComboBox_;
-    QLabel *speedLabel_;
-    QComboBox *gameComboBox_;
-    QLabel *gameLabel_;
+    QSharedPointer<FieldWidget> fieldWidget_;
+    QSharedPointer<QTimer> runGameTimer_;
+    QSharedPointer<QPushButton> runButton_;
+    QSharedPointer<QPushButton> loadFieldButton_;
+    QSharedPointer<QPushButton> clearFieldButton_;
+    QSharedPointer<QPushButton> nextButton_;
+    QSharedPointer<QPushButton> eraseButton_;
+    QSharedPointer<QComboBox> colorComboBox_;
+    QSharedPointer<QComboBox> speedComboBox_;
+    QSharedPointer<QComboBox> gameComboBox_;
 
     void getNext();
     void stopRunning();

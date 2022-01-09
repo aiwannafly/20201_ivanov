@@ -1,6 +1,7 @@
 #ifndef WIREWORLD2D_FIELDWIDGET_H
 #define WIREWORLD2D_FIELDWIDGET_H
 
+#include <memory>
 #include <QBrush>
 #include <QPen>
 #include <QPixmap>
@@ -54,7 +55,7 @@ private:
         int col;
         int row;
     } leftTop_ = {0, 0};
-    GameQt *game_ = nullptr;
+    std::unique_ptr<GameQt> game_ = nullptr;
     drawMode mode_;
     size_t width_ = 0;
     size_t height_ = 0;

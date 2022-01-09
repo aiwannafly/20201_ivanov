@@ -2,6 +2,7 @@
 #define WIREWORLD2D_WIREWORLD_H
 
 #include <string>
+#include <memory>
 
 #include "Game.h"
 #include "VectorField.h"
@@ -9,10 +10,10 @@
 class WireWorld : public Game {
 public:
     WireWorld(size_t width, size_t height) : height_(height), width_(width) {
-        field_ = new VectorField<int>(width, height);
+        field_ = std::make_unique<VectorField<int>>(height, width);
     };
 
-    ~WireWorld() = default;
+    ~WireWorld() override = default;
 
     void set(size_t i, size_t j, int state) override;
 
@@ -30,7 +31,7 @@ public:
 private:
     size_t width_ = 0;
     size_t height_ = 0;
-    VectorField<int> *field_;
+    std::unique_ptr<VectorField<int>> field_;
 
     size_t getCountOfHeads(VectorField<int> &field, int x, int y) const;
 };

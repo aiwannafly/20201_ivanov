@@ -2,6 +2,7 @@
 #define WIREWORLD2D_GAMELIFE_H
 
 #include <string>
+#include <memory>
 
 #include "Game.h"
 #include "VectorField.h"
@@ -9,8 +10,10 @@
 class GameLife : Game {
 public:
     GameLife(size_t width, size_t height) : width_(width), height_(height) {
-        field_ = new VectorField<int>(height, width);
+        field_ = std::make_unique<VectorField<int>>(height, width);
     }
+
+    ~GameLife() override = default;
 
     void set(size_t i, size_t j, int value) override {
         field_->set(i, j, value);
@@ -29,7 +32,7 @@ public:
 private:
     size_t height_;
     size_t width_;
-    VectorField<int> *field_;
+    std::unique_ptr<VectorField<int>> field_;
 
     size_t getCountOfAlive(VectorField<int> &field, int x, int y) const;
 };

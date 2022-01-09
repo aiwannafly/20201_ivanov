@@ -37,16 +37,16 @@ namespace {
 }
 
 void MainWindow::initButtons() {
-    runButton_ = new QPushButton(QIcon(kRunIconName), kRunButtonText);
-    connect(runButton_, SIGNAL (released()), this, SLOT (handleRunButton()));
-    loadFieldButton_ = new QPushButton(QIcon(kLoadIconName), kLoadFieldButtonText);
-    connect(loadFieldButton_, SIGNAL (released()), this, SLOT (handleLoadFieldButton()));
-    clearFieldButton_ = new QPushButton(QIcon(kClearIconName), kClearFieldButtonText);
-    connect(clearFieldButton_, SIGNAL (released()), this, SLOT (handleClearButton()));
-    nextButton_ = new QPushButton(QIcon(kNextIconName), kNextButtonText);
-    connect(nextButton_, SIGNAL (released()), this, SLOT (handleNextButton()));
-    eraseButton_ = new QPushButton(QIcon(kEraseIconName), kEraseButtonText);
-    connect(eraseButton_, SIGNAL (released()), this, SLOT (handleEraseButton()));
+    runButton_ = QSharedPointer<QPushButton>(new QPushButton(QIcon(kRunIconName), kRunButtonText));
+    connect(runButton_.get(), SIGNAL (released()), this, SLOT (handleRunButton()));
+    loadFieldButton_ = QSharedPointer<QPushButton>(new QPushButton(QIcon(kLoadIconName), kLoadFieldButtonText));
+    connect(loadFieldButton_.get(), SIGNAL (released()), this, SLOT (handleLoadFieldButton()));
+    clearFieldButton_ = QSharedPointer<QPushButton>(new QPushButton(QIcon(kClearIconName), kClearFieldButtonText));
+    connect(clearFieldButton_.get(), SIGNAL (released()), this, SLOT (handleClearButton()));
+    nextButton_ = QSharedPointer<QPushButton>(new QPushButton(QIcon(kNextIconName), kNextButtonText));
+    connect(nextButton_.get(), SIGNAL (released()), this, SLOT (handleNextButton()));
+    eraseButton_ = QSharedPointer<QPushButton>(new QPushButton(QIcon(kEraseIconName), kEraseButtonText));
+    connect(eraseButton_.get(), SIGNAL (released()), this, SLOT (handleEraseButton()));
 }
 
 void MainWindow::setColors() {
@@ -69,28 +69,24 @@ void MainWindow::initColorComboBox() {
     if (!fieldWidget_) {
         return;
     }
-    colorComboBox_ = new QComboBox;
+    colorComboBox_ = QSharedPointer<QComboBox>(new QComboBox);
     setColors();
-    colorLabel_ = new QLabel(tr("&Set cell to draw:"));
-    colorLabel_->setBuddy(colorComboBox_);
-    connect(colorComboBox_, SIGNAL(activated(int)), this, SLOT(colorChanged()));
+    connect(colorComboBox_.get(), SIGNAL(activated(int)), this, SLOT(colorChanged()));
 }
 
 void MainWindow::initSpeedComboBox() {
-    speedComboBox_ = new QComboBox;
+    speedComboBox_ = QSharedPointer<QComboBox>(new QComboBox);
     QIcon speedIcon = QIcon(kSpeedIconName);
     speedComboBox_->addItem(speedIcon, tr("x0.5"));
     speedComboBox_->addItem(speedIcon, tr("x1"));
     speedComboBox_->addItem(speedIcon, tr("x1.5"));
     speedComboBox_->addItem(speedIcon, tr("x2"));
     speedComboBox_->addItem(speedIcon, tr("x8"));
-    speedLabel_ = new QLabel(tr("&Set speed"));
-    speedLabel_->setBuddy(speedComboBox_);
-    connect(speedComboBox_, SIGNAL(activated(int)), this, SLOT(speedChanged()));
+    connect(speedComboBox_.get(), SIGNAL(activated(int)), this, SLOT(speedChanged()));
 }
 
 void MainWindow::initGameComboBox() {
-    gameComboBox_ = new QComboBox;
+    gameComboBox_ = QSharedPointer<QComboBox>(new QComboBox);
     for (const std::string &name: GamesIDs::GAMES_NAMES) {
         auto icon = QIcon(kGameIconName);
         if (name == GamesIDs::WIREWORLD_ID) {
@@ -100,35 +96,28 @@ void MainWindow::initGameComboBox() {
         }
         gameComboBox_->addItem(icon, tr(name.data()));
     }
-    gameLabel_ = new QLabel(tr("&Set game"));
-    gameLabel_->setBuddy(gameComboBox_);
-    connect(gameComboBox_, SIGNAL(activated(int)), this, SLOT(gameChanged()));
+    connect(gameComboBox_.get(), SIGNAL(activated(int)), this, SLOT(gameChanged()));
 }
 
 MainWindow::MainWindow() {
-    fieldWidget_ = new FieldWidget(kFieldWidth, kFieldHeight, kSquareCellSizePx);
+    fieldWidget_ = QSharedPointer<FieldWidget>(new FieldWidget(kFieldWidth, kFieldHeight, kSquareCellSizePx));
     initButtons();
     initColorComboBox();
     initSpeedComboBox();
     initGameComboBox();
     auto *mainLayout = new QGridLayout;
-    runGameTimer_ = new QTimer(this);
-    connect(runGameTimer_, &QTimer::timeout, this, QOverload<>::of(&MainWindow::getNext));
+    runGameTimer_ = QSharedPointer<QTimer>(new QTimer(this));
+    connect(runGameTimer_.get(), &QTimer::timeout, this, QOverload<>::of(&MainWindow::getNext));
     runGameTimer_->setInterval(kIntervals[1]);
-//    mainLayout->setColumnStretch(0, 1);
-//    mainLayout->setColumnStretch(2, 1);
-    mainLayout->addWidget(fieldWidget_, 0, 0, 1, 5);
-    mainLayout->addWidget(runButton_, 1, 0);
-    mainLayout->addWidget(nextButton_, 1, 1);
-    mainLayout->addWidget(loadFieldButton_, 1, 2);
-    mainLayout->addWidget(clearFieldButton_, 1, 3);
-    mainLayout->addWidget(colorLabel_, 2, 0);
-    mainLayout->addWidget(colorComboBox_, 2, 0);
-    mainLayout->addWidget(eraseButton_, 2, 1);
-    mainLayout->addWidget(speedLabel_, 2, 2);
-    mainLayout->addWidget(speedComboBox_, 2, 2);
-    mainLayout->addWidget(gameLabel_, 2, 3);
-    mainLayout->addWidget(gameComboBox_, 2, 3);
+    mainLayout->addWidget(fieldWidget_.get(), 0, 0, 1, 5);
+    mainLayout->addWidget(runButton_.get(), 1, 0);
+    mainLayout->addWidget(nextButton_.get(), 1, 1);
+    mainLayout->addWidget(loadFieldButton_.get(), 1, 2);
+    mainLayout->addWidget(clearFieldButton_.get(), 1, 3);
+    mainLayout->addWidget(colorComboBox_.get(), 2, 0);
+    mainLayout->addWidget(eraseButton_.get(), 2, 1);
+    mainLayout->addWidget(speedComboBox_.get(), 2, 2);
+    mainLayout->addWidget(gameComboBox_.get(), 2, 3);
     setLayout(mainLayout);
     setWindowTitle(tr(kMainWindowName));
 }

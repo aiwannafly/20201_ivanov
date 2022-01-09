@@ -20,6 +20,8 @@ class WireWorldQt : public GameQt, public WireWorld {
 public:
     WireWorldQt(size_t width, size_t height): WireWorld(width, height) {};
 
+    ~WireWorldQt() override = default;
+
     void set(size_t i, size_t j, int state) override {
         WireWorld::set(i, j, state);
     }

@@ -7,6 +7,8 @@ class Game {
 public:
     Game() = default;
 
+    virtual ~Game() = default;
+
     Game(const Game &g) = delete;
 
     void operator=(const Game &g) = delete;

@@ -8,6 +8,8 @@ class GameLifeQt : public GameLife, public GameQt {
 public:
     GameLifeQt(size_t width, size_t height): GameLife(width, height) {};
 
+    ~GameLifeQt() override = default;
+
     void set(size_t i, size_t j, int state) override {
         GameLife::set(i, j, state);
     }

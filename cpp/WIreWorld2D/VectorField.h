@@ -16,8 +16,6 @@ public:
     ~VectorField() = default;
 
     TCell operator()(size_t i, size_t j) {
-//        assert(i < height_);
-//        assert(j < width_);
         if (i < height_ && j < width_) {
             return field_[i][j];
         }
