@@ -4,7 +4,6 @@
 #include <QWidget>
 
 class FieldWidget;
-class QLabel;
 class QPushButton;
 class QTimer;
 class QComboBox;
@@ -14,6 +13,10 @@ class MainWindow : public QWidget {
     Q_OBJECT
 public:
     MainWindow();
+
+    MainWindow(const MainWindow &) = delete;
+
+    void operator=(const MainWindow &) = delete;
 
 private
 slots:

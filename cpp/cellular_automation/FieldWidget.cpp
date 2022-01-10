@@ -153,9 +153,9 @@ void FieldWidget::mousePressEvent(QMouseEvent *event) {
 void FieldWidget::mouseMoveEvent(QMouseEvent *event) {
     moveDelta_ = event->pos() - oldPos_;
     if (event->buttons() != Qt::LeftButton) {
-        int deltaCol = -moveDelta_.x() / (cellSizePx_ * scale_);
-        int deltaRow = -moveDelta_.y() / (cellSizePx_ * scale_);
-        updateLeftTop(sign(deltaCol), sign(deltaRow));
+        int deltaCol = -moveDelta_.x() / (cellSizePx_ * scale_ * 2);
+        int deltaRow = -moveDelta_.y() / (cellSizePx_ * scale_ * 2);
+        updateLeftTop(deltaCol, deltaRow);
         update();
         return;
     }
