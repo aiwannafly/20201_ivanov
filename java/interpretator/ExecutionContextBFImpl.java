@@ -61,16 +61,10 @@ public class ExecutionContextBFImpl implements ExecutionContextBF {
 
     @Override
     public Character getNextCommandCode() {
-        while (true) {
-            if (programPtr < 0 || programPtr >= program.length()) {
-                return null;
-            }
-            char commandCode = program.charAt(programPtr);
-            if (!Character.isSpaceChar(commandCode)) {
-                return commandCode;
-            }
-            programPtr++;
+        if (programPtr < 0 || programPtr >= program.length()) {
+            return null;
         }
+        return program.charAt(programPtr);
     }
 
     private char[] code = new char[CODE_SIZE];

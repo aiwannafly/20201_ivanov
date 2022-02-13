@@ -27,6 +27,7 @@ public class Main {
                 break;
             }
         }
+//        System.out.println(program);
         FactoryOfCommands factory = new ReflexiveFactoryOfCommands();
         if (!factory.setConfigs(configsFileName)) {
             System.out.println("Configs was not opened / has wrong format."
@@ -39,12 +40,12 @@ public class Main {
             if (commandCode == null) {
                 break;
             }
-//            System.out.print(commandCode);
             Command command = factory.getCommand(commandCode);
             try {
                 command.execute(executionContext);
             } catch (Exception exception) {
-                System.out.println("Program command " + commandCode + " failed.");
+                System.out.println("Program command " + commandCode + " failed: " +
+                        exception);
                 return;
             }
         }

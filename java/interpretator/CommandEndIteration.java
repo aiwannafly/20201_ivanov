@@ -7,22 +7,20 @@ public class CommandEndIteration implements Command {
             return;
         }
         String program = executionContext.getProgram();
-        executionContext.decProgramPtr();
+//        executionContext.decProgramPtr();
         int currentIdx = executionContext.getProgramPtr();
         int bracketsCount = 0;
-        while (currentIdx > 0) {
+        while (currentIdx >= 0) {
             if (program.charAt(currentIdx) == '[') {
                 bracketsCount++;
             } else if (program.charAt(currentIdx) == ']') {
                 bracketsCount--;
             }
-            executionContext.decProgramPtr();
             if (bracketsCount == 0) {
-                executionContext.decProgramPtr();
-                executionContext.decProgramPtr();
-                executionContext.decProgramPtr();
+                executionContext.incProgramPtr();
                 return;
             }
+            executionContext.decProgramPtr();
             currentIdx--;
         }
     }
