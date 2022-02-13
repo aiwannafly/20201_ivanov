@@ -4,16 +4,13 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        if (args.length == 0) {
-            System.out.println(USAGE_GUIDE);
-            return;
-        }
         parseArgs(args);
         if (null == inputStream) {
-            System.out.println("Could not open input file.");
+            System.out.println("Could not open input file." + "\n" + USAGE_GUIDE);
             return;
         } else if (null == configsFileName) {
-            System.out.println("Enter the configs file name with use of --configs=");
+            System.out.println("Enter the configs file name with use of --configs="
+                    + "\n" + USAGE_GUIDE);
             return;
         }
         Scanner scanner = new Scanner(inputStream);
@@ -32,7 +29,8 @@ public class Main {
         }
         FactoryOfCommands factory = new ReflexiveFactoryOfCommands();
         if (!factory.setConfigs(configsFileName)) {
-            System.out.println("Configs was not opened / has wrong format.");
+            System.out.println("Configs was not opened / has wrong format."
+                    + "\n" + USAGE_GUIDE);
             return;
         }
         ExecutionContextBF executionContext = new ExecutionContextBFImpl(program.toString());
@@ -41,6 +39,7 @@ public class Main {
             if (commandCode == null) {
                 break;
             }
+//            System.out.print(commandCode);
             Command command = factory.getCommand(commandCode);
             try {
                 command.execute(executionContext);
@@ -62,8 +61,9 @@ public class Main {
         }
     }
 
+    private static final String DEFAULT_CONFIGS = "FactoryConfigs.txt";
     private static InputStream inputStream = System.in;
-    private static String configsFileName = null;
+    private static String configsFileName = DEFAULT_CONFIGS;
     private static final String PROGRAM_PREFIX = "--program";
     private static final String CONFIGS_PREFIX = "--configs";
     private static final String USAGE_GUIDE = "java Main --configs=<configs file name> --program=<program file name>";

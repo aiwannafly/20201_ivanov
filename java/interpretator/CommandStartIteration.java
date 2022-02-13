@@ -8,7 +8,7 @@ public class CommandStartIteration implements Command {
         }
         String program = executionContext.getProgram();
         int currentIdx = executionContext.getProgramPtr();
-        int bracketsCount = 1; // first bracket is already counted
+        int bracketsCount = 0; // first bracket is already counted
         for (int i = currentIdx; i < program.length(); i++) {
             if (program.charAt(i) == '[') {
                 bracketsCount++;
