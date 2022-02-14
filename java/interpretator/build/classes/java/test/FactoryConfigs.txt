@@ -1,0 +1,8 @@
+>=CommandIncrementPointer
+<=CommandDecrementPointer
++=CommandIncrementByte
+-=CommandDecrementByte
+.=CommandOutputByte
+,=CommandInputByte
+[=CommandStartIteration
+]=CommandEndIteration

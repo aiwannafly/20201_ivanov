@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ExecutionContextBFImplTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2022-02-14T14:31:53" hostname="LAPTOP-E3TJCCED" time="0.025">
+  <properties/>
+  <testcase name="testIncCodePtr" classname="ExecutionContextBFImplTest" time="0.018"/>
+  <testcase name="testDecCodePtr" classname="ExecutionContextBFImplTest" time="0.001"/>
+  <testcase name="testGetNextCommandCode" classname="ExecutionContextBFImplTest" time="0.001"/>
+  <testcase name="testIncProgramPtr" classname="ExecutionContextBFImplTest" time="0.0"/>
+  <testcase name="testDecProgramPtr" classname="ExecutionContextBFImplTest" time="0.0"/>
+  <testcase name="testGetProgram" classname="ExecutionContextBFImplTest" time="0.001"/>
+  <testcase name="testDecByte" classname="ExecutionContextBFImplTest" time="0.001"/>
+  <testcase name="testIncByte" classname="ExecutionContextBFImplTest" time="0.0"/>
+  <testcase name="testSetByte" classname="ExecutionContextBFImplTest" time="0.0"/>
+  <testcase name="testGetProgramPtr" classname="ExecutionContextBFImplTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
