@@ -1,3 +1,7 @@
+/** BrainFuck command to switch to end iteration / start it again
+ @author aiwannafly
+ @version 1.0
+ */
 public class CommandEndIteration implements Command {
     @Override
     public void execute(ExecutionContextBF executionContext) {
@@ -7,7 +11,6 @@ public class CommandEndIteration implements Command {
             return;
         }
         String program = executionContext.getProgram();
-//        executionContext.decProgramPtr();
         int currentIdx = executionContext.getProgramPtr();
         int bracketsCount = 0;
         while (currentIdx >= 0) {

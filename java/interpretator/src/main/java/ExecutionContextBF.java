@@ -1,6 +1,8 @@
-/*
- * Used for commands of Brainfuck programs.
- * https://en.wikipedia.org/wiki/Brainfuck
+/** A convinient interface to contain objects
+ * for implementation of the BrainFuck scripts commands.
+ * Contains required 30000 bytes-array, ptr, etc.
+ @author aiwannafly
+ @version 1.0
  */
 public interface ExecutionContextBF {
 

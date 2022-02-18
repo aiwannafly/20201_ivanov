@@ -1,5 +1,10 @@
 import java.util.Scanner;
 
+/** BrainFuck command to insert a byte from the input to the
+ * current cell
+ @author aiwannafly
+ @version 1.0
+ */
 public class CommandInputByte implements Command {
     @Override
     public void execute(ExecutionContextBF executionContext) {

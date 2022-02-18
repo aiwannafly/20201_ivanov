@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="ReflexiveFactoryOfCommandsTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2022-02-14T14:31:54" hostname="LAPTOP-E3TJCCED" time="0.086">
-  <properties/>
-  <testcase name="testSetConfigs" classname="ReflexiveFactoryOfCommandsTest" time="0.055"/>
-  <testcase name="testGetCommand" classname="ReflexiveFactoryOfCommandsTest" time="0.03"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

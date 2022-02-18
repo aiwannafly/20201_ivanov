@@ -7,9 +7,17 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
+/** Generates objects from Command class by name
+ @author aiwannafly
+ @version 1.0
+ */
 public class ReflexiveFactoryOfCommands implements FactoryOfCommands {
     private static final Logger log = Logger.getLogger(ReflexiveFactoryOfCommands.class);
 
+    /** Returns a command from it's name, which was set in {@link #setConfigs(String)}
+     @param code - a character name of a command
+     @return command which has name code 
+     */
     @Override
     public Command getCommand(Character code) {
         String commandName = configuration.get(code);
@@ -21,6 +29,10 @@ public class ReflexiveFactoryOfCommands implements FactoryOfCommands {
         return getByName(commandName);
     }
 
+    /** Sets configs for factory of commands
+     @param configsFileName - a name of a file, which contains factory configs
+     @return false if configs were not set, true otherwise
+     */
     @Override
     public boolean setConfigs(String configsFileName) {
         configuration = new HashMap<>();
@@ -53,6 +65,10 @@ public class ReflexiveFactoryOfCommands implements FactoryOfCommands {
         return true;
     }
 
+    /** Uses java-reflection technology to create Command objects by name
+     @param name - name of a class, which implements interface Command
+     @return a new instance of the chosen class
+     */
     private Command getByName(String name) {
         Class<?> namedClass = null;
         try {

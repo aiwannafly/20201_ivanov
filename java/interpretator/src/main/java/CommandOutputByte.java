@@ -1,3 +1,7 @@
+/** BrainFuck command to output the byte from a current cell
+ @author aiwannafly
+ @version 1.0
+ */
 public class CommandOutputByte implements Command {
     @Override
     public void execute(ExecutionContextBF executionContext) {

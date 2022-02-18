@@ -1,8 +1,17 @@
+/** A convinient class to contain objects
+ * for implementation of the BrainFuck scripts commands.
+ * Contains required 30000 bytes-array, ptr, etc.
+ @author aiwannafly
+ @version 1.0
+ */
 public class ExecutionContextBFImpl implements ExecutionContextBF {
     ExecutionContextBFImpl(String program) {
         this.program = program;
     }
 
+    /** Changes current cell to the next one
+     @throws IndexOutOfBoundsException
+     */
     @Override
     public void incCodePtr() {
         codePtr++;
@@ -11,6 +20,9 @@ public class ExecutionContextBFImpl implements ExecutionContextBF {
         }
     }
 
+    /** Changes current cell to the previous one
+     @throws IndexOutOfBoundsException
+     */
     @Override
     public void decCodePtr() {
         codePtr--;
@@ -59,6 +71,10 @@ public class ExecutionContextBFImpl implements ExecutionContextBF {
         code[codePtr] = symbol;
     }
 
+    /** Changes current cell to the previous one
+     @return The current command of the program or null in 
+     case if the program ptr is out of bounds
+     */
     @Override
     public Character getNextCommandCode() {
         if (programPtr < 0 || programPtr >= program.length()) {

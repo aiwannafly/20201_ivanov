@@ -1,3 +1,7 @@
+/** BrainFuck command to start cycle or jump over it
+ @author aiwannafly
+ @version 1.0
+ */
 public class CommandStartIteration implements Command {
     @Override
     public void execute(ExecutionContextBF executionContext) {
