@@ -2,9 +2,12 @@ build
 
 gradle
 
+.gradle
+
 gradlew
 
 *.log
 
 *.class
+
 
