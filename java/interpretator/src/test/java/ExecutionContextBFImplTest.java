@@ -1,6 +1,7 @@
-import junit.framework.TestCase;
+import org.junit.Test;
+import org.junit.Assert;
 
-public class ExecutionContextBFImplTest extends TestCase {
+public class ExecutionContextBFImplTest {
 
     private void incCodeOverflow() {
         for (int i = 0; i < ExecutionContextBFImpl.CODE_SIZE; i++) {
@@ -14,17 +15,19 @@ public class ExecutionContextBFImplTest extends TestCase {
         }
     }
 
-    public void testIncCodePtr() {
+    @Test
+    public void incCodePtr() {
         Exception exception = null;
         try {
             incCodeOverflow();
         } catch (Exception exception1) {
             exception = exception1;
         }
-        assertNotNull(exception);
+        Assert.assertNotNull(exception);
     }
 
-    public void testDecCodePtr() {
+    @Test
+    public void decCodePtr() {
         Exception exception = null;
         executionContext = new ExecutionContextBFImpl(program);
         try {
@@ -32,57 +35,65 @@ public class ExecutionContextBFImplTest extends TestCase {
         } catch (Exception exception1) {
             exception = exception1;
         }
-        assertNotNull(exception);
+        Assert.assertNotNull(exception);
     }
 
-    public void testIncByte() {
+    @Test
+    public void incByte() {
         executionContext = new ExecutionContextBFImpl(program);
         char b = executionContext.getByte();
         executionContext.incByte();
-        assertEquals(b + 1, executionContext.getByte());
+        Assert.assertEquals(b + 1, executionContext.getByte());
     }
 
-    public void testDecByte() {
+    @Test
+    public void decByte() {
         executionContext.incByte();
         char b = executionContext.getByte();
         executionContext.decByte();
-        assertEquals(b - 1, executionContext.getByte());
+        Assert.assertEquals(b - 1, executionContext.getByte());
     }
 
-    public void testIncProgramPtr() {
+    @Test
+    public void incProgramPtr() {
         int ptr = executionContext.getProgramPtr();
         executionContext.incProgramPtr();
-        assertEquals(executionContext.getNextCommandCode(),
+        Assert.assertEquals(executionContext.getNextCommandCode(),
                 (Character) program.charAt(ptr + 1));
     }
 
-    public void testDecProgramPtr() {
+    @Test
+    public void decProgramPtr() {
         executionContext.incProgramPtr();
         int ptr = executionContext.getProgramPtr();
         executionContext.decProgramPtr();
-        assertEquals(executionContext.getNextCommandCode(),
+        Assert.assertEquals(executionContext.getNextCommandCode(),
                 (Character) program.charAt(ptr - 1));
     }
 
-    public void testGetProgramPtr() {
+    @Test
+    public void getProgramPtr() {
         int ptr = executionContext.getProgramPtr();
-        assertEquals(executionContext.getNextCommandCode(),
+        Assert.assertEquals(executionContext.getNextCommandCode(),
                 (Character) program.charAt(ptr));
     }
 
-    public void testGetProgram() {
-        assertEquals(program, executionContext.getProgram());
+    @Test
+    public void getProgram() {
+        Assert.assertEquals(program, executionContext.getProgram());
     }
 
-    public void testSetByte() {
+    @Test
+    public void setByte() {
         char b = 'A';
         executionContext.setByte(b);
-        assertEquals(executionContext.getByte(), b);
+        Assert.assertEquals(executionContext.getByte(), b);
     }
 
-    public void testGetNextCommandCode() {
+    @Test
+    public void getNextCommandCode() {
         int ptr = executionContext.getProgramPtr();
-        assertEquals(executionContext.getNextCommandCode(),
+        Assert.assertEquals(executionContext.getNextCommandCode(),
                 (Character) program.charAt(ptr));
     }
 

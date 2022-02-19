@@ -1,18 +1,20 @@
-import junit.framework.TestCase;
+import org.junit.Test;
+import org.junit.Assert;
 
-public class CommandEndIterationTest extends TestCase {
+public class CommandEndIterationTest {
 
-    public void testExecute() {
+    @Test
+    public void execute() {
         CommandEndIteration cmd = new CommandEndIteration();
         for (int i = 0; i < 4; i++) {
             executionContext.incProgramPtr();
         }
         cmd.execute(executionContext);
-        assertEquals(5, executionContext.getProgramPtr());
+        Assert.assertEquals(5, executionContext.getProgramPtr());
         executionContext.decProgramPtr();
         executionContext.incByte();
         cmd.execute(executionContext);
-        assertEquals(1, executionContext.getProgramPtr());
+        Assert.assertEquals(1, executionContext.getProgramPtr());
     }
 
     String program = "[++-]+++";

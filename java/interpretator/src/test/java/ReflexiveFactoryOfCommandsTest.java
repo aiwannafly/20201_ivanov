@@ -1,20 +1,47 @@
-import junit.framework.TestCase;
+import org.junit.Test;
+import org.junit.Assert;
 
-public class ReflexiveFactoryOfCommandsTest extends TestCase {
+public class ReflexiveFactoryOfCommandsTest {
 
-    public void testGetCommand() {
-        assertTrue(factory.setConfigs(goodFileName));
-        assertNull(factory.getCommand('A'));
+    @Test
+    public void getCommand() {
+        FactoryBadConfigs exception = null;
+        try {
+            factory.setConfigs(goodFileName);
+        } catch (FactoryBadConfigs exception1) {
+            exception = exception1;
+        }
+        Assert.assertNull(exception);
+        Assert.assertNull(factory.getCommand('A'));
         Character[] commands = {'+', '-', '>', '<', '[', ']', ',', '.'};
         for (Character command : commands) {
-            assertNotNull(factory.getCommand(command));
+            Assert.assertNotNull(factory.getCommand(command));
         }
     }
 
-    public void testSetConfigs() {
-        assertFalse(factory.setConfigs(badFileName));
-        assertFalse(factory.setConfigs(awfulFileName));
-        assertTrue(factory.setConfigs(goodFileName));
+    @Test
+    public void setConfigs() {
+        FactoryBadConfigs exception = null;
+        try {
+            factory.setConfigs(badFileName);
+        } catch (FactoryBadConfigs exception1) {
+            exception = exception1;
+        }
+        Assert.assertNotNull(exception);
+        exception = null;
+        try {
+            factory.setConfigs(awfulFileName);
+        } catch (FactoryBadConfigs exception1) {
+            exception = exception1;
+        }
+        Assert.assertNotNull(exception);
+        exception = null;
+        try {
+            factory.setConfigs(goodFileName);
+        } catch (FactoryBadConfigs exception1) {
+            exception = exception1;
+        }
+        Assert.assertNull(exception);
     }
 
     private static final String goodFileName = "FactoryConfigs.txt";
