@@ -6,5 +6,5 @@
 public interface FactoryOfCommands {
     Command getCommand(Character code);
 
-    boolean setConfigs(String configsFileName);
+    void setConfigs(String configsFileName) throws FactoryBadConfigs;
 }

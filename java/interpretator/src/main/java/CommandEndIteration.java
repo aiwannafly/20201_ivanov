@@ -11,6 +11,7 @@ public class CommandEndIteration implements Command {
             return;
         }
         String program = executionContext.getProgram();
+//        executionContext.decProgramPtr();
         int currentIdx = executionContext.getProgramPtr();
         int bracketsCount = 0;
         while (currentIdx >= 0) {

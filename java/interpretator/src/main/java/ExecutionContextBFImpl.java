@@ -10,7 +10,7 @@ public class ExecutionContextBFImpl implements ExecutionContextBF {
     }
 
     /** Changes current cell to the next one
-     @throws IndexOutOfBoundsException
+     @throws IndexOutOfBoundsException - the size is const
      */
     @Override
     public void incCodePtr() {
@@ -21,7 +21,7 @@ public class ExecutionContextBFImpl implements ExecutionContextBF {
     }
 
     /** Changes current cell to the previous one
-     @throws IndexOutOfBoundsException
+     @throws IndexOutOfBoundsException - the size is const
      */
     @Override
     public void decCodePtr() {
@@ -72,7 +72,7 @@ public class ExecutionContextBFImpl implements ExecutionContextBF {
     }
 
     /** Changes current cell to the previous one
-     @return The current command of the program or null in 
+     @return The current command of the program or null in
      case if the program ptr is out of bounds
      */
     @Override

@@ -1,7 +1,6 @@
 import java.io.InputStream;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
-
 import org.apache.log4j.Logger;
 
 public class Main {
@@ -10,31 +9,40 @@ public class Main {
     public static void main(String[] args) {
         log.info("Start program, parse args.");
         parseArgs(args);
-        if (null == inputStream) {
-            System.out.println("Could not open input file." + "\n" + USAGE_GUIDE);
-            log.error("Input file was not opened.");
-            return;
-        }
-        Scanner scanner = new Scanner(inputStream);
-        StringBuilder program = new StringBuilder();
-        while (true) {
-            if (inputStream == System.in) {
-                if (!program.toString().isEmpty()) {
-                    break; // to avoid endless input from a console
-                }
+        InputStream inputStream = System.in;
+        if (null != inputFileName) {
+            inputStream = ClassLoader.getSystemResourceAsStream(inputFileName);
+            if (null == inputStream) {
+                System.err.println("Could not open input file: " + inputFileName
+                        + "\n" + USAGE_GUIDE);
+                log.error("Input file was not opened.");
+                return;
             }
-            try {
-                program.append(scanner.next());
-            } catch (NoSuchElementException exception) {
-                log.info("Input was read.");
-                break;
+        }
+        StringBuilder program = new StringBuilder();
+        try (Scanner scanner = new Scanner(inputStream)) {
+            while (true) {
+                if (inputStream == System.in) {
+                    if (!program.toString().isEmpty()) {
+                        break; // to avoid endless input from a console
+                    }
+                }
+                try {
+                    program.append(scanner.next());
+                } catch (NoSuchElementException exception) {
+                    log.info("Input was read.");
+                    break;
+                }
             }
         }
         FactoryOfCommands factory = new ReflexiveFactoryOfCommands();
-        if (!factory.setConfigs(configsFileName)) {
-            System.out.println("Configs was not opened / has wrong format."
+        try {
+            factory.setConfigs(configsFileName);
+        } catch (FactoryBadConfigs exception) {
+            String errorMsg = exception.getMessage();
+            System.err.println(errorMsg
                     + "\n" + USAGE_GUIDE);
-            log.error("Factory did not accept the configs.");
+            log.error(errorMsg);
             return;
         }
         ExecutionContextBF executionContext = new ExecutionContextBFImpl(program.toString());
@@ -51,7 +59,7 @@ public class Main {
             } catch (Exception exception) {
                 String failMsg = "Program command " + commandCode +
                         " failed: " + exception;
-                System.out.println(failMsg);
+                System.err.println(failMsg);
                 log.error(failMsg);
                 return;
             }
@@ -61,8 +69,7 @@ public class Main {
     public static void parseArgs(String[] args) {
         for (String arg : args) {
             if (arg.startsWith(PROGRAM_PREFIX)) {
-                String fileName = arg.substring((PROGRAM_PREFIX + "=").length());
-                inputStream = ClassLoader.getSystemResourceAsStream(fileName);
+                inputFileName = arg.substring((PROGRAM_PREFIX + "=").length());
             } else if (arg.startsWith(CONFIGS_PREFIX)) {
                 configsFileName = arg.substring((CONFIGS_PREFIX + "=").length());
             }
@@ -70,9 +77,10 @@ public class Main {
     }
 
     private static final String DEFAULT_CONFIGS = "FactoryConfigs.txt";
-    private static InputStream inputStream = System.in;
+    private static String inputFileName = null;
     private static String configsFileName = DEFAULT_CONFIGS;
     private static final String PROGRAM_PREFIX = "--program";
     private static final String CONFIGS_PREFIX = "--configs";
-    private static final String USAGE_GUIDE = "java Main --configs=<configs file name> --program=<program file name>";
+    private static final String USAGE_GUIDE = "java Main --configs=<configs file name>" +
+            " --program=<program file name>";
 }
