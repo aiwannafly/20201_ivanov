@@ -1,12 +1,27 @@
-/** A convinient class to contain objects
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
+/** A convenient class to contain objects
  * for implementation of the BrainFuck scripts commands.
  * Contains required 30000 bytes-array, ptr, etc.
  @author aiwannafly
  @version 1.0
  */
 public class ExecutionContextBFImpl implements ExecutionContextBF {
-    ExecutionContextBFImpl(String program) {
+    ExecutionContextBFImpl(String program, Map<Character, String> configs) {
         this.program = program;
+        this.configuration = configs;
+        Set<?> codes = configuration.keySet();
+        for (Object code : codes) {
+            if (Objects.equals(configuration.get((Character) code),
+                    START_NAME)) {
+                startIterationCode = (Character) code;
+            } else if (Objects.equals(configuration.get((Character) code),
+                    END_NAME)) {
+                endIterationCode = (Character) code;
+            }
+        }
     }
 
     /** Changes current cell to the next one
@@ -83,7 +98,22 @@ public class ExecutionContextBFImpl implements ExecutionContextBF {
         return program.charAt(programPtr);
     }
 
-    private char[] code = new char[CODE_SIZE];
+    @Override
+    public Character getStartIterCode() {
+        return startIterationCode;
+    }
+
+    @Override
+    public Character getEndIterCode() {
+        return endIterationCode;
+    }
+
+    public static final String START_NAME = "CommandStartIteration";
+    public static final String END_NAME = "CommandEndIteration";
+    private Character startIterationCode;
+    private Character endIterationCode;
+    Map<Character, String> configuration;
+    private final char[] code = new char[CODE_SIZE];
     private int codePtr = 0;
     private int programPtr = 0;
     private String program = null;

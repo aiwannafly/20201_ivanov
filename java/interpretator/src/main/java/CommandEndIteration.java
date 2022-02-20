@@ -11,13 +11,12 @@ public class CommandEndIteration implements Command {
             return;
         }
         String program = executionContext.getProgram();
-//        executionContext.decProgramPtr();
         int currentIdx = executionContext.getProgramPtr();
         int bracketsCount = 0;
         while (currentIdx >= 0) {
-            if (program.charAt(currentIdx) == '[') {
+            if (program.charAt(currentIdx) == executionContext.getStartIterCode()) {
                 bracketsCount++;
-            } else if (program.charAt(currentIdx) == ']') {
+            } else if (program.charAt(currentIdx) == executionContext.getEndIterCode()) {
                 bracketsCount--;
             }
             if (bracketsCount == 0) {

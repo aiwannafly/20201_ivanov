@@ -5,40 +5,52 @@ public class ReflexiveFactoryOfCommandsTest {
 
     @Test
     public void getCommand() {
-        FactoryBadConfigs exception = null;
+        FactoryBadConfigsException exception = null;
         try {
             factory.setConfigs(goodFileName);
-        } catch (FactoryBadConfigs exception1) {
+        } catch (FactoryBadConfigsException exception1) {
             exception = exception1;
         }
         Assert.assertNull(exception);
-        Assert.assertNull(factory.getCommand('A'));
+        FactoryFailureException exception1 = null;
+        try {
+            factory.getCommand('A');
+        } catch (FactoryFailureException exception2) {
+            exception1 = exception2;
+        }
+        Assert.assertNotNull(exception1);
         Character[] commands = {'+', '-', '>', '<', '[', ']', ',', '.'};
         for (Character command : commands) {
-            Assert.assertNotNull(factory.getCommand(command));
+            exception1 = null;
+            try {
+                factory.getCommand(command);
+            } catch (FactoryFailureException exception2) {
+                exception1 = exception2;
+            }
+            Assert.assertNull(exception1);
         }
     }
 
     @Test
     public void setConfigs() {
-        FactoryBadConfigs exception = null;
+        FactoryBadConfigsException exception = null;
         try {
             factory.setConfigs(badFileName);
-        } catch (FactoryBadConfigs exception1) {
+        } catch (FactoryBadConfigsException exception1) {
             exception = exception1;
         }
         Assert.assertNotNull(exception);
         exception = null;
         try {
             factory.setConfigs(awfulFileName);
-        } catch (FactoryBadConfigs exception1) {
+        } catch (FactoryBadConfigsException exception1) {
             exception = exception1;
         }
         Assert.assertNotNull(exception);
         exception = null;
         try {
             factory.setConfigs(goodFileName);
-        } catch (FactoryBadConfigs exception1) {
+        } catch (FactoryBadConfigsException exception1) {
             exception = exception1;
         }
         Assert.assertNull(exception);
@@ -46,6 +58,6 @@ public class ReflexiveFactoryOfCommandsTest {
 
     private static final String goodFileName = "FactoryConfigs.txt";
     private static final String badFileName = "HeLLo WoRlD";
-    private static final String awfulFileName = "Main.class";
+    private static final String awfulFileName = "ReflexiveFactoryOfCommandsTest.class";
     private static final ReflexiveFactoryOfCommands factory = new ReflexiveFactoryOfCommands();
 }

@@ -1,6 +1,9 @@
 import org.junit.Test;
 import org.junit.Assert;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class ExecutionContextBFImplTest {
 
     private void incCodeOverflow() {
@@ -29,7 +32,7 @@ public class ExecutionContextBFImplTest {
     @Test
     public void decCodePtr() {
         Exception exception = null;
-        executionContext = new ExecutionContextBFImpl(program);
+        executionContext = new ExecutionContextBFImpl(program, configuration);
         try {
             decCodeOverflow();
         } catch (Exception exception1) {
@@ -40,7 +43,7 @@ public class ExecutionContextBFImplTest {
 
     @Test
     public void incByte() {
-        executionContext = new ExecutionContextBFImpl(program);
+        executionContext = new ExecutionContextBFImpl(program, configuration);
         char b = executionContext.getByte();
         executionContext.incByte();
         Assert.assertEquals(b + 1, executionContext.getByte());
@@ -98,5 +101,6 @@ public class ExecutionContextBFImplTest {
     }
 
     String program = "[->+<]";
-    ExecutionContextBFImpl executionContext = new ExecutionContextBFImpl(program);
+    Map<Character, String> configuration = new HashMap<>();
+    ExecutionContextBFImpl executionContext = new ExecutionContextBFImpl(program, configuration);
 }

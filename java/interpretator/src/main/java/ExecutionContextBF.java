@@ -28,5 +28,9 @@ public interface ExecutionContextBF {
 
     Character getNextCommandCode();
 
+    Character getStartIterCode();
+
+    Character getEndIterCode();
+
     int CODE_SIZE = 30000;
 }

@@ -14,9 +14,9 @@ public class CommandStartIteration implements Command {
         int currentIdx = executionContext.getProgramPtr();
         int bracketsCount = 0;
         for (int i = currentIdx; i < program.length(); i++) {
-            if (program.charAt(i) == '[') {
+            if (program.charAt(i) == executionContext.getStartIterCode()) {
                 bracketsCount++;
-            } else if (program.charAt(i) == ']') {
+            } else if (program.charAt(i) == executionContext.getEndIterCode()) {
                 bracketsCount--;
             }
             executionContext.incProgramPtr();

@@ -35,34 +35,12 @@ public class Main {
                 }
             }
         }
-        FactoryOfCommands factory = new ReflexiveFactoryOfCommands();
+        Interpreter interpreter = new InterpreterBrainFuck(program.toString(), configsFileName);
         try {
-            factory.setConfigs(configsFileName);
-        } catch (FactoryBadConfigs exception) {
-            String errorMsg = exception.getMessage();
-            System.err.println(errorMsg
-                    + "\n" + USAGE_GUIDE);
-            log.error(errorMsg);
-            return;
-        }
-        ExecutionContextBF executionContext = new ExecutionContextBFImpl(program.toString());
-        log.info("Starting of interpretation commands");
-        while (true) {
-            Character commandCode = executionContext.getNextCommandCode();
-            if (commandCode == null) {
-                log.info("Interpretation successfully finished.");
-                break;
-            }
-            Command command = factory.getCommand(commandCode);
-            try {
-                command.execute(executionContext);
-            } catch (Exception exception) {
-                String failMsg = "Program command " + commandCode +
-                        " failed: " + exception;
-                System.err.println(failMsg);
-                log.error(failMsg);
-                return;
-            }
+            interpreter.runScript();
+        } catch (ScriptException exception) {
+            System.err.println(exception.getMessage());
+            System.err.println(USAGE_GUIDE);
         }
     }
 
