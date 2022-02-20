@@ -1,3 +1,5 @@
+package interpreter;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -108,8 +110,8 @@ public class ExecutionContextBFImpl implements ExecutionContextBF {
         return endIterationCode;
     }
 
-    public static final String START_NAME = "CommandStartIteration";
-    public static final String END_NAME = "CommandEndIteration";
+    public static final String START_NAME = "interpreter.CommandStartIteration";
+    public static final String END_NAME = "interpreter.CommandEndIteration";
     private Character startIterationCode;
     private Character endIterationCode;
     Map<Character, String> configuration;

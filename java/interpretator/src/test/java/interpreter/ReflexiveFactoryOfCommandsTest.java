@@ -1,3 +1,5 @@
+package interpreter;
+
 import org.junit.Test;
 import org.junit.Assert;
 
@@ -58,6 +60,6 @@ public class ReflexiveFactoryOfCommandsTest {
 
     private static final String goodFileName = "FactoryConfigs.txt";
     private static final String badFileName = "HeLLo WoRlD";
-    private static final String awfulFileName = "ReflexiveFactoryOfCommandsTest.class";
+    private static final String awfulFileName = "interpreter.ReflexiveFactoryOfCommandsTest.class";
     private static final ReflexiveFactoryOfCommands factory = new ReflexiveFactoryOfCommands();
 }

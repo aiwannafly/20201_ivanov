@@ -1,3 +1,5 @@
+package interpreter;
+
 import org.apache.log4j.Logger;
 
 public class InterpreterBrainFuck implements Interpreter {

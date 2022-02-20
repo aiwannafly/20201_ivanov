@@ -1,3 +1,5 @@
+package interpreter;
+
 import java.util.Scanner;
 
 /** BrainFuck command to insert a byte from the input to the

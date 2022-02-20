@@ -1,3 +1,5 @@
+package interpreter;
+
 /** A convinient interface to contain objects
  * for implementation of the BrainFuck scripts commands.
  * Contains required 30000 bytes-array, ptr, etc.

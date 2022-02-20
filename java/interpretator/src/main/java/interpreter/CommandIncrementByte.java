@@ -1,3 +1,5 @@
+package interpreter;
+
 /** BrainFuck command to increment byte in a current cell
  @author aiwannafly
  @version 1.0

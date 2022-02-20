@@ -30,4 +30,4 @@ task stream( type: JavaExec, dependsOn: assemble ){
 
 
 apply plugin: 'application'
-mainClassName = 'Main'
+mainClassName = 'interpreter.Main'

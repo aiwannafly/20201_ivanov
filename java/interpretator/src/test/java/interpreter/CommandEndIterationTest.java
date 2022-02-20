@@ -1,27 +1,30 @@
+package interpreter;
+
 import org.junit.Test;
 import org.junit.Assert;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class CommandStartIterationTest {
+public class CommandEndIterationTest {
 
     @Test
     public void execute() {
-        Map<Character, String> configuration = new HashMap<>();
-        configuration.put('[', "CommandStartIteration");
-        configuration.put(']', "CommandEndIteration");
         String program = "[++-]+++";
+        Map<Character, String> configuration = new HashMap<>();
+        configuration.put('[', "interpreter.CommandStartIteration");
+        configuration.put(']', "interpreter.CommandEndIteration");
+
         ExecutionContextBF executionContext = new ExecutionContextBFImpl(program, configuration);
-        CommandStartIteration cmd = new CommandStartIteration();
+        CommandEndIteration cmd = new CommandEndIteration();
+        for (int i = 0; i < 4; i++) {
+            executionContext.incProgramPtr();
+        }
         cmd.execute(executionContext);
         Assert.assertEquals(5, executionContext.getProgramPtr());
-        for (int i = 0; i < 5; i++) {
-            executionContext.decProgramPtr();
-        }
+        executionContext.decProgramPtr();
         executionContext.incByte();
         cmd.execute(executionContext);
         Assert.assertEquals(1, executionContext.getProgramPtr());
     }
-
 }

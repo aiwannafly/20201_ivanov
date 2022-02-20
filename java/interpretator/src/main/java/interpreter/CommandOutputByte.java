@@ -1,3 +1,5 @@
+package interpreter;
+
 /** BrainFuck command to output the byte from a current cell
  @author aiwannafly
  @version 1.0
