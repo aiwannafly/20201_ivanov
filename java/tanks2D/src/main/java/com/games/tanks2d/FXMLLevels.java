@@ -1,5 +1,7 @@
 package com.games.tanks2d;
 
+import com.games.tanks2d.controller.Runner;
+import com.games.tanks2d.view.SceneBuilder;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -14,8 +16,8 @@ public class FXMLLevels {
 
     private void setLevel(int level) {
         Stage stage = (Stage) backButton.getScene().getWindow();
-        Scene scene = SceneBuilder.getGameScene(level);
-        stage.setScene(scene);
+        Runner runner = new Runner(level);
+        runner.run(stage);
     }
 
     @FXML

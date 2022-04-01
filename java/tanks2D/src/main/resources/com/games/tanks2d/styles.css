@@ -3,21 +3,33 @@
     -fx-background-insets: 0,0 0 5 0, 0 0 6 0, 0 0 7 0;
     -fx-background-radius: 8;
     -fx-background-color:
-            linear-gradient(from 0% 93% to 0% 100%, #a34313 0%, #903b12 100%),
-            #9d4024,
-            #d86e3a,
-            radial-gradient(center 50% 50%, radius 100%, #d86e3a, #c54e2c);
+            linear-gradient(from 0% 93% to 0% 100%, #0ac7b8 0%, #31c1ea 100%),
+            #125b8c,
+            #08abb9,
+            radial-gradient(center 50% 50%, radius 100%, #00c1ff, #08abb9);
     -fx-effect: dropshadow( gaussian , rgba(0,0,0,0.75) , 4,0,0,1 );
     -fx-font-weight: bold;
     -fx-font-size: 2em;
 }
 
+.label {
+    -fx-text-fill: #24b1de;
+    -fx-font-weight: bold;
+    -fx-font-size: 4em;
+}
+
+/*#redLabel {*/
+/*    -fx-text-fill: #e10015;*/
+/*    -fx-font-weight: bold;*/
+/*    -fx-font-size: 4em;*/
+/*}*/
+
 .button:hover {
     -fx-background-color:
-            linear-gradient(from 0% 93% to 0% 100%, #a34313 0%, #903b12 100%),
-            #9d4024,
-            #d86e3a,
-            radial-gradient(center 50% 50%, radius 100%, #ea7f4b, #c54e2c);
+            linear-gradient(from 0% 93% to 0% 100%, #0ac7b8 0%, #31c1ea 100%),
+            #125b8c,
+            #08abb9,
+            radial-gradient(center 50% 50%, radius 100%, #24b1de, #08abb9);
 }
 
 .button:pressed {
@@ -27,7 +39,7 @@
 
 .button Text {
     -fx-fill: white;
-    -fx-effect: dropshadow( gaussian , #a30000 , 0,0,0,2 );
+    -fx-effect: dropshadow( gaussian , #001ba3, 0,0,0,2 );
 }
 
 /*.button {*/
@@ -49,7 +61,8 @@
 /*}*/
 
 #menu {
-    -fx-background-image: url("images/big_image_tank.jpeg");
+    -fx-background-image: url("images/wallpaper.jpg");
+    -fx-background-size: 1530 780;
     -fx-background-repeat: stretch;
     -fx-background-position: center center;
     -fx-effect: dropshadow(three-pass-box, black, 30, 0.5, 0, 0);
@@ -71,7 +84,7 @@
 
 #endGameMenuBar {
     -fx-background-color: black;
-    -fx-background-image: url("images/you_died.jpg");
+    -fx-background-image: url("images/lose.jpg");
     -fx-background-size: 1280 720;
     -fx-background-position: top center;
     -fx-effect: dropshadow(three-pass-box, black, 30, 0.5, 0, 0);
@@ -79,7 +92,7 @@
 
 #winGameMenuBar {
     -fx-background-color: black;
-    -fx-background-image: url("images/you_win.jpg");
+    -fx-background-image: url("images/win.jpg");
     -fx-background-repeat: no-repeat;
     -fx-background-size: contain;
     -fx-background-position: top center;

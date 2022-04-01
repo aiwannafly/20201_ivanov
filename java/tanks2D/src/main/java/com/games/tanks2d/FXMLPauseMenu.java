@@ -1,5 +1,6 @@
 package com.games.tanks2d;
 
+import com.games.tanks2d.view.SceneBuilder;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;

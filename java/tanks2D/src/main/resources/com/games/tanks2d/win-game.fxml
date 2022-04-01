@@ -4,20 +4,25 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<HBox fx:id="winGameMenuBar" alignment="CENTER" prefHeight="615.0" prefWidth="880.0"
-      spacing="20.0" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.games.tanks2d.FXMLWinMenu">
-    <padding>
-        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-    </padding>
+<VBox fx:id="winGameMenuBar" alignment="CENTER" prefHeight="615.0"
+      prefWidth="880.0" spacing="20.0" xmlns="http://javafx.com/javafx/16"
+      xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.games.tanks2d.FXMLWinMenu">
+    <Label text="YOU WIN">
 
-    <Button onAction="#onNextButtonClick" prefHeight="75.0" prefWidth="240.0" text="NEXT LEVEL">
-        <HBox.margin>
-            <Insets top="350.0" />
-        </HBox.margin></Button>
-    <Button onAction="#onBackButtonClick" prefHeight="75.0" prefWidth="240.0" text="BACK TO MENU">
-        <HBox.margin>
-            <Insets top="350.0" />
-        </HBox.margin>
-    </Button>
-</HBox>
+    </Label>
+    <HBox>
+        <padding>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+        </padding>
+        <Button onAction="#onNextButtonClick" prefHeight="75.0" prefWidth="240.0" text="CHOOSE NEXT">
+            <HBox.margin>
+                <Insets top="350.0" left="480"/>
+            </HBox.margin>
+        </Button>
+        <Button onAction="#onBackButtonClick" prefHeight="75.0" prefWidth="240.0" text="BACK TO MENU">
+            <HBox.margin>
+                <Insets top="350.0" left="50"/>
+            </HBox.margin>
+        </Button>
+    </HBox>
+</VBox>

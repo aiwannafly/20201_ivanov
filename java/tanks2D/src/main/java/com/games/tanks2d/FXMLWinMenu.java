@@ -1,14 +1,16 @@
 package com.games.tanks2d;
 
+import com.games.tanks2d.view.SceneBuilder;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 public class FXMLWinMenu {
 
     @FXML
-    private HBox winGameMenuBar;
+    private VBox winGameMenuBar;
 
     @FXML
     public void onNextButtonClick() {
