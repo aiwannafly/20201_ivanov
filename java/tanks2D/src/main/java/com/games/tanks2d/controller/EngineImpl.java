@@ -92,9 +92,9 @@ public class EngineImpl implements Engine {
                 playerGunReload = reloadTime;
             }
         }
-        for (StarShip t: gameField.getEnemyTanks()) {
+        for (StarShip t: gameField.getEnemyShips()) {
             t.shoot();
-            t.move(t.getSide());
+            t.move(t.getCurrentDirection());
         }
         for (Explosion e: gameField.getExplosions()) {
             e.hit();
@@ -106,7 +106,7 @@ public class EngineImpl implements Engine {
         if (playersStarShip.isCrippled()) {
             return Status.LOSE;
         }
-        if (gameField.getEnemyTanks().isEmpty()) {
+        if (gameField.getEnemyShips().isEmpty()) {
             return Status.WIN;
         }
         return Status.IN_PROGRESS;
@@ -131,12 +131,12 @@ public class EngineImpl implements Engine {
         }
         gameField.getObstacles().removeAll(util);
         util.clear();
-        for (StarShip t: gameField.getEnemyTanks()) {
+        for (StarShip t: gameField.getEnemyShips()) {
             if (t.isCrippled()) {
                 util.add(t);
             }
         }
-        gameField.getEnemyTanks().removeAll(util);
+        gameField.getEnemyShips().removeAll(util);
         util.clear();
         for (Blast b: gameField.getBullets()) {
             if (b.isCrippled()) {

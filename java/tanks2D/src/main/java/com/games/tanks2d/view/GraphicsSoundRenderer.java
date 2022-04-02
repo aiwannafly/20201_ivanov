@@ -3,11 +3,8 @@ package com.games.tanks2d.view;
 import com.games.tanks2d.model.*;
 import com.games.tanks2d.model.obstacles.FragileBlock;
 import com.games.tanks2d.model.obstacles.Obstacle;
-import com.games.tanks2d.model.ships.StarDestroyer;
 import com.games.tanks2d.model.obstacles.WallBlock;
 import com.games.tanks2d.model.obstacles.SolidBlock;
-import com.games.tanks2d.model.ships.EmpireStarShip;
-import com.games.tanks2d.model.ships.Exterminator;
 import com.games.tanks2d.model.ships.StarShip;
 import javafx.scene.layout.Pane;
 import javafx.scene.media.AudioClip;
@@ -62,7 +59,7 @@ public class GraphicsSoundRenderer implements Renderer {
         util.forEach(obstacles.keySet()::remove);
         util.clear();
         for (StarShip e: enemyShips.keySet()) {
-            if (!gameField.getEnemyTanks().contains(e)) {
+            if (!gameField.getEnemyShips().contains(e)) {
                 if (Settings.soundsON) {
                     bigExplosionSound.play();
                 }
@@ -72,12 +69,10 @@ public class GraphicsSoundRenderer implements Renderer {
             }
             // update coords
             Rectangle texture = enemyShips.get(e);
-            if (e instanceof Exterminator) {
-                texture.setFill(TexturePack.getExtStarShipTexture(e.getSide()));
-            } else if (e instanceof StarDestroyer) {
-                 texture.setFill(TexturePack.getStarDestroyerTexture(e.getSide()));
-            } else if (e instanceof EmpireStarShip){
-                texture.setFill(TexturePack.getEmpireStarShipTexture(e.getSide()));
+            switch (e.getShipClass()) {
+                case EXTERMINATOR -> texture.setFill(TexturePack.getExtStarShipTexture(e.getCurrentDirection()));
+                case STAR_DESTROYER -> texture.setFill(TexturePack.getStarDestroyerTexture(e.getCurrentDirection()));
+                case EMPIRE_SHIP -> texture.setFill(TexturePack.getEmpireStarShipTexture(e.getCurrentDirection()));
             }
             texture.relocate(e.getX(), e.getY());
         }
@@ -85,7 +80,7 @@ public class GraphicsSoundRenderer implements Renderer {
         if (!gameField.getPlayersShip().isCrippled()) {
             Rectangle texture = playerTankTexture;
             StarShip p = gameField.getPlayersShip();
-            texture.setFill(TexturePack.getPlayerTexture(p.getSide()));
+            texture.setFill(TexturePack.getPlayerTexture(p.getCurrentDirection()));
             texture.relocate(p.getX(), p.getY());
         } else {
             pane.getChildren().remove(playerTankTexture);
@@ -93,7 +88,7 @@ public class GraphicsSoundRenderer implements Renderer {
         for (Blast b: gameField.getBullets()) {
             if (!bullets.containsKey(b)) {
                 if (Settings.soundsON) {
-                    switch (b.getTeam()) {
+                    switch (b.getOwnerClass()) {
                         case STAR_DESTROYER -> shipBlastGunSound.play();
                         case EMPIRE_SHIP, REBELLION_SHIP -> laserGunSound.play();
                     }
@@ -137,7 +132,7 @@ public class GraphicsSoundRenderer implements Renderer {
     }
 
     @Override
-    public Pane getPane() {
+    public Pane getLayout() {
         return pane;
     }
 
@@ -146,21 +141,23 @@ public class GraphicsSoundRenderer implements Renderer {
         switch (b.getSide()) {
             case TOP, BOTTOM -> {
                 r = new Rectangle(b.getX(), b.getY(),  b.getWidth(), 4 * b.getHeight());
-                if (b.getTeam() == StarShip.Class.REBELLION_SHIP) {
+                if (b.getOwnerClass() == StarShip.ShipClass.REBELLION_SHIP) {
                     r.setFill(TexturePack.imgBlueBulletVert);
-                } else if (b.getTeam() == StarShip.Class.EMPIRE_SHIP) {
+                } else if (b.getOwnerClass() == StarShip.ShipClass.EMPIRE_SHIP ||
+                        b.getOwnerClass() == StarShip.ShipClass.EXTERMINATOR ) {
                     r.setFill(TexturePack.imgRedBulletVert);
-                } else if (b.getTeam() == StarShip.Class.STAR_DESTROYER) {
+                } else if (b.getOwnerClass() == StarShip.ShipClass.STAR_DESTROYER) {
                     r.setFill(TexturePack.imgGreenBlastVert);
                 }
             }
             case RIGHT, LEFT -> {
                 r = new Rectangle(b.getX(), b.getY(), 4 * b.getWidth(), b.getHeight());
-                if (b.getTeam() == StarShip.Class.REBELLION_SHIP) {
+                if (b.getOwnerClass() == StarShip.ShipClass.REBELLION_SHIP) {
                     r.setFill(TexturePack.imgBlueBulletHor);
-                } else if (b.getTeam() == StarShip.Class.EMPIRE_SHIP) {
+                } else if (b.getOwnerClass() == StarShip.ShipClass.EMPIRE_SHIP ||
+                        b.getOwnerClass() == StarShip.ShipClass.EXTERMINATOR ) {
                     r.setFill(TexturePack.imgRedBulletHor);
-                } else if (b.getTeam() == StarShip.Class.STAR_DESTROYER) {
+                } else if (b.getOwnerClass() == StarShip.ShipClass.STAR_DESTROYER) {
                     r.setFill(TexturePack.imgGreenBlastHor);
                 }
             }
@@ -171,16 +168,16 @@ public class GraphicsSoundRenderer implements Renderer {
     private void initStatBar() {
         double size = gameField.getPlayersShip().getWidth();
         int hp = gameField.getPlayersShip().getHP();
-        for (int i = 0; i <= Settings.LEVEL_WIDTH / 2; i++) {
+        for (int i = 0; i <= Settings.BLOCK_WIDTH / 2; i++) {
             Rectangle rect = new Rectangle(i * size,
-                    (Settings.LEVEL_HEIGHT) * size / 2, size, size);
+                    (Settings.BLOCK_HEIGHT) * size / 2, size, size);
             rect.setFill(Color.BLACK);
             pane.getChildren().add(rect);
         }
-        int offset = (Settings.LEVEL_WIDTH / 3);
+        int offset = (Settings.BLOCK_WIDTH / 3);
         for (int i = 0; i <= hp + 1; i++) {
             Rectangle hpPoint = new Rectangle((i + offset) * size,
-                    (Settings.LEVEL_HEIGHT) * size / 2, size, size);
+                    (Settings.BLOCK_HEIGHT) * size / 2, size, size);
             if (i == 0 || i == hp + 1) {
                 hpPoint.setFill(Color.BLACK);
             } else {
@@ -216,7 +213,7 @@ public class GraphicsSoundRenderer implements Renderer {
             obstacles.put(o, texture);
         }
         pane.getChildren().addAll(obstacles.values());
-        for (StarShip t: gameField.getEnemyTanks()) {
+        for (StarShip t: gameField.getEnemyShips()) {
             Rectangle tankTexture = new Rectangle(t.getX(), t.getY(), t.getWidth(), t.getHeight());
             enemyShips.put(t, tankTexture);
         }

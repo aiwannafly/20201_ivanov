@@ -61,6 +61,14 @@ abstract public class SquareBlock implements Obstacle {
         return Math.min(xSize, ySize);
     }
 
+    protected boolean crossesObstacle(double newX, double newY, Shape o) {
+        if (intersectsObstacle(newX, newY, o)) {
+            double intSize = getIntersectionSize(newX, newY, o);
+            return intSize != 0;
+        }
+        return false;
+    }
+
     protected boolean intersectsObstacle(double newX, double newY, Shape o) {
         if (o.isTransparent()) {
             return false;

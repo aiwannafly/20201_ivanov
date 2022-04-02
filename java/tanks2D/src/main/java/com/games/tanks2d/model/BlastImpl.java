@@ -5,29 +5,29 @@ import com.games.tanks2d.model.obstacles.SquareBlock;
 import com.games.tanks2d.model.ships.StarShip;
 
 public class BlastImpl extends SquareBlock implements Blast {
-    private boolean isCrippled = false;
-    private final StarShip.Direction direction;
-    private final StarShip.Class aClass;
+    private final StarShip.Direction FLY_DIRECTION;
+    private final StarShip.ShipClass OWNER_SHIP_CLASS;
+    private final double SPEED = 10;
     private final GameField env;
-    private final double bulletSpeed = 10;
+    private boolean isCrippled = false;
 
     public BlastImpl(double x, double y, double size, StarShip.Direction dir,
-                     GameField env, StarShip.Class aClass) {
+                     GameField env, StarShip.ShipClass aShipClass) {
         super(x, y, size);
-        this.direction = dir;
+        this.FLY_DIRECTION = dir;
         this.env = env;
-        this.aClass = aClass;
+        this.OWNER_SHIP_CLASS = aShipClass;
     }
 
     @Override
     public void fly() {
         double newX = getX();
         double newY = getY();
-        switch (direction) {
-            case LEFT -> newX -= bulletSpeed;
-            case TOP -> newY -= bulletSpeed;
-            case RIGHT -> newX += bulletSpeed;
-            case BOTTOM -> newY += bulletSpeed;
+        switch (FLY_DIRECTION) {
+            case LEFT -> newX -= SPEED;
+            case TOP -> newY -= SPEED;
+            case RIGHT -> newX += SPEED;
+            case BOTTOM -> newY += SPEED;
         }
         if (hitObstacles(newX, newY)) {
             hit();
@@ -49,12 +49,12 @@ public class BlastImpl extends SquareBlock implements Blast {
 
     @Override
     public StarShip.Direction getSide() {
-        return direction;
+        return FLY_DIRECTION;
     }
 
     @Override
-    public StarShip.Class getTeam() {
-        return aClass;
+    public StarShip.ShipClass getOwnerClass() {
+        return OWNER_SHIP_CLASS;
     }
 
     @Override
@@ -65,13 +65,13 @@ public class BlastImpl extends SquareBlock implements Blast {
         double eY = getY();
         double blockSize = 30;
         double offset = (blockSize - getWidth()) / 2;
-        if (direction == StarShip.Direction.LEFT ||
-                direction == StarShip.Direction.RIGHT) {
+        if (FLY_DIRECTION == StarShip.Direction.LEFT ||
+                FLY_DIRECTION == StarShip.Direction.RIGHT) {
             eY -= offset;
         } else {
             eX -= offset;
         }
-        switch (direction) {
+        switch (FLY_DIRECTION) {
             case LEFT -> eX -= offset * 2;
             case TOP -> eY -= offset * 2;
         }
@@ -81,7 +81,6 @@ public class BlastImpl extends SquareBlock implements Blast {
 
     private boolean hitObstacles(double newX, double newY) {
         boolean hits = false;
-
         for (Obstacle o: env.getObstacles()) {
             if (intersectsObstacle(newX, newY, o)) {
                 o.hit();
@@ -91,8 +90,8 @@ public class BlastImpl extends SquareBlock implements Blast {
         if (hits) {
             return true;
         }
-        if (aClass == StarShip.Class.REBELLION_SHIP) {
-            for (StarShip t: env.getEnemyTanks()) {
+        if (OWNER_SHIP_CLASS == StarShip.ShipClass.REBELLION_SHIP) {
+            for (StarShip t: env.getEnemyShips()) {
                 if (intersectsObstacle(newX, newY, t)) {
                     t.hit();
                     return true;

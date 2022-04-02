@@ -9,13 +9,9 @@ public interface GameField {
 
     void loadLevel(String fileName) throws LevelFailLoadException;
 
-    void destroyObstacle(Obstacle obstacle);
-
-    void destroyTank(StarShip starShip);
-
     ArrayList<Obstacle> getObstacles();
 
-    ArrayList<StarShip> getEnemyTanks();
+    ArrayList<StarShip> getEnemyShips();
 
     ArrayList<Blast> getBullets();
 
@@ -23,6 +19,5 @@ public interface GameField {
 
     StarShip getPlayersShip();
 
-    void update();
-
+    double getBlockSize();
 }

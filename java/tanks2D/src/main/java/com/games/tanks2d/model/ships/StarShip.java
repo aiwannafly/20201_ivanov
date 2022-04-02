@@ -4,16 +4,12 @@ import com.games.tanks2d.model.obstacles.Obstacle;
 
 public interface StarShip extends Obstacle {
 
-    enum Class {
+    enum ShipClass {
         REBELLION_SHIP, EMPIRE_SHIP, STAR_DESTROYER, EXTERMINATOR
     }
 
     enum Direction {
         TOP, RIGHT, BOTTOM, LEFT;
-
-        public boolean isVertical() {
-            return !(this == TOP || this == BOTTOM);
-        }
     }
 
     void move(Direction side);
@@ -24,7 +20,7 @@ public interface StarShip extends Obstacle {
 
     void setHP(int HP);
 
-    void setType(Class type);
+    void setShipClass(ShipClass shipClass);
 
     void setReloadTime(int reloadTime);
 
@@ -32,10 +28,10 @@ public interface StarShip extends Obstacle {
 
     int getSpeed();
 
-    Class getType();
+    ShipClass getShipClass();
 
     int getReloadTime();
 
-    Direction getSide();
+    Direction getCurrentDirection();
 
 }

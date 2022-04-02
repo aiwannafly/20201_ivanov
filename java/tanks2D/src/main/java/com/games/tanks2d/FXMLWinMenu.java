@@ -1,10 +1,10 @@
 package com.games.tanks2d;
 
+import com.games.tanks2d.view.SoundsPlayer;
 import com.games.tanks2d.view.SceneBuilder;
 import com.games.tanks2d.view.Settings;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -16,7 +16,7 @@ public class FXMLWinMenu {
     @FXML
     public void onNextButtonClick() {
         if (Settings.soundsON) {
-            ApplicationMainClass.buttonClick.play();
+            SoundsPlayer.playButtonClick();
         }
         Stage stage = (Stage) winGameMenuBar.getScene().getWindow();
         Scene scene = SceneBuilder.getLevelsScene();
@@ -26,7 +26,7 @@ public class FXMLWinMenu {
     @FXML
     public void onBackButtonClick() {
         if (Settings.soundsON) {
-            ApplicationMainClass.buttonClick.play();
+            SoundsPlayer.playButtonClick();
         }
         Stage stage = (Stage) winGameMenuBar.getScene().getWindow();
         Scene scene = SceneBuilder.getMenuScene();

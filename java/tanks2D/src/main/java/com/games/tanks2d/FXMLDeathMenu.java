@@ -1,6 +1,7 @@
 package com.games.tanks2d;
 
 import com.games.tanks2d.controller.Runner;
+import com.games.tanks2d.view.SoundsPlayer;
 import com.games.tanks2d.view.SceneBuilder;
 import com.games.tanks2d.view.Settings;
 import javafx.fxml.FXML;
@@ -27,7 +28,7 @@ public class FXMLDeathMenu {
     @FXML
     public void onReplayButtonClick() {
         if (Settings.soundsON) {
-            ApplicationMainClass.buttonClick.play();
+            SoundsPlayer.playButtonClick();
         }
         Stage stage = (Stage) endGameMenuBar.getScene().getWindow();
         Runner runner = SceneBuilder.getGameRunner(SceneBuilder.getLastLevel());
@@ -37,7 +38,7 @@ public class FXMLDeathMenu {
     @FXML
     public void onBackButtonClick() {
         if (Settings.soundsON) {
-            ApplicationMainClass.buttonClick.play();
+            SoundsPlayer.playButtonClick();
         }
         Stage stage = (Stage) endGameMenuBar.getScene().getWindow();
         Scene scene = SceneBuilder.getMenuScene();

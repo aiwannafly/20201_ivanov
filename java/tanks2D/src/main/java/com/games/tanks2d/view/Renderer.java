@@ -6,6 +6,6 @@ public interface Renderer {
 
     void render();
 
-    Pane getPane();
+    Pane getLayout();
 
 }

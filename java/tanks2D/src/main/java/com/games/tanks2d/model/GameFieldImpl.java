@@ -6,11 +6,26 @@ import com.games.tanks2d.model.ships.*;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 
 public class GameFieldImpl implements GameField {
-    public final double BLOCK_SIZE = 30;
+    private final double BLOCK_SIZE = 30;
+    private final double EXTERMINATOR_SIZE = BLOCK_SIZE;
+    private final double PLAYER_SHIP_SIZE = 2 * BLOCK_SIZE;
+    private final double EMPIRE_SHIP_SIZE = 2 * BLOCK_SIZE;
+    private final double STAR_DESTROYER_SIZE = 4 * BLOCK_SIZE;
+    private final char SOLID_BLOCK = 'g';
+    private final char FRAGILE_BLOCK = 'r';
+    private final char WALL_BLOCK = 'l';
+    private final char EMPIRE_SHIP = 'e';
+    private final char STAR_DESTROYER = 's';
+    private final char EXTERMINATOR = 'f';
+    private final char REBELLION_SHIP = 'p';
+    private final Character[] BLOCKS_ARRAY = {SOLID_BLOCK, FRAGILE_BLOCK, WALL_BLOCK};
+    private final Character[] SHIPS_ARRAY = {EMPIRE_SHIP, STAR_DESTROYER, EXTERMINATOR, REBELLION_SHIP};
+
     private final ArrayList<StarShip> enemyStarShips = new ArrayList<>();
     private final ArrayList<Obstacle> obstacles = new ArrayList<>();
     private final ArrayList<Blast> blasts = new ArrayList<>();
@@ -30,48 +45,37 @@ public class GameFieldImpl implements GameField {
             while (scanner.hasNext()) {
                 stringLayout.append(scanner.next());
             }
-            for (int i = 0; i < height; i++) {
-                for (int j = 0; j < width; j++) {
-                    if (i * width +j >= stringLayout.length()) {
-                        break;
+            parseStringLayout(stringLayout.toString(), width, height);
+        }
+    }
+
+    private void parseStringLayout(String stringLayout, int width, int height) {
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                if (i * width + j >= stringLayout.length()) {
+                    break;
+                }
+                char nextByte = stringLayout.charAt(i * width + j);
+                double x = j * BLOCK_SIZE;
+                double y = i * BLOCK_SIZE;
+                if (List.of(BLOCKS_ARRAY).contains(nextByte)) {
+                    Obstacle obstacle = null;
+                    switch (nextByte) {
+                        case SOLID_BLOCK -> obstacle = new SolidBlock(x, y, BLOCK_SIZE);
+                        case FRAGILE_BLOCK -> obstacle = new FragileBlock(x, y, BLOCK_SIZE);
+                        case WALL_BLOCK -> obstacle = new WallBlock(x, y, BLOCK_SIZE);
                     }
-                    char nextByte = stringLayout.charAt(i * width + j);
-                    double size = BLOCK_SIZE;
-                    double x = j * BLOCK_SIZE;
-                    double y = i * BLOCK_SIZE;
-                    if (nextByte == 'g' || nextByte == 'r' || nextByte == 'l') {
-                        Obstacle obstacle = null;
-                        switch (nextByte) {
-                            case 'g' -> obstacle = new SolidBlock(x, y, size);
-                            case 'r' -> obstacle = new FragileBlock(x, y, size);
-                            case 'l' -> obstacle = new WallBlock(x, y, size);
-                        }
-                        obstacles.add(obstacle);
-                    } else if (nextByte == 'e' || nextByte == 'p' || nextByte == 's'
-                    || nextByte == 'f') {
-                        if (nextByte == 'p') {
-                            playersStarShip = new RebellionShip(x, y, 2 * size, this);
-                        } else if (nextByte == 'e') {
-                            enemyStarShips.add(new EmpireStarShip(x, y, 2 * size, this));
-                        } else if (nextByte == 's') {
-                            enemyStarShips.add(new StarDestroyer(x, y, 4 * size, this));
-                        } else if (nextByte == 'f') {
-                            enemyStarShips.add(new Exterminator(x, y, size, this));
-                        }
+                    obstacles.add(obstacle);
+                } else if (List.of(SHIPS_ARRAY).contains(nextByte)) {
+                    switch (nextByte) {
+                        case REBELLION_SHIP -> playersStarShip = new RebellionShip(x, y, PLAYER_SHIP_SIZE, this);
+                        case EXTERMINATOR -> enemyStarShips.add(new Exterminator(x, y, EXTERMINATOR_SIZE, this));
+                        case STAR_DESTROYER -> enemyStarShips.add(new StarDestroyer(x, y, STAR_DESTROYER_SIZE, this));
+                        case EMPIRE_SHIP -> enemyStarShips.add(new EmpireStarShip(x, y, EMPIRE_SHIP_SIZE, this));
                     }
                 }
             }
         }
-    }
-
-    @Override
-    public void destroyObstacle(Obstacle obstacle) {
-
-    }
-
-    @Override
-    public void destroyTank(StarShip starShip) {
-
     }
 
     @Override
@@ -80,13 +84,18 @@ public class GameFieldImpl implements GameField {
     }
 
     @Override
-    public ArrayList<StarShip> getEnemyTanks() {
+    public ArrayList<StarShip> getEnemyShips() {
         return enemyStarShips;
     }
 
     @Override
     public StarShip getPlayersShip() {
         return playersStarShip;
+    }
+
+    @Override
+    public double getBlockSize() {
+        return BLOCK_SIZE;
     }
 
     @Override
@@ -99,8 +108,4 @@ public class GameFieldImpl implements GameField {
         return explosions;
     }
 
-    @Override
-    public void update() {
-
-    }
 }

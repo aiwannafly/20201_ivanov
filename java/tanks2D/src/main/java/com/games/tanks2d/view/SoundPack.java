@@ -14,12 +14,12 @@ public class SoundPack {
     public final static String EMPIRE_MARCH_FILE_PATH = PATH + "level3.mp3";
     public final static String ALERT_FILE_PATH = PATH + "level1.mp3";
     private final static String MAIN_TRACK_FILE_PATH = PATH + "main_star_wars_theme.mp3";
-    public final static Media MAIN_SOUNDTRACK;
-    public final static Media CLONE_MARCH_SOUNDTRACK;
-    public final static Media ALERT_SOUNDTRACK;
-    public final static Media EMPIRE_MARCH_SOUNDTRACK;
     public static double SOUNDTRACK_VOLUME = 0.5;
     public static double GAME_SOUNDS_VOLUME = 0.25;
+    public final static Media mainSoundtrack;
+    public final static Media cloneMarchSoundtrack;
+    public final static Media anakinVsObiwanSoundtrack;
+    public final static Media empireMarchSoundtrack;
 
     private static Media loadSound(String filePath) {
         File musicFile = new File(filePath);
@@ -30,9 +30,9 @@ public class SoundPack {
     }
 
     static {
-        MAIN_SOUNDTRACK = loadSound(MAIN_TRACK_FILE_PATH);
-        CLONE_MARCH_SOUNDTRACK = loadSound(CLONE_MARCH_FILE_PATH);
-        ALERT_SOUNDTRACK = loadSound(ALERT_FILE_PATH);
-        EMPIRE_MARCH_SOUNDTRACK = loadSound(EMPIRE_MARCH_FILE_PATH);
+        mainSoundtrack = loadSound(MAIN_TRACK_FILE_PATH);
+        cloneMarchSoundtrack = loadSound(CLONE_MARCH_FILE_PATH);
+        anakinVsObiwanSoundtrack = loadSound(ALERT_FILE_PATH);
+        empireMarchSoundtrack = loadSound(EMPIRE_MARCH_FILE_PATH);
     }
 }

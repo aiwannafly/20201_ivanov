@@ -1,5 +1,6 @@
 package com.games.tanks2d;
 
+import com.games.tanks2d.view.SoundsPlayer;
 import com.games.tanks2d.view.SceneBuilder;
 import com.games.tanks2d.view.Settings;
 import javafx.application.Platform;
@@ -21,7 +22,7 @@ public class FXMLMainMenu {
     @FXML
     protected void onPlayButtonClick() {
         if (Settings.soundsON) {
-            ApplicationMainClass.buttonClick.play();
+            SoundsPlayer.playButtonClick();
         }
         Stage stage = (Stage) playButton.getScene().getWindow();
         Scene scene = SceneBuilder.getLevelsScene();
@@ -31,7 +32,7 @@ public class FXMLMainMenu {
     @FXML
     private void onSoundButtonClick() {
         if (Settings.soundsON) {
-            ApplicationMainClass.buttonClick.play();
+            SoundsPlayer.playButtonClick();
         }
         if (Settings.soundsON) {
             soundButton.setText("TURN ON SOUND");
@@ -44,23 +45,23 @@ public class FXMLMainMenu {
     @FXML
     private void onMusicButtonClick() {
         if (Settings.soundsON) {
-            ApplicationMainClass.buttonClick.play();
+            SoundsPlayer.playButtonClick();
         }
         if (Settings.musicON) {
             musicButton.setText("TURN ON MUSIC");
             Settings.musicON = false;
-            ApplicationMainClass.menuPlayer.stop();
+            SoundsPlayer.stopMenuSoundtrack();
         } else {
             musicButton.setText("TURN OFF MUSIC");
             Settings.musicON = true;
-            ApplicationMainClass.menuPlayer.play();
+            SoundsPlayer.playMenuSoundtrack();
         }
     }
 
     @FXML
     protected void onExitButtonClick() {
         if (Settings.soundsON) {
-            ApplicationMainClass.buttonClick.play();
+            SoundsPlayer.playButtonClick();
         }
         Platform.exit();
     }

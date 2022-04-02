@@ -9,5 +9,5 @@ public interface Blast extends Obstacle {
 
     StarShip.Direction getSide();
 
-    StarShip.Class getTeam();
+    StarShip.ShipClass getOwnerClass();
 }

@@ -4,6 +4,7 @@ import com.games.tanks2d.ApplicationMainClass;
 import com.games.tanks2d.view.SceneBuilder;
 import com.games.tanks2d.view.Settings;
 import com.games.tanks2d.view.SoundPack;
+import com.games.tanks2d.view.SoundsPlayer;
 import javafx.animation.AnimationTimer;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
@@ -22,18 +23,18 @@ public class Runner {
 
     public Runner(int levelNum) {
         gameEngine = new EngineImpl(levelNum);
-        scene = new Scene(gameEngine.getRenderer().getPane(),
+        scene = new Scene(gameEngine.getRenderer().getLayout(),
                 SceneBuilder.WIDTH, SceneBuilder.HEIGHT);
         switch (levelNum) {
-            case 3 -> mediaPlayer = new MediaPlayer(SoundPack.EMPIRE_MARCH_SOUNDTRACK);
-            case 2 -> mediaPlayer = new MediaPlayer(SoundPack.CLONE_MARCH_SOUNDTRACK);
-            case 1 -> mediaPlayer = new MediaPlayer(SoundPack.ALERT_SOUNDTRACK);
+            case 3 -> mediaPlayer = new MediaPlayer(SoundPack.empireMarchSoundtrack);
+            case 2 -> mediaPlayer = new MediaPlayer(SoundPack.cloneMarchSoundtrack);
+            case 1 -> mediaPlayer = new MediaPlayer(SoundPack.anakinVsObiwanSoundtrack);
         }
         mediaPlayer.setVolume(SoundPack.SOUNDTRACK_VOLUME);
     }
 
     public void run(Stage stage) {
-        ApplicationMainClass.menuPlayer.stop();
+        SoundsPlayer.stopMenuSoundtrack();
         if (Settings.musicON) {
             mediaPlayer.play();
         }
@@ -41,7 +42,7 @@ public class Runner {
                 "images/background_star_wars.jpg")).toString());
         Background b = new Background(new BackgroundImage(backImage, null,
                 null, null, null));
-        gameEngine.getRenderer().getPane().setBackground(b);
+        gameEngine.getRenderer().getLayout().setBackground(b);
         scene.setOnKeyPressed(gameEngine::handlePressedKeyEvent);
         scene.setOnKeyReleased(gameEngine::handleReleasedKeyEvent);
         scene.setOnMousePressed(gameEngine::handleClickEvent);
@@ -59,7 +60,7 @@ public class Runner {
         isActive = false;
         mediaPlayer.stop();
         if (Settings.musicON) {
-            ApplicationMainClass.menuPlayer.play();
+            SoundsPlayer.playMenuSoundtrack();
         }
     }
 

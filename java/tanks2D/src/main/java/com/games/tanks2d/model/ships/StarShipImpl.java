@@ -5,145 +5,53 @@ import com.games.tanks2d.model.obstacles.Obstacle;
 import com.games.tanks2d.model.obstacles.SquareBlock;
 
 public class StarShipImpl extends SquareBlock implements StarShip {
-    private Direction currentDir = Direction.RIGHT;
-    private int shipSpeed = 3;
-    private boolean isCrippled = false;
+    private final double BLAST_SIZE = 10;
     private final GameField gameField;
-    private final double bulletWidth = 10;
-    private final double bulletHeight = 10;
-    private Class type;
-    private int shootReloadTime = 20;
-    private int reload = shootReloadTime;
+    private ShipClass shipClass;
+    private Direction currentDir = Direction.RIGHT;
+    private boolean isCrippled = false;
+    private int shipSpeed = 3;
+    private int shootReloadCapacity = 20;
+    private int shootReloadSize = 0;
     private int HP = 3;
-    private boolean vertical = false;
-    private boolean positive = false;
 
     public StarShipImpl(double x, double y, double size, GameField gameField,
-                        Class aClass) {
+                        ShipClass shipClass) {
         super(x, y, size);
-        this.type = aClass;
+        this.shipClass = shipClass;
         this.gameField = gameField;
     }
 
     @Override
     public void move(Direction side) {
         if (side != currentDir) {
-            changeDirection(side);
+            setNewDirection(side);
         }
         double newX = getX();
         double newY = getY();
-        double deltaX = 0;
-        double deltaY = 0;
-        if (vertical) {
-            deltaX = (positive ? shipSpeed : -shipSpeed);
-            newX += deltaX;
+        if (side == Direction.RIGHT || side == Direction.LEFT) {
+            newX += getSideSign(side) * shipSpeed;
         } else {
-            deltaY = (positive ? shipSpeed : -shipSpeed);
-            newY += deltaY;
+            newY += getSideSign(side) * shipSpeed;
         }
-        if (intersectsObstacles(newX, newY)) {
+        if (crossesFieldObjects(newX, newY)) {
             return;
         }
         setX(newX);
         setY(newY);
     }
 
-    protected void changeDirection(Direction side) {
-        currentDir = side;
-        vertical = side.isVertical();
-        positive = side == (vertical ? Direction.RIGHT : Direction.BOTTOM);
-    }
-
     @Override
     public void shoot() {
-        reload--;
-        if (reload > 0) {
+        shootReloadSize--;
+        if (shootReloadSize > 0) {
             return;
         }
-        reload = shootReloadTime;
+        shootReloadSize = shootReloadCapacity;
         Point2D p = calcBulletCoords();
-        Blast blast = new BlastImpl(p.x, p.y, bulletWidth, currentDir,
-                gameField, type);
+        Blast blast = new BlastImpl(p.x, p.y, BLAST_SIZE, currentDir,
+                gameField, shipClass);
         gameField.getBullets().add(blast);
-    }
-
-    @Override
-    public int getHP() {
-        return HP;
-    }
-
-    @Override
-    public int getSpeed() {
-        return shipSpeed;
-    }
-
-    @Override
-    public Class getType() {
-        return type;
-    }
-
-    @Override
-    public int getReloadTime() {
-        return shootReloadTime;
-    }
-
-    @Override
-    public void setSpeed(int speed) {
-        shipSpeed = speed;
-    }
-
-    @Override
-    public void setReloadTime(int reloadTime) {
-        this.shootReloadTime = reloadTime;
-    }
-
-    @Override
-    public void setHP(int HP) {
-        this.HP = HP;
-    }
-
-    @Override
-    public void setType(Class type) {
-        this.type = type;
-    }
-
-    private boolean intersectsObstacles(double newX, double newY) {
-        for (Obstacle o : gameField.getObstacles()) {
-            if (intersectsObstacle(newX, newY, o)) {
-                double intSize = getIntersectionSize(newX, newY, o);
-                if (intSize != 0) {
-                    return true;
-                }
-            }
-        }
-        for (StarShip t: gameField.getEnemyTanks()) {
-            if (this == t) {
-                continue;
-            }
-            if (intersectsObstacle(newX, newY, t)) {
-                double intSize = getIntersectionSize(newX, newY, t);
-                if (intSize != 0) {
-                    return true;
-                }
-            }
-        }
-        if (this.type == Class.EMPIRE_SHIP) {
-            if (intersectsObstacle(newX, newY, gameField.getPlayersShip())) {
-                double intSize = getIntersectionSize(newX, newY, gameField.getPlayersShip());
-                return intSize != 0;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public boolean isCrippled() {
-        return isCrippled;
-    }
-
-    @Override
-    public boolean isTransparent() {
-        return false;
     }
 
     @Override
@@ -157,8 +65,82 @@ public class StarShipImpl extends SquareBlock implements StarShip {
     }
 
     @Override
-    public Direction getSide() {
+    public int getHP() {
+        return HP;
+    }
+
+    @Override
+    public int getSpeed() {
+        return shipSpeed;
+    }
+
+    @Override
+    public ShipClass getShipClass() {
+        return shipClass;
+    }
+
+    @Override
+    public int getReloadTime() {
+        return shootReloadCapacity;
+    }
+
+    @Override
+    public void setSpeed(int speed) {
+        shipSpeed = speed;
+    }
+
+    @Override
+    public void setReloadTime(int reloadTime) {
+        this.shootReloadCapacity = reloadTime;
+    }
+
+    @Override
+    public void setHP(int HP) {
+        this.HP = HP;
+    }
+
+    @Override
+    public void setShipClass(ShipClass shipClass) {
+        this.shipClass = shipClass;
+    }
+
+    @Override
+    public boolean isCrippled() {
+        return isCrippled;
+    }
+
+    @Override
+    public boolean isTransparent() {
+        return false;
+    }
+
+    @Override
+    public Direction getCurrentDirection() {
         return currentDir;
+    }
+
+    protected void setNewDirection(Direction side) {
+        currentDir = side;
+    }
+
+    protected boolean crossesFieldObjects(double newX, double newY) {
+        for (Obstacle o : gameField.getObstacles()) {
+            if (crossesObstacle(newX, newY, o)) {
+                return true;
+            }
+        }
+        for (StarShip t : gameField.getEnemyShips()) {
+            if (this == t) {
+                continue;
+            }
+            if (crossesObstacle(newX, newY, t)) {
+                return true;
+            }
+        }
+        if (this != gameField.getPlayersShip()) {
+            return crossesObstacle(newX, newY, gameField.getPlayersShip());
+        }
+        return false;
     }
 
     protected Point2D calcBulletCoords() {
@@ -166,22 +148,29 @@ public class StarShipImpl extends SquareBlock implements StarShip {
         double y = getY();
         switch (currentDir) {
             case TOP -> {
-                x += (getWidth() - bulletWidth) / 2;
-                y -= bulletHeight;
+                x += (getWidth() - BLAST_SIZE) / 2;
+                y -= BLAST_SIZE;
             }
             case BOTTOM -> {
-                x += (getWidth() - bulletWidth) / 2;
+                x += (getWidth() - BLAST_SIZE) / 2;
                 y += getHeight();
             }
             case RIGHT -> {
                 x += getWidth();
-                y += (getHeight() - bulletHeight) / 2;
+                y += (getHeight() - BLAST_SIZE) / 2;
             }
             case LEFT -> {
-                y += (getHeight() - bulletHeight) / 2;
-                x -= bulletWidth;
+                y += (getHeight() - BLAST_SIZE) / 2;
+                x -= BLAST_SIZE;
             }
         }
         return new Point2D(x, y);
+    }
+
+    private int getSideSign(Direction side) {
+        if (side == Direction.BOTTOM || side == Direction.RIGHT) {
+            return 1;
+        }
+        return -1;
     }
 }

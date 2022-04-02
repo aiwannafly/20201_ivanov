@@ -21,6 +21,6 @@ public class ExplosionImpl extends SquareBlock implements Explosion {
 
     @Override
     public boolean isTransparent() {
-        return false;
+        return true;
     }
 }

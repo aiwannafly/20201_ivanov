@@ -6,23 +6,23 @@ import com.games.tanks2d.model.GameField;
 import com.games.tanks2d.model.Point2D;
 
 public class StarDestroyer extends EmpireStarShip implements StarShip {
-    private final int maxShotsCount = 3;
+    private final int BURST_VALUE = 3;
+    private final int BURST_RELOAD_TIME = 10;
+    private final int SHOOT_RELOAD_TIME = 50;
+    private final double BLAST_SIZE = 10;
+    private final GameField gameField;
+    private final ShipClass type = ShipClass.STAR_DESTROYER;
     private int shotsCount = 0;
-    private final int burstReloadTime = 10;
     private int burstReloadCount = 10;
     private int reload = 0;
-    private final int shootReloadTime = 50;
-    private final double bulletSize = 10;
-    private final GameField gameField;
-    private final Class type = Class.STAR_DESTROYER;
 
     public StarDestroyer(double x, double y, double size, GameField gameField) {
         super(x, y, size, gameField);
-        setSpeed(2);
+        setSpeed(getSpeed() - 1);
         setHP(5);
+        setSingleDirTime(400);
+        setShipClass(ShipClass.STAR_DESTROYER);
         this.gameField = gameField;
-//        this.singleDirTime = 400;
-        setType(Class.STAR_DESTROYER);
     }
 
     @Override
@@ -31,36 +31,36 @@ public class StarDestroyer extends EmpireStarShip implements StarShip {
         if (reload > 0) {
             return;
         }
-        if (shotsCount >= maxShotsCount) {
+        if (shotsCount >= BURST_VALUE) {
             shotsCount = 0;
-            reload = shootReloadTime;
+            reload = SHOOT_RELOAD_TIME;
         }
         burstReloadCount--;
         if (burstReloadCount > 0) {
             return;
         }
-        burstReloadCount = burstReloadTime;
+        burstReloadCount = BURST_RELOAD_TIME;
         shotsCount++;
         Point2D p = calcBulletCoords();
-        double betweenOffset = bulletSize * 2.5;
+        double betweenOffset = BLAST_SIZE * 2.5;
         double startOffset = getWidth() * 0.75;
-        Blast first = null;
-        Blast second = null;
-        if (getSide() == Direction.RIGHT || getSide() == Direction.LEFT) {
-            if (getSide() == Direction.RIGHT) {
+        Blast first;
+        Blast second;
+        if (getCurrentDirection() == Direction.RIGHT || getCurrentDirection() == Direction.LEFT) {
+            if (getCurrentDirection() == Direction.RIGHT) {
                 startOffset *= -1;
             }
-            first = new BlastImpl(p.x + startOffset, p.y + betweenOffset, bulletSize, getSide(),
+            first = new BlastImpl(p.x + startOffset, p.y + betweenOffset, BLAST_SIZE, getCurrentDirection(),
                     gameField, type);
-            second = new BlastImpl(p.x + startOffset, p.y - betweenOffset, bulletSize, getSide(),
+            second = new BlastImpl(p.x + startOffset, p.y - betweenOffset, BLAST_SIZE, getCurrentDirection(),
                     gameField, type);
         } else {
-            if (getSide() == Direction.BOTTOM) {
+            if (getCurrentDirection() == Direction.BOTTOM) {
                 startOffset *= -1;
             }
-            first = new BlastImpl(p.x + betweenOffset, p.y + startOffset, bulletSize, getSide(),
+            first = new BlastImpl(p.x + betweenOffset, p.y + startOffset, BLAST_SIZE, getCurrentDirection(),
                     gameField, type);
-            second = new BlastImpl(p.x - betweenOffset, p.y + startOffset, bulletSize, getSide(),
+            second = new BlastImpl(p.x - betweenOffset, p.y + startOffset, BLAST_SIZE, getCurrentDirection(),
                     gameField, type);
         }
         gameField.getBullets().add(first);
