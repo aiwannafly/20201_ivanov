@@ -13,7 +13,11 @@
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
     </padding>
 
-    <Button onAction="#onResumeButtonClick" prefHeight="75.0" prefWidth="240.0" text="RESUME">
+    <Button  onAction="#onResumeButtonClick" prefHeight="75.0" prefWidth="240.0" text="RESUME">
+    </Button>
+    <Button fx:id="soundButton" onAction="#onSoundButtonClick" prefHeight="75.0" prefWidth="240.0" text="TURN OFF SOUND">
+    </Button>
+    <Button fx:id="musicButton" onAction="#onMusicButtonClick" prefHeight="75.0" prefWidth="240.0" text="TURN OFF MUSIC">
     </Button>
     <Button fx:id="backButton" mnemonicParsing="false" onAction="#onBackButtonClick" prefHeight="75.0" prefWidth="240.0"
             text="BACK TO MENU">

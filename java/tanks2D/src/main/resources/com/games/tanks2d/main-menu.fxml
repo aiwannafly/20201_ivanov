@@ -11,7 +11,6 @@
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
     </padding>
-
     <Button fx:id="playButton" onAction="#onPlayButtonClick" prefHeight="75.0" prefWidth="240.0" text="PLAY">
       <VBox.margin>
          <Insets left="800.0" top="350.0" />
@@ -19,9 +18,27 @@
       <font>
          <Font size="48.0" />
       </font></Button>
-   <Button mnemonicParsing="false" onAction="#onExitButtonClick" prefHeight="75.0" prefWidth="240.0" text="EXIT">
+    <Button fx:id="soundButton" onAction="#onSoundButtonClick" prefHeight="75.0" prefWidth="240.0" text="TURN OFF SOUND">
+        <VBox.margin>
+            <Insets left="800.0" />
+        </VBox.margin>
+        <font>
+            <Font size="48.0" />
+        </font>
+    </Button>
+
+    <Button fx:id="musicButton" onAction="#onMusicButtonClick" prefHeight="75.0" prefWidth="240.0" text="TURN OFF MUSIC">
+        <VBox.margin>
+            <Insets left="800.0"  />
+        </VBox.margin>
+        <font>
+            <Font size="48.0" />
+        </font>
+    </Button>
+
+    <Button onAction="#onExitButtonClick" prefHeight="75.0" prefWidth="240.0" text="EXIT">
       <VBox.margin>
-         <Insets left="800.0" top="50.0" />
+         <Insets left="800.0" />
       </VBox.margin>
       <font>
          <Font size="48.0" />

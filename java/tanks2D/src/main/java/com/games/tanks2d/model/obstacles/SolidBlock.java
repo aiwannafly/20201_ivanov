@@ -1,7 +1,5 @@
 package com.games.tanks2d.model.obstacles;
 
-import com.games.tanks2d.model.SquareBlock;
-
 public class SolidBlock extends SquareBlock {
     public SolidBlock(double x, double y, double size) {
         super(x, y, size);

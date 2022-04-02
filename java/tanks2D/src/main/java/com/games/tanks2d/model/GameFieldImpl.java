@@ -2,6 +2,7 @@ package com.games.tanks2d.model;
 
 import com.games.tanks2d.ApplicationMainClass;
 import com.games.tanks2d.model.obstacles.*;
+import com.games.tanks2d.model.ships.*;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -46,11 +47,16 @@ public class GameFieldImpl implements GameField {
                             case 'l' -> obstacle = new WallBlock(x, y, size);
                         }
                         obstacles.add(obstacle);
-                    } else if (nextByte == 'e' || nextByte == 'p') {
+                    } else if (nextByte == 'e' || nextByte == 'p' || nextByte == 's'
+                    || nextByte == 'f') {
                         if (nextByte == 'p') {
-                            playersStarShip = new StarShipImpl(x, y, 2 * size, this, StarShip.Team.PLAYERS);
-                        } else {
+                            playersStarShip = new RebellionShip(x, y, 2 * size, this);
+                        } else if (nextByte == 'e') {
                             enemyStarShips.add(new EmpireStarShip(x, y, 2 * size, this));
+                        } else if (nextByte == 's') {
+                            enemyStarShips.add(new StarDestroyer(x, y, 4 * size, this));
+                        } else if (nextByte == 'f') {
+                            enemyStarShips.add(new Exterminator(x, y, size, this));
                         }
                     }
                 }
@@ -79,7 +85,7 @@ public class GameFieldImpl implements GameField {
     }
 
     @Override
-    public StarShip getPlayersTank() {
+    public StarShip getPlayersShip() {
         return playersStarShip;
     }
 

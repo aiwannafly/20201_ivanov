@@ -5,18 +5,24 @@ import com.games.tanks2d.view.SceneBuilder;
 import com.games.tanks2d.view.TexturePack;
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.media.AudioClip;
 import javafx.scene.media.MediaPlayer;
 import javafx.stage.Stage;
 
+import java.nio.file.Paths;
+
 
 public class ApplicationMainClass extends Application {
-    public static MediaPlayer player = new MediaPlayer(SoundPack.MAIN_SOUNDTRACK);
+    public static MediaPlayer menuPlayer = new MediaPlayer(SoundPack.MAIN_SOUNDTRACK);
+    public static AudioClip buttonClick = new AudioClip(Paths.get(SoundPack.BUTTON_FILE_PATH).
+            toUri().toString());
 
     @Override
     public void start(Stage stage) {
-        player.setVolume(SoundPack.SOUNDTRACK_VOLUME);
-        player.setAutoPlay(true);
-        player.play();
+        menuPlayer.setVolume(SoundPack.SOUNDTRACK_VOLUME);
+        buttonClick.setVolume(SoundPack.GAME_SOUNDS_VOLUME);
+        menuPlayer.setAutoPlay(true);
+        menuPlayer.play();
         Scene scene = SceneBuilder.getMenuScene();
         if (null == scene) {
             return;

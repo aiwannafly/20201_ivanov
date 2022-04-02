@@ -1,6 +1,7 @@
 package com.games.tanks2d.view;
 
 import com.games.tanks2d.ApplicationMainClass;
+import com.games.tanks2d.controller.Runner;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 
@@ -8,6 +9,7 @@ import java.io.IOException;
 import java.util.Objects;
 
 public class SceneBuilder {
+    private static Runner runner = null;
     private static Scene menuScene = null;
     private static Scene levelsScene = null;
     private static Scene gameScene = null;
@@ -68,7 +70,14 @@ public class SceneBuilder {
         return lastLevelNum;
     }
 
-    public static Scene getGameScene(int level) {
-        return null;
+    public static Runner getGameRunner(int level) {
+        if (null == runner) {
+            runner = new Runner(level);
+        }
+        if (!runner.isActive()) {
+            runner = new Runner(level);
+        }
+        lastLevelNum = level;
+        return runner;
     }
 }

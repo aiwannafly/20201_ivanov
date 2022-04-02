@@ -1,18 +1,22 @@
 package com.games.tanks2d.model;
 
+import com.games.tanks2d.model.obstacles.Obstacle;
+import com.games.tanks2d.model.obstacles.SquareBlock;
+import com.games.tanks2d.model.ships.StarShip;
+
 public class BlastImpl extends SquareBlock implements Blast {
     private boolean isCrippled = false;
     private final StarShip.Direction direction;
-    private final StarShip.Team team;
+    private final StarShip.Class aClass;
     private final GameField env;
     private final double bulletSpeed = 10;
 
     public BlastImpl(double x, double y, double size, StarShip.Direction dir,
-                     GameField env, StarShip.Team team) {
+                     GameField env, StarShip.Class aClass) {
         super(x, y, size);
         this.direction = dir;
         this.env = env;
-        this.team = team;
+        this.aClass = aClass;
     }
 
     @Override
@@ -49,8 +53,8 @@ public class BlastImpl extends SquareBlock implements Blast {
     }
 
     @Override
-    public StarShip.Team getTeam() {
-        return team;
+    public StarShip.Class getTeam() {
+        return aClass;
     }
 
     @Override
@@ -77,6 +81,7 @@ public class BlastImpl extends SquareBlock implements Blast {
 
     private boolean hitObstacles(double newX, double newY) {
         boolean hits = false;
+
         for (Obstacle o: env.getObstacles()) {
             if (intersectsObstacle(newX, newY, o)) {
                 o.hit();
@@ -86,7 +91,7 @@ public class BlastImpl extends SquareBlock implements Blast {
         if (hits) {
             return true;
         }
-        if (team == StarShip.Team.PLAYERS) {
+        if (aClass == StarShip.Class.REBELLION_SHIP) {
             for (StarShip t: env.getEnemyTanks()) {
                 if (intersectsObstacle(newX, newY, t)) {
                     t.hit();
@@ -94,11 +99,11 @@ public class BlastImpl extends SquareBlock implements Blast {
                 }
             }
         } else {
-            if (env.getPlayersTank().isCrippled()) {
+            if (env.getPlayersShip().isCrippled()) {
                 return false;
             }
-            if (intersectsObstacle(newX, newY, env.getPlayersTank())) {
-                env.getPlayersTank().hit();
+            if (intersectsObstacle(newX, newY, env.getPlayersShip())) {
+                env.getPlayersShip().hit();
                 return true;
             }
         }

@@ -1,7 +1,5 @@
 package com.games.tanks2d.model.obstacles;
 
-import com.games.tanks2d.model.SquareBlock;
-
 public class FragileBlock extends SquareBlock {
     private boolean isCrippled = false;
 

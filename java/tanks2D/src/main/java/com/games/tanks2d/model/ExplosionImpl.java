@@ -1,5 +1,7 @@
 package com.games.tanks2d.model;
 
+import com.games.tanks2d.model.obstacles.SquareBlock;
+
 public class ExplosionImpl extends SquareBlock implements Explosion {
     private int lifeTime = 10;
 

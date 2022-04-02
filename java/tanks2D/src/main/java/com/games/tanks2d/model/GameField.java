@@ -1,5 +1,8 @@
 package com.games.tanks2d.model;
 
+import com.games.tanks2d.model.obstacles.Obstacle;
+import com.games.tanks2d.model.ships.StarShip;
+
 import java.util.ArrayList;
 
 public interface GameField {
@@ -18,7 +21,7 @@ public interface GameField {
 
     ArrayList<Explosion> getExplosions();
 
-    StarShip getPlayersTank();
+    StarShip getPlayersShip();
 
     void update();
 

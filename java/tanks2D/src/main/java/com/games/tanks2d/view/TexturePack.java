@@ -1,7 +1,7 @@
 package com.games.tanks2d.view;
 
 import com.games.tanks2d.ApplicationMainClass;
-import com.games.tanks2d.model.StarShip;
+import com.games.tanks2d.model.ships.StarShip;
 import javafx.scene.image.Image;
 import javafx.scene.paint.ImagePattern;
 
@@ -20,85 +20,84 @@ public class TexturePack {
         return pat;
     }
 
-    public static ImagePattern getEnemyTexture(StarShip.Direction dir) {
+    public static ImagePattern getEmpireStarShipTexture(StarShip.Direction dir) {
         ImagePattern pat = null;
         switch (dir) {
-            case TOP -> pat = TexturePack.imgEnemyShipTop;
-            case BOTTOM -> pat = TexturePack.imgEnemyShipBottom;
-            case LEFT -> pat = TexturePack.imgEnemyShipLeft;
-            case RIGHT -> pat = TexturePack.imgEnemyShipRight;
+            case TOP -> pat = TexturePack.imgEmpireStarShipTop;
+            case BOTTOM -> pat = TexturePack.imgEmpireStarShipBottom;
+            case LEFT -> pat = TexturePack.imgEmpireStarShipLeft;
+            case RIGHT -> pat = TexturePack.imgEmpireStarShipRight;
         }
         return pat;
     }
 
+    public static ImagePattern getExtStarShipTexture(StarShip.Direction dir) {
+        ImagePattern pat = null;
+        switch (dir) {
+            case TOP -> pat = TexturePack.imgExtStarShipTop;
+            case BOTTOM -> pat = TexturePack.imgExtStarShipBottom;
+            case LEFT -> pat = TexturePack.imgExtStarShipLeft;
+            case RIGHT -> pat = TexturePack.imgExtStarShipRight;
+        }
+        return pat;
+    }
+
+    public static ImagePattern getStarDestroyerTexture(StarShip.Direction dir) {
+        ImagePattern pat = null;
+        switch (dir) {
+            case TOP -> pat = TexturePack.starDestroyerTop;
+            case BOTTOM -> pat = TexturePack.starDestroyerBottom;
+            case LEFT -> pat = TexturePack.starDestroyerLeft;
+            case RIGHT -> pat = TexturePack.starDestroyerRight;
+        }
+        return pat;
+    }
+
+    public static ImagePattern getImagePattern(String imgName) {
+        return new ImagePattern(new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
+                        imgName)).toString()));
+    }
+
+    public final static ImagePattern starDestroyerRight =
+            getImagePattern("images/star_destroyer_right.png");
+    public final static ImagePattern starDestroyerBottom =
+            getImagePattern("images/star_destroyer_bottom.png");
+    public final static ImagePattern starDestroyerLeft =
+            getImagePattern("images/star_destroyer_left.png");
+    public final static ImagePattern starDestroyerTop =
+            getImagePattern("images/star_destroyer_top.png");
+
+    public final static ImagePattern heartIcon = getImagePattern("images/heart.png");
+    public final static ImagePattern imgGreenBlastHor = getImagePattern("images/green_blast_hor.png");
+    public final static ImagePattern imgGreenBlastVert = getImagePattern("images/green_blast_vert.png");
     public final static Image icon = new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
             "images/icon.png")).toString());
+    public final static ImagePattern imgMetalBlock = getImagePattern("images/metal.png");
 
-    public final static ImagePattern imgMetalBlock = new ImagePattern(
-            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-                    "images/metal.jpg")).toString()));
+    public final static ImagePattern imgRedBulletHor = getImagePattern("images/red_bullet_hor.png");
+    public final static ImagePattern imgRedBulletVert = getImagePattern("images/red_bullet_vert.png");
 
-    public final static ImagePattern imgRedBulletHor = new ImagePattern(
-            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-                    "images/red_bullet_hor.png")).toString()));
-    public final static ImagePattern imgRedBulletVert = new ImagePattern(
-            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-                    "images/red_bullet_vert.png")).toString()));
+    public final static ImagePattern imgBlueBulletHor = getImagePattern("images/blue_bullet_hor.png");
+    public final static ImagePattern imgBlueBulletVert = getImagePattern("images/blue_bullet_vert.png");
 
-    public final static ImagePattern imgBlueBulletHor = new ImagePattern(
-            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-                    "images/blue_bullet_hor.png")).toString()));
-    public final static ImagePattern imgBlueBulletVert = new ImagePattern(
-            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-                    "images/blue_bullet_vert.png")).toString()));
+    public final static ImagePattern imgPlayerShipRight = getImagePattern("images/player_ship_right.png");
+    public final static ImagePattern imgPlayerShipBottom = getImagePattern("images/player_ship_bottom.png");
+    public final static ImagePattern imgPlayerShipLeft = getImagePattern("images/player_ship_left.png");
+    public final static ImagePattern imgPlayerShipTop = getImagePattern("images/player_ship_top.png");
 
-    public final static ImagePattern imgPlayerShipRight = new ImagePattern(
-            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-                    "images/player_ship_right.png")).toString()));
-    public final static ImagePattern imgPlayerShipBottom = new ImagePattern(
-            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-                    "images/player_ship_bottom.png")).toString()));
-    public final static ImagePattern imgPlayerShipLeft = new ImagePattern(
-            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-                    "images/player_ship_left.png")).toString()));
-    public final static ImagePattern imgPlayerShipTop = new ImagePattern(
-            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-                    "images/player_ship_top.png")).toString()));
+    public final static ImagePattern imgEmpireStarShipRight = getImagePattern("images/enemy_ship_right.png");
+    public final static ImagePattern imgEmpireStarShipBottom = getImagePattern("images/enemy_ship_bottom.png");
+    public final static ImagePattern imgEmpireStarShipLeft = getImagePattern("images/enemy_ship_left.png");
+    public final static ImagePattern imgEmpireStarShipTop = getImagePattern("images/enemy_ship_top.png");
 
-    public final static ImagePattern imgEnemyShipRight = new ImagePattern(
-            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-                    "images/enemy_ship_right.png")).toString()));
-    public final static ImagePattern imgEnemyShipBottom = new ImagePattern(
-            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-                    "images/enemy_ship_bottom.png")).toString()));
-    public final static ImagePattern imgEnemyShipLeft = new ImagePattern(
-            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-                    "images/enemy_ship_left.png")).toString()));
-    public final static ImagePattern imgEnemyShipTop = new ImagePattern(
-            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-                    "images/enemy_ship_top.png")).toString()));
+    public final static ImagePattern imgExtStarShipRight = getImagePattern("images/ext_ship_right.png");
+    public final static ImagePattern imgExtStarShipBottom = getImagePattern("images/ext_ship_bottom.png");
+    public final static ImagePattern imgExtStarShipLeft = getImagePattern("images/ext_ship_left.png");
+    public final static ImagePattern imgExtStarShipTop = getImagePattern("images/ext_ship_top.png");
 
-//    public final static ImagePattern imgLeafBlockPattern = new ImagePattern(
-//            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-//                    "images/leaf_block.png")).toString()));
-//
-//    public final static ImagePattern imgBlueBrickPattern = new ImagePattern(
-//            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-//                    "images/blue_brick.png")).toString()));
-//    public final static  ImagePattern imgGreenBrickPattern = new ImagePattern(
-//            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-//                    "images/green_brick.png")).toString()));
-//    public final static ImagePattern imgDarkBlueBrickPattern = new ImagePattern(
-//            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-//                    "images/dark_blue_brick.png")).toString()));
-    public final static ImagePattern imgBlackBrickPattern = new ImagePattern(
-            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-                    "images/black_brick.png")).toString()));
-    public final static ImagePattern imgGrayBrickPattern = new ImagePattern(
-            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-                    "images/gray_brick.png")).toString()));
+    public final static ImagePattern imgBlackBrickPattern = getImagePattern("images/black_brick.jpg");
+    public final static ImagePattern imgGrayBrickPattern = getImagePattern("images/gray_brick.png");
+    public final static ImagePattern imgBlueBrickPattern = getImagePattern("images/blue_brick.png");
 
-    public final static ImagePattern imgExplosionPattern = new ImagePattern(
-            new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-                    "images/explosion.gif")).toString()));
+    public final static ImagePattern imgExplosionPattern = getImagePattern("images/explosion.gif");
 }
