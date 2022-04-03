@@ -1,0 +1,4 @@
+e=com.games.starwars.view.textures.blasts.RedBlastTexture
+s=com.games.starwars.view.textures.blasts.GreenBlastTexture
+f=com.games.starwars.view.textures.blasts.RedBlastTexture
+p=com.games.starwars.view.textures.blasts.BlueBlastTexture

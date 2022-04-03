@@ -5,6 +5,8 @@ module com.games.tanks_2d {
     requires org.kordamp.bootstrapfx.core;
     requires javafx.media;
 
-    opens com.games.tanks2d to javafx.fxml;
-    exports com.games.tanks2d;
+    opens com.games.starwars to javafx.fxml;
+    exports com.games.starwars;
+    exports com.games.starwars.model.factory;
+    opens com.games.starwars.model.factory to javafx.fxml;
 }

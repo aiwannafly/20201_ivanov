@@ -1,0 +1,4 @@
+e=com.games.starwars.view.textures.ships.EmpireShipTexture
+s=com.games.starwars.view.textures.ships.StarDestroyerTexture
+f=com.games.starwars.view.textures.ships.ExterminatorTexture
+p=com.games.starwars.view.textures.ships.RebellionShipTexture

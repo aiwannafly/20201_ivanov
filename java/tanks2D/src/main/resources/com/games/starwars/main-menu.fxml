@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<VBox fx:id="menu" alignment="CENTER"
+      spacing="20.0" xmlns="http://javafx.com/javafx/16"
+      xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.games.starwars.FXMLMainMenu">
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+    </padding>
+    <Button fx:id="playButton" onAction="#onPlayButtonClick" prefHeight="75.0" prefWidth="240.0" text="PLAY">
+      <VBox.margin>
+         <Insets left="800.0" top="350.0" />
+      </VBox.margin>
+      <font>
+         <Font size="48.0" />
+      </font></Button>
+    <Button fx:id="soundButton" onAction="#onSoundButtonClick" prefHeight="75.0" prefWidth="240.0" text="TURN OFF SOUND">
+        <VBox.margin>
+            <Insets left="800.0" />
+        </VBox.margin>
+        <font>
+            <Font size="48.0" />
+        </font>
+    </Button>
+
+    <Button fx:id="musicButton" onAction="#onMusicButtonClick" prefHeight="75.0" prefWidth="240.0" text="TURN OFF MUSIC">
+        <VBox.margin>
+            <Insets left="800.0"  />
+        </VBox.margin>
+        <font>
+            <Font size="48.0" />
+        </font>
+    </Button>
+
+    <Button onAction="#onExitButtonClick" prefHeight="75.0" prefWidth="240.0" text="EXIT">
+      <VBox.margin>
+         <Insets left="800.0" />
+      </VBox.margin>
+      <font>
+         <Font size="48.0" />
+      </font></Button>
+</VBox>

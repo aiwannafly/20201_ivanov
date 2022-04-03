@@ -1,0 +1,4 @@
+g=com.games.starwars.view.textures.obstacles.SolidBlockTexture
+r=com.games.starwars.view.textures.obstacles.FragileBlockTexture
+l=com.games.starwars.view.textures.WallBlockTexture
+o=com.games.starwars.view.textures.obstacles.FragileBlockTexture
