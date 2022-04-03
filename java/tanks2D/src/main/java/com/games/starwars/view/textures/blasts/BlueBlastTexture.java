@@ -3,7 +3,7 @@ package com.games.starwars.view.textures.blasts;
 import com.games.starwars.model.Blast;
 import com.games.starwars.model.ships.StarShip;
 import com.games.starwars.view.SoundsPlayer;
-import com.games.starwars.view.TexturePack;
+import com.games.starwars.view.textures.TexturePack;
 import com.games.starwars.view.textures.TextureImpl;
 import javafx.scene.shape.Rectangle;
 

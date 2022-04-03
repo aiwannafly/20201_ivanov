@@ -1,8 +1,7 @@
 package com.games.starwars.view.textures.obstacles;
 
 import com.games.starwars.model.obstacles.Obstacle;
-import com.games.starwars.view.TexturePack;
-import com.games.starwars.view.textures.Texture;
+import com.games.starwars.view.textures.TexturePack;
 import com.games.starwars.view.textures.TextureImpl;
 
 public class FragileBlockTexture extends TextureImpl implements ObstacleTexture {

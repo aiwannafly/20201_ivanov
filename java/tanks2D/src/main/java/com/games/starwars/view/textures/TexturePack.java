@@ -1,4 +1,4 @@
-package com.games.starwars.view;
+package com.games.starwars.view.textures;
 
 import com.games.starwars.ApplicationMainClass;
 import com.games.starwars.model.ships.StarShip;
@@ -59,7 +59,7 @@ public class TexturePack {
     }
 
     public final static Image icon = new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
-            "images/icon.png")).toString());
+            "images/starwars_icon.jpg")).toString());
 
     public final static Image backgroundImage = new Image(Objects.requireNonNull(ApplicationMainClass.class.getResource(
             "images/background_star_wars.jpg")).toString());
@@ -84,10 +84,10 @@ public class TexturePack {
     public final static ImagePattern imgBlueBulletHor = getImagePattern("images/blue_bullet_hor.png");
     public final static ImagePattern imgBlueBulletVert = getImagePattern("images/blue_bullet_vert.png");
 
-    public final static ImagePattern imgPlayerShipRight = getImagePattern("images/player_ship_right.png");
-    public final static ImagePattern imgPlayerShipBottom = getImagePattern("images/player_ship_bottom.png");
-    public final static ImagePattern imgPlayerShipLeft = getImagePattern("images/player_ship_left.png");
-    public final static ImagePattern imgPlayerShipTop = getImagePattern("images/player_ship_top.png");
+    public final static ImagePattern imgPlayerShipRight = getImagePattern("images/x-wing_right.png");
+    public final static ImagePattern imgPlayerShipBottom = getImagePattern("images/x-wing_bottom.png");
+    public final static ImagePattern imgPlayerShipLeft = getImagePattern("images/x-wing_left.png");
+    public final static ImagePattern imgPlayerShipTop = getImagePattern("images/x-wing_top.png");
 
     public final static ImagePattern imgEmpireStarShipRight = getImagePattern("images/enemy_ship_right.png");
     public final static ImagePattern imgEmpireStarShipBottom = getImagePattern("images/enemy_ship_bottom.png");

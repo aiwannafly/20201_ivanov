@@ -1,8 +1,8 @@
 package com.games.starwars.view.textures.ships;
 
-import com.games.starwars.view.TexturePack;
+import com.games.starwars.view.textures.TexturePack;
 
-public class RebellionShipTexture extends StarDestroyerTexture implements ShipTexture {
+public class XWingTexture extends StarDestroyerTexture implements ShipTexture {
 
     @Override
     protected void setFill() {

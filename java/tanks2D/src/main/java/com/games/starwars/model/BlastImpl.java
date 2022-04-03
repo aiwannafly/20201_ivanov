@@ -1,5 +1,6 @@
 package com.games.starwars.model;
 
+import com.games.starwars.Settings;
 import com.games.starwars.model.obstacles.Obstacle;
 import com.games.starwars.model.obstacles.SquareBlock;
 import com.games.starwars.model.ships.StarShip;
@@ -65,11 +66,10 @@ public class BlastImpl extends SquareBlock implements Blast {
     @Override
     public void hit() {
         isCrippled = true;
-        double explosionSize = 30;
+        double explosionSize = 15;
         double eX = getX();
         double eY = getY();
-        double blockSize = 30;
-        double offset = (blockSize - getWidth()) / 2;
+        double offset = (explosionSize - getWidth()) / 2;
         if (FLY_DIRECTION == StarShip.Direction.LEFT ||
                 FLY_DIRECTION == StarShip.Direction.RIGHT) {
             eY -= offset;
@@ -77,8 +77,10 @@ public class BlastImpl extends SquareBlock implements Blast {
             eX -= offset;
         }
         switch (FLY_DIRECTION) {
-            case LEFT -> eX -= offset * 2;
-            case TOP -> eY -= offset * 2;
+            case LEFT -> eX -= offset * 6;
+            case TOP -> eY -= offset * 6;
+            case RIGHT -> eX += offset * 4;
+            case BOTTOM -> eY += offset * 4;
         }
         Explosion e = new ExplosionImpl(eX, eY, explosionSize);
         env.getExplosions().add(e);
@@ -95,7 +97,7 @@ public class BlastImpl extends SquareBlock implements Blast {
         if (hits) {
             return true;
         }
-        if (getCodeName() == 'p') {
+        if (getCodeName() == Settings.PLAYER_SHIP_CODE) {
             for (StarShip t: env.getEnemyShips()) {
                 if (intersectsObstacle(newX, newY, t)) {
                     t.hit();

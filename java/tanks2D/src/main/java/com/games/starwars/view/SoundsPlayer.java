@@ -6,16 +6,11 @@ import javafx.scene.media.MediaPlayer;
 import java.nio.file.Paths;
 
 public class SoundsPlayer {
-    private static final AudioClip explosionSound = new AudioClip(
-            Paths.get(SoundPack.EXPL_FILE_PATH).toUri().toString());
-    private static final AudioClip bigExplosionSound = new AudioClip(
-            Paths.get(SoundPack.EXPL_FILE_PATH).toUri().toString());
-    private static final AudioClip laserGunSound = new AudioClip(
-            Paths.get(SoundPack.LASER_FILE_PATH).toUri().toString());
-    private static final AudioClip shipBlastGunSound = new AudioClip(
-            Paths.get(SoundPack.SHIP_BLAST_FILE_PATH).toUri().toString());
-    private static final AudioClip buttonClick = new AudioClip(Paths.get(SoundPack.BUTTON_FILE_PATH).
-            toUri().toString());
+    private static final AudioClip explosionSound = getAudioCLip(SoundPack.EXPL_FILE_PATH);
+    private static final AudioClip bigExplosionSound = getAudioCLip(SoundPack.EXPL_FILE_PATH);
+    private static final AudioClip laserGunSound = getAudioCLip(SoundPack.LASER_FILE_PATH);
+    private static final AudioClip shipBlastGunSound = getAudioCLip(SoundPack.SHIP_BLAST_FILE_PATH);
+    private static final AudioClip buttonClick = getAudioCLip(SoundPack.BUTTON_FILE_PATH);
     private static MediaPlayer menuPlayer = new MediaPlayer(SoundPack.mainSoundtrack);
 
     static {
@@ -54,5 +49,9 @@ public class SoundsPlayer {
 
     public static void stopMenuSoundtrack() {
         menuPlayer.stop();
+    }
+
+    private static AudioClip getAudioCLip(String path) {
+        return new AudioClip(Paths.get(path).toUri().toString());
     }
 }

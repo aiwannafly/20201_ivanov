@@ -9,7 +9,10 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.util.Objects;
 
+import static com.games.starwars.Settings.FXML_PATH;
+
 public class SceneBuilder {
+
     private static final Scene menuScene;
     private static final Scene levelsScene;
     private static final Scene pauseScene;
@@ -23,11 +26,11 @@ public class SceneBuilder {
     private static int lastLevelNum = 1;
 
     static {
-        menuScene = loadWithFXMLAndCSS("main-menu.fxml", STYLESHEET);
-        levelsScene = loadWithFXMLAndCSS("levels.fxml", STYLESHEET);
-        pauseScene = loadWithFXMLAndCSS("pause.fxml", STYLESHEET);
-        deathScene = loadWithFXMLAndCSS("end-game.fxml", STYLESHEET);
-        winScene = loadWithFXMLAndCSS("win-game.fxml", STYLESHEET);
+        menuScene = loadWithFXMLAndCSS(FXML_PATH + "main-menu.fxml", STYLESHEET);
+        levelsScene = loadWithFXMLAndCSS(FXML_PATH + "levels.fxml", STYLESHEET);
+        pauseScene = loadWithFXMLAndCSS(FXML_PATH + "pause.fxml", STYLESHEET);
+        deathScene = loadWithFXMLAndCSS(FXML_PATH + "end-game.fxml", STYLESHEET);
+        winScene = loadWithFXMLAndCSS(FXML_PATH + "win-game.fxml", STYLESHEET);
     }
 
     public static Scene getDeathScene() {
@@ -72,8 +75,7 @@ public class SceneBuilder {
         try {
             scene = new Scene(fxmlLoader.load(), WIDTH, HEIGHT);
         } catch (IOException exception) {
-            System.err.println("Could not load a scene.");
-            System.err.println(exception.getMessage());
+            System.err.println("Could not load a scene: " + exception.getMessage());
         }
         if (null != scene) {
             scene.getStylesheets().add(stylesheetName);

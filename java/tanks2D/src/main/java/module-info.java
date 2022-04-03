@@ -9,4 +9,6 @@ module com.games.tanks_2d {
     exports com.games.starwars;
     exports com.games.starwars.model.factory;
     opens com.games.starwars.model.factory to javafx.fxml;
+    exports com.games.starwars.FXML;
+    opens com.games.starwars.FXML to javafx.fxml;
 }

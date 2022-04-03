@@ -1,9 +1,8 @@
 package com.games.starwars.view.textures.ships;
 
 import com.games.starwars.model.ships.StarShip;
-import com.games.starwars.view.TexturePack;
+import com.games.starwars.view.textures.TexturePack;
 import com.games.starwars.view.textures.TextureImpl;
-import com.games.starwars.view.textures.ships.ShipTexture;
 import javafx.scene.shape.Rectangle;
 
 public class StarDestroyerTexture extends TextureImpl implements ShipTexture {

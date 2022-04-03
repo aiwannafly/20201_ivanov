@@ -6,7 +6,7 @@
 
 <VBox fx:id="winGameMenuBar" alignment="CENTER" prefHeight="615.0"
       prefWidth="880.0" spacing="20.0" xmlns="http://javafx.com/javafx/16"
-      xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.games.starwars.FXMLWinMenu">
+      xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.games.starwars.FXML.FXMLWinMenu">
     <Label text="YOU WIN">
 
     </Label>

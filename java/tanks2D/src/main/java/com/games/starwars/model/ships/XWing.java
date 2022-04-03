@@ -5,67 +5,35 @@ import com.games.starwars.model.BlastImpl;
 import com.games.starwars.model.GameField;
 import com.games.starwars.model.Point2D;
 
-public class StarDestroyer extends EmpireStarShip implements StarShip {
-    private final int BURST_VALUE = 3;
-    private final int BURST_RELOAD_TIME = 10;
-    private final int SHOOT_RELOAD_TIME = 30;
+public class XWing extends StarShipImpl implements StarShip {
     private final double BLAST_SIZE = 10;
     private GameField gameField;
-    private int shotsCount = 0;
-    private int burstReloadCount = 10;
-    private int reload = 0;
 
-    public StarDestroyer() {
+    public XWing() {
         super(0, 0, 0 , null);
         initStats();
     }
 
     private void initStats() {
-        setSpeed(getSpeed() - 1);
-        setHP(9);
-        setSingleDirTime(400);
+        setSpeed(getSpeed() + 1);
     }
 
-    public StarDestroyer(double x, double y, double blockSize, GameField gameField) {
-        super(x, y, blockSize * 4, gameField);
+    public XWing(double x, double y, double size, GameField gameField) {
+        super(x, y, size, gameField);
         initStats();
-        this.gameField = gameField;
-    }
-
-    @Override
-    public void setHeight(double height) {
-        super.setHeight(2 * height);
-    }
-
-    @Override
-    public void setWidth(double height) {
-        super.setWidth(2 * height);
     }
 
     @Override
     public void shoot() {
-        reload--;
-        if (reload > 0) {
-            return;
-        }
-        if (shotsCount >= BURST_VALUE) {
-            shotsCount = 0;
-            reload = SHOOT_RELOAD_TIME;
-        }
-        burstReloadCount--;
-        if (burstReloadCount > 0) {
-            return;
-        }
-        burstReloadCount = BURST_RELOAD_TIME;
-        shotsCount++;
+        setReloadTime(0);
         Point2D p = calcBulletCoords();
-        double betweenOffset = BLAST_SIZE * 2.5;
-        double startOffset = getWidth() * 0.75;
+        double betweenOffset = BLAST_SIZE * 2.4;
+        double startOffset = 0;
         Blast first;
         Blast second;
         if (getCurrentDirection() == Direction.RIGHT || getCurrentDirection() == Direction.LEFT) {
             if (getCurrentDirection() == Direction.RIGHT) {
-                startOffset *= -1;
+                startOffset -= betweenOffset;
             }
             first = new BlastImpl(p.x + startOffset, p.y + betweenOffset, BLAST_SIZE, getCurrentDirection(),
                     gameField, getCodeName());
@@ -73,7 +41,7 @@ public class StarDestroyer extends EmpireStarShip implements StarShip {
                     gameField, getCodeName());
         } else {
             if (getCurrentDirection() == Direction.BOTTOM) {
-                startOffset *= -1;
+                startOffset -= betweenOffset;
             }
             first = new BlastImpl(p.x + betweenOffset, p.y + startOffset, BLAST_SIZE, getCurrentDirection(),
                     gameField, getCodeName());

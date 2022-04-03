@@ -6,7 +6,7 @@
 
 <VBox fx:id="endGameMenuBar" alignment="CENTER" prefHeight="615.0"
       prefWidth="880.0" spacing="20.0" xmlns="http://javafx.com/javafx/16"
-      xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.games.starwars.FXMLDeathMenu">
+      xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.games.starwars.FXML.FXMLDeathMenu">
     <Label fx:id="redLabel" text="YOU LOSE">
 
     </Label>

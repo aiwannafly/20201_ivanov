@@ -1,11 +1,13 @@
 package com.games.starwars.view;
 
+import com.games.starwars.Settings;
 import com.games.starwars.model.*;
 import com.games.starwars.model.factory.FactoryBadConfigsException;
 import com.games.starwars.model.factory.FactoryFailureException;
 import com.games.starwars.model.obstacles.Obstacle;
 import com.games.starwars.model.ships.StarShip;
 import com.games.starwars.view.factory.*;
+import com.games.starwars.view.textures.TexturePack;
 import com.games.starwars.view.textures.blasts.BlastTexture;
 import com.games.starwars.view.textures.obstacles.ObstacleTexture;
 import com.games.starwars.view.textures.ships.ShipTexture;
@@ -21,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GraphicsSoundRenderer implements Renderer {
-    private final Scene scene;
+    private Scene scene = null;
     private final GameField gameField;
     private final ArrayList<Rectangle> pointsHP = new ArrayList<>();
     private final Map<StarShip, ShipTexture> enemyShips = new HashMap<>();
@@ -41,21 +43,25 @@ public class GraphicsSoundRenderer implements Renderer {
             shipsFactory.setConfigs(Settings.SHIPS_TEXTURES_CONFIGS);
         } catch (FactoryBadConfigsException e) {
             System.err.println(e.getMessage());
+            return;
         }
         try {
             blastsFactory.setConfigs(Settings.BLAST_TEXTURES_CONFIGS);
         } catch (FactoryBadConfigsException e) {
             System.err.println(e.getMessage());
+            return;
         }
         try {
             obstaclesFactory.setConfigs(Settings.OBSTACLE_TEXTURES_CONFIGS);
         } catch (FactoryBadConfigsException e) {
             System.err.println(e.getMessage());
+            return;
         }
         try {
             initObjects();
         } catch (FactoryFailureException e) {
             System.err.println(e.getMessage());
+            return;
         }
         initStatBar();
         Background b = new Background(new BackgroundImage(TexturePack.backgroundImage, null,
@@ -67,18 +73,18 @@ public class GraphicsSoundRenderer implements Renderer {
     @Override
     public void render() {
         if (null == playerShipTexture) {
+            System.err.println("Player ship texture was not set");
             return;
         }
         updateStatusBar();
         util.clear();
         for (Obstacle o: obstacles.keySet()) {
-            if (!gameField.getObstacles().contains(o)) {
-                // the obstacle was deleted
+            if (!gameField.getObstacles().contains(o)) { // if the obstacle was deleted
                 pane.getChildren().remove(obstacles.get(o).getTexture());
                 util.add(o);
             }
         }
-        util.forEach(obstacles.keySet()::remove);
+        util.forEach(obstacles.keySet()::remove); // remove deleted obstacles
         util.clear();
         for (StarShip e: enemyShips.keySet()) {
             if (!gameField.getEnemyShips().contains(e)) {
@@ -90,8 +96,7 @@ public class GraphicsSoundRenderer implements Renderer {
                 continue;
             }
             // update coords
-            ShipTexture texture = enemyShips.get(e);
-            texture.updateView();
+            enemyShips.get(e).updateView();
         }
         util.forEach(enemyShips.keySet()::remove);
         if (!gameField.getPlayersShip().isCrippled()) {
@@ -100,7 +105,7 @@ public class GraphicsSoundRenderer implements Renderer {
             pane.getChildren().remove(playerShipTexture.getTexture());
         }
         for (Blast b: gameField.getBullets()) {
-            if (!blasts.containsKey(b)) {
+            if (!blasts.containsKey(b)) { // a new blast appeared
                 BlastTexture bt;
                 try {
                     bt = blastsFactory.getTexture(b.getCodeName());
@@ -121,9 +126,6 @@ public class GraphicsSoundRenderer implements Renderer {
             if (!gameField.getBullets().contains(b)) {
                 pane.getChildren().remove(blasts.get(b).getTexture());
                 util.add(b);
-                if (Settings.soundsON) {
-                    SoundsPlayer.playExplosion();
-                }
                 continue;
             }
             blasts.get(b).updateView();
@@ -208,7 +210,7 @@ public class GraphicsSoundRenderer implements Renderer {
             pane.getChildren().add(texture.getTexture());
         }
         StarShip p = gameField.getPlayersShip();
-        ShipTexture texture =shipsFactory.getTexture(p.getCodeName());
+        ShipTexture texture = shipsFactory.getTexture(p.getCodeName());
         texture.setShip(p);
         playerShipTexture = texture;
         pane.getChildren().add(texture.getTexture());

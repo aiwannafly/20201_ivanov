@@ -4,7 +4,7 @@ import com.games.starwars.ApplicationMainClass;
 import com.games.starwars.model.factory.*;
 import com.games.starwars.model.obstacles.*;
 import com.games.starwars.model.ships.*;
-import com.games.starwars.view.Settings;
+import com.games.starwars.Settings;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -14,7 +14,6 @@ import java.util.Scanner;
 public class GameFieldImpl implements GameField {
     private final double BLOCK_SIZE = 30;
     private final char SPACE_SYMBOL = '_';
-
     private final ArrayList<StarShip> enemyStarShips = new ArrayList<>();
     private final ArrayList<Obstacle> obstacles = new ArrayList<>();
     private final ArrayList<Blast> blasts = new ArrayList<>();
@@ -23,7 +22,8 @@ public class GameFieldImpl implements GameField {
 
     @Override
     public void loadLevel(String fileName) throws LevelFailLoadException {
-        InputStream inputStream = ApplicationMainClass.class.getResourceAsStream("levels/" + fileName);
+        InputStream inputStream = ApplicationMainClass.class.getResourceAsStream(
+                Settings.LEVELS_DIR_PATH + fileName);
         if (null == inputStream) {
             throw new LevelFailLoadException("File " + fileName + " was not opened.");
         }
@@ -70,7 +70,7 @@ public class GameFieldImpl implements GameField {
                     ship.setHeight(BLOCK_SIZE);
                     ship.setGameField(this);
                     ship.setCodeName(nextByte);
-                    if (ship.getCodeName() == 'p') {
+                    if (ship.getCodeName() == Settings.PLAYER_SHIP_CODE) {
                         playersStarShip = ship;
                     } else {
                         enemyStarShips.add(ship);

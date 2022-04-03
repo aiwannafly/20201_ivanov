@@ -2,9 +2,7 @@ package com.games.starwars.view.textures.blasts;
 
 import com.games.starwars.model.ships.StarShip;
 import com.games.starwars.view.SoundsPlayer;
-import com.games.starwars.view.TexturePack;
-import com.games.starwars.view.textures.blasts.BlastTexture;
-import com.games.starwars.view.textures.blasts.BlueBlastTexture;
+import com.games.starwars.view.textures.TexturePack;
 
 public class GreenBlastTexture extends BlueBlastTexture implements BlastTexture {
 

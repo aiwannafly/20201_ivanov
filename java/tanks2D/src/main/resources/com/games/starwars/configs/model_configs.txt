@@ -1,7 +1,7 @@
 e=com.games.starwars.model.ships.EmpireStarShip
 s=com.games.starwars.model.ships.StarDestroyer
 f=com.games.starwars.model.ships.Exterminator
-p=com.games.starwars.model.ships.RebellionShip
+p=com.games.starwars.model.ships.XWing
 g=com.games.starwars.model.obstacles.SolidBlock
 r=com.games.starwars.model.obstacles.FragileBlock
 l=com.games.starwars.model.obstacles.WallBlock

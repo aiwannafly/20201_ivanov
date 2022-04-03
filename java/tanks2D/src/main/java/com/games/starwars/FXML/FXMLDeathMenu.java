@@ -1,9 +1,9 @@
-package com.games.starwars;
+package com.games.starwars.FXML;
 
+import com.games.starwars.Settings;
 import com.games.starwars.controller.Runner;
 import com.games.starwars.view.SoundsPlayer;
 import com.games.starwars.view.SceneBuilder;
-import com.games.starwars.view.Settings;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;

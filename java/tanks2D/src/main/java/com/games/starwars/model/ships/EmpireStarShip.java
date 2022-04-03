@@ -37,7 +37,7 @@ public class EmpireStarShip extends StarShipImpl implements StarShip {
     }
 
     private void initStats() {
-        setHP(1);
+        setHP(2);
         setReloadTime(50);
         initSides();
     }
