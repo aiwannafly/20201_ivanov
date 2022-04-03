@@ -13,8 +13,9 @@ public class StarDestroyerTexture extends TextureImpl implements ShipTexture {
     private StarShip ship;
     private final ArrayList<Rectangle> healthPoints = new ArrayList<>();
     private double blockWidth = 0;
-    private int startHP = 0;
-    private int previousHP = 0;
+    private int maxHP = 0;
+    private double healthBarXOffset = 0;
+    private double healthBarYOffset = 3;
     private final ArrayList<Rectangle> util = new ArrayList<>();
     private final double HEALTH_BAR_WIDTH = 60;
     private boolean healthBarIsSet = false;
@@ -49,7 +50,7 @@ public class StarDestroyerTexture extends TextureImpl implements ShipTexture {
             healthPoints.clear();
             return;
         }
-        if (ship.getHP() == startHP) {
+        if (ship.getHP() == maxHP) {
             return;
         }
         if (!healthBarIsSet) {
@@ -58,7 +59,7 @@ public class StarDestroyerTexture extends TextureImpl implements ShipTexture {
             if (0 == healthPoints.size()) {
                 return;
             }
-            for (int i = 0; i < startHP; i++) {
+            for (int i = 0; i < maxHP; i++) {
                 pane.getChildren().add(healthPoints.get(i));
             }
         }
@@ -74,8 +75,7 @@ public class StarDestroyerTexture extends TextureImpl implements ShipTexture {
     @Override
     public void setShip(StarShip ship) {
         this.ship = ship;
-        this.startHP = ship.getHP();
-        this.previousHP = startHP;
+        this.maxHP = ship.getHP();
         setX(ship.getX());
         setY(ship.getY());
         setWidth(ship.getWidth());
@@ -92,28 +92,26 @@ public class StarDestroyerTexture extends TextureImpl implements ShipTexture {
     }
 
     protected void updateHealthBar() {
-        double xOffset = (ship.getWidth() - HEALTH_BAR_WIDTH) / 2;
-        double x = ship.getX() + xOffset;
-        double y = ship.getY() + ship.getHeight() + 3;
+        double x = ship.getX() + healthBarXOffset;
+        double y = ship.getY() + ship.getHeight() + healthBarYOffset;
         for (Rectangle healthPoint : healthPoints) {
             healthPoint.setX(x);
             healthPoint.setY(y);
             x += blockWidth;
         }
         util.clear();
-        for (int i = ship.getHP(); i < startHP; i++) {
+        for (int i = ship.getHP(); i < maxHP; i++) {
             healthPoints.get(i).setFill(Color.BLACK);
         }
-        previousHP = ship.getHP();
     }
 
     protected void initHealthBar() {
         double height = 3;
-        blockWidth = HEALTH_BAR_WIDTH / startHP;
-        double xOffset = (ship.getWidth() - HEALTH_BAR_WIDTH) / 2;
-        double x = ship.getX() + xOffset;
-        double y = ship.getY() + ship.getHeight() + 3;
-        for (int i = 0; i < startHP; i++) {
+        blockWidth = HEALTH_BAR_WIDTH / maxHP;
+        healthBarXOffset = (ship.getWidth() - HEALTH_BAR_WIDTH) / 2;
+        double x = ship.getX() + healthBarXOffset;
+        double y = ship.getY() + ship.getHeight() + healthBarYOffset;
+        for (int i = 0; i < maxHP; i++) {
             Rectangle rect = new Rectangle(x, y, blockWidth, height);
             x += blockWidth;
             rect.setFill(Color.DARKRED);
