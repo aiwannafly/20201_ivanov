@@ -5,6 +5,7 @@ import com.games.starwars.model.ships.StarShip;
 import com.games.starwars.view.SoundsPlayer;
 import com.games.starwars.view.textures.TexturePack;
 import com.games.starwars.view.textures.TextureImpl;
+import javafx.scene.layout.Pane;
 import javafx.scene.shape.Rectangle;
 
 public class BlueBlastTexture extends TextureImpl implements BlastTexture {
@@ -27,10 +28,20 @@ public class BlueBlastTexture extends TextureImpl implements BlastTexture {
     }
 
     @Override
-    public void updateView() {
+    public void updateView(Pane pane) {
 //        getTexture().relocate(blast.getX(), blast.getY());
         getTexture().setX(blast.getX());
         getTexture().setY(blast.getY());
+    }
+
+    @Override
+    public void removeFrom(Pane pane) {
+        pane.getChildren().remove(getTexture());
+    }
+
+    @Override
+    public void appear(Pane pane) {
+        pane.getChildren().add(getTexture());
     }
 
     @Override

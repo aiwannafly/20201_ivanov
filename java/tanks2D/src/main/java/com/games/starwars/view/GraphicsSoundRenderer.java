@@ -80,7 +80,7 @@ public class GraphicsSoundRenderer implements Renderer {
         util.clear();
         for (Obstacle o: obstacles.keySet()) {
             if (!gameField.getObstacles().contains(o)) { // if the obstacle was deleted
-                pane.getChildren().remove(obstacles.get(o).getTexture());
+                obstacles.get(o).removeFrom(pane);
                 util.add(o);
             }
         }
@@ -91,18 +91,18 @@ public class GraphicsSoundRenderer implements Renderer {
                 if (Settings.soundsON) {
                     SoundsPlayer.playBigExplosion();
                 }
-                pane.getChildren().remove(enemyShips.get(e).getTexture());
+                enemyShips.get(e).removeFrom(pane);
                 util.add(e);
                 continue;
             }
             // update coords
-            enemyShips.get(e).updateView();
+            enemyShips.get(e).updateView(pane);
         }
         util.forEach(enemyShips.keySet()::remove);
         if (!gameField.getPlayersShip().isCrippled()) {
-            playerShipTexture.updateView();
+            playerShipTexture.updateView(pane);
         } else {
-            pane.getChildren().remove(playerShipTexture.getTexture());
+            playerShipTexture.removeFrom(pane);
         }
         for (Blast b: gameField.getBullets()) {
             if (!blasts.containsKey(b)) { // a new blast appeared
@@ -118,17 +118,17 @@ public class GraphicsSoundRenderer implements Renderer {
                     bt.playSound();
                 }
                 blasts.put(b, bt);
-                pane.getChildren().add(bt.getTexture());
+                bt.appear(pane);
             }
         }
         util.clear();
         for (Blast b: blasts.keySet()) {
             if (!gameField.getBullets().contains(b)) {
-                pane.getChildren().remove(blasts.get(b).getTexture());
+                blasts.get(b).removeFrom(pane);
                 util.add(b);
                 continue;
             }
-            blasts.get(b).updateView();
+            blasts.get(b).updateView(pane);
         }
         util.forEach(blasts.keySet()::remove);
 
@@ -201,18 +201,18 @@ public class GraphicsSoundRenderer implements Renderer {
             assert t != null;
             t.setObstacle(o);
             obstacles.put(o, t);
-            pane.getChildren().add(t.getTexture());
+            t.appear(pane);
         }
         for (StarShip s: gameField.getEnemyShips()) {
             ShipTexture texture = shipsFactory.getTexture(s.getCodeName());
             texture.setShip(s);
             enemyShips.put(s, texture);
-            pane.getChildren().add(texture.getTexture());
+            texture.appear(pane);
         }
         StarShip p = gameField.getPlayersShip();
         ShipTexture texture = shipsFactory.getTexture(p.getCodeName());
         texture.setShip(p);
         playerShipTexture = texture;
-        pane.getChildren().add(texture.getTexture());
+        texture.appear(pane);
     }
 }

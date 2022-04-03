@@ -1,5 +1,6 @@
 package com.games.starwars.model.obstacles;
 
+import com.games.starwars.model.Point2D;
 import com.games.starwars.model.Shape;
 
 abstract public class SquareBlock implements Obstacle {

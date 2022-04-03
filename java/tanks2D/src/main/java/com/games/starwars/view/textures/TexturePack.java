@@ -89,10 +89,10 @@ public class TexturePack {
     public final static ImagePattern imgPlayerShipLeft = getImagePattern("images/x-wing_left.png");
     public final static ImagePattern imgPlayerShipTop = getImagePattern("images/x-wing_top.png");
 
-    public final static ImagePattern imgEmpireStarShipRight = getImagePattern("images/enemy_ship_right.png");
-    public final static ImagePattern imgEmpireStarShipBottom = getImagePattern("images/enemy_ship_bottom.png");
-    public final static ImagePattern imgEmpireStarShipLeft = getImagePattern("images/enemy_ship_left.png");
-    public final static ImagePattern imgEmpireStarShipTop = getImagePattern("images/enemy_ship_top.png");
+    public final static ImagePattern imgEmpireStarShipRight = getImagePattern("images/empire_ship_right.png");
+    public final static ImagePattern imgEmpireStarShipBottom = getImagePattern("images/empire_ship_bottom.png");
+    public final static ImagePattern imgEmpireStarShipLeft = getImagePattern("images/empire_ship_left.png");
+    public final static ImagePattern imgEmpireStarShipTop = getImagePattern("images/empire_ship_top.png");
 
     public final static ImagePattern imgExtStarShipRight = getImagePattern("images/ext_ship_right.png");
     public final static ImagePattern imgExtStarShipBottom = getImagePattern("images/ext_ship_bottom.png");

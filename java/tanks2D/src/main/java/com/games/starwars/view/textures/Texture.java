@@ -1,12 +1,17 @@
 package com.games.starwars.view.textures;
 
+import javafx.scene.layout.Pane;
 import javafx.scene.shape.Rectangle;
 
 public interface Texture {
 
-    Rectangle getTexture();
+    void appear(Pane pane);
 
-    void updateView();
+    void updateView(Pane pane);
+
+    void removeFrom(Pane pane);
+
+    Rectangle getTexture();
 
     void setX(double x);
 

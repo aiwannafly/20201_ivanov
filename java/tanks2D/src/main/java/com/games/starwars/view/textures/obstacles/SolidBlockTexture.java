@@ -3,6 +3,7 @@ package com.games.starwars.view.textures.obstacles;
 import com.games.starwars.model.obstacles.Obstacle;
 import com.games.starwars.view.textures.TexturePack;
 import com.games.starwars.view.textures.TextureImpl;
+import javafx.scene.layout.Pane;
 
 public class SolidBlockTexture extends TextureImpl implements ObstacleTexture {
 
@@ -17,8 +18,18 @@ public class SolidBlockTexture extends TextureImpl implements ObstacleTexture {
     }
 
     @Override
-    public void updateView() {
+    public void updateView(Pane pane) {
 
+    }
+
+    @Override
+    public void removeFrom(Pane pane) {
+        pane.getChildren().remove(getTexture());
+    }
+
+    @Override
+    public void appear(Pane pane) {
+        pane.getChildren().add(getTexture());
     }
 
     @Override
