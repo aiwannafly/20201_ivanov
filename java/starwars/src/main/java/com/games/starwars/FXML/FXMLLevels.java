@@ -2,6 +2,7 @@ package com.games.starwars.FXML;
 
 import com.games.starwars.Settings;
 import com.games.starwars.controller.Runner;
+import com.games.starwars.controller.RunnerImpl;
 import com.games.starwars.view.SoundsPlayer;
 import com.games.starwars.view.SceneBuilder;
 import javafx.fxml.FXML;

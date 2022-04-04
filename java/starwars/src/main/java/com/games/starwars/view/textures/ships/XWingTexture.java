@@ -1,7 +1,6 @@
 package com.games.starwars.view.textures.ships;
 
 import com.games.starwars.view.textures.TexturePack;
-import javafx.scene.layout.Pane;
 
 public class XWingTexture extends StarDestroyerTexture implements ShipTexture {
 

@@ -1,7 +1,6 @@
 package com.games.starwars.controller;
 
 import com.games.starwars.model.*;
-import com.games.starwars.model.factory.FactoryBadConfigsException;
 import com.games.starwars.model.obstacles.Obstacle;
 import com.games.starwars.model.ships.StarShip;
 import com.games.starwars.view.Renderer;
@@ -24,6 +23,7 @@ public class EngineImpl implements Engine {
     private boolean paused = false;
     private final int reloadTime = 20;
     private int playerGunReload = 0;
+    private final ArrayList<StarShip.Direction> directionsStack = new ArrayList<>();
 
     public EngineImpl(int levelNum) {
         gameField = new GameFieldImpl();
@@ -39,10 +39,26 @@ public class EngineImpl implements Engine {
     @Override
     public void handlePressedKeyEvent(KeyEvent event) {
         switch (event.getCode()) {
-            case UP, W -> goUp = true;
-            case LEFT, A -> goLeft = true;
-            case DOWN, S -> goDown = true;
-            case RIGHT, D -> goRight = true;
+            case UP, W -> {
+                if (!directionsStack.contains(StarShip.Direction.TOP))
+                directionsStack.add(StarShip.Direction.TOP);
+                goUp = true;
+            }
+            case LEFT, A -> {
+                if (!directionsStack.contains(StarShip.Direction.LEFT))
+                directionsStack.add(StarShip.Direction.LEFT);
+                goLeft = true;
+            }
+            case DOWN, S -> {
+                if (!directionsStack.contains(StarShip.Direction.BOTTOM))
+                directionsStack.add(StarShip.Direction.BOTTOM);
+                goDown = true;
+            }
+            case RIGHT, D -> {
+                if (!directionsStack.contains(StarShip.Direction.RIGHT))
+                directionsStack.add(StarShip.Direction.RIGHT);
+                goRight = true;
+            }
             case SPACE -> shootEnabled = true;
             case ESCAPE -> paused = true;
         }
@@ -51,10 +67,18 @@ public class EngineImpl implements Engine {
     @Override
     public void handleReleasedKeyEvent(KeyEvent event) {
         switch (event.getCode()) {
-            case UP, W -> goUp = false;
-            case LEFT, A -> goLeft = false;
-            case DOWN, S -> goDown = false;
-            case RIGHT, D -> goRight = false;
+            case UP, W -> {
+                directionsStack.remove(StarShip.Direction.TOP);
+            }
+            case LEFT, A -> {
+                directionsStack.remove(StarShip.Direction.LEFT);
+            }
+            case DOWN, S -> {
+                directionsStack.remove(StarShip.Direction.BOTTOM);
+            }
+            case RIGHT, D -> {
+                directionsStack.remove(StarShip.Direction.RIGHT);
+            }
             case SPACE -> shootEnabled = false;
         }
     }
@@ -75,14 +99,8 @@ public class EngineImpl implements Engine {
             paused = false;
             return Status.PAUSE;
         }
-        if (goUp) {
-            playersStarShip.move(StarShip.Direction.TOP);
-        } else if (goLeft) {
-            playersStarShip.move(StarShip.Direction.LEFT);
-        } else if (goRight) {
-            playersStarShip.move(StarShip.Direction.RIGHT);
-        } else if (goDown) {
-            playersStarShip.move(StarShip.Direction.BOTTOM);
+        if (directionsStack.size() != 0) {
+            playersStarShip.move(directionsStack.get(directionsStack.size() - 1));
         }
         if (playerGunReload >= 0) {
             playerGunReload--;

@@ -1,12 +1,13 @@
 package com.games.starwars.view;
 
 import com.games.starwars.Settings;
+import com.games.starwars.factory.Factory;
+import com.games.starwars.factory.FactoryImpl;
 import com.games.starwars.model.*;
-import com.games.starwars.model.factory.FactoryBadConfigsException;
-import com.games.starwars.model.factory.FactoryFailureException;
+import com.games.starwars.factory.FactoryBadConfigsException;
+import com.games.starwars.factory.FactoryFailureException;
 import com.games.starwars.model.obstacles.Obstacle;
 import com.games.starwars.model.ships.StarShip;
-import com.games.starwars.view.factory.*;
 import com.games.starwars.view.textures.TexturePack;
 import com.games.starwars.view.textures.blasts.BlastTexture;
 import com.games.starwars.view.textures.obstacles.ObstacleTexture;
@@ -33,9 +34,9 @@ public class GraphicsSoundRenderer implements Renderer {
     private ShipTexture playerShipTexture;
     private final Pane pane = new Pane();
     private final ArrayList<Obstacle> util = new ArrayList<>();
-    private final FactoryOfStarShipsTextures shipsFactory = new FactoryOfStarShipsTexturesImpl();
-    private final FactoryOfBlastsTextures blastsFactory = new FactoryOfBlastsTexturesImpl();
-    private final FactoryOfObstaclesTextures obstaclesFactory = new FactoryOfObstaclesTexturesImpl();
+    private final Factory<ShipTexture> shipsFactory = new FactoryImpl<>();
+    private final Factory<BlastTexture> blastsFactory = new FactoryImpl<>();
+    private final Factory<ObstacleTexture> obstaclesFactory = new FactoryImpl<>();
 
     public GraphicsSoundRenderer(GameField gameField) {
         this.gameField = gameField;
@@ -108,7 +109,7 @@ public class GraphicsSoundRenderer implements Renderer {
             if (!blasts.containsKey(b)) { // a new blast appeared
                 BlastTexture bt;
                 try {
-                    bt = blastsFactory.getTexture(b.getCodeName());
+                    bt = blastsFactory.getObject(b.getCodeName());
                 } catch (FactoryFailureException e) {
                     e.printStackTrace();
                     return;
@@ -192,25 +193,20 @@ public class GraphicsSoundRenderer implements Renderer {
 
     private void initObjects() throws FactoryFailureException {
         for (Obstacle o: gameField.getObstacles()) {
-            ObstacleTexture t = null;
-            try {
-                t =obstaclesFactory.getTexture(o.getCodeName());
-            } catch (FactoryFailureException e) {
-                System.err.println(e.getMessage());
-            }
-            assert t != null;
+            ObstacleTexture t;
+            t = obstaclesFactory.getObject(o.getCodeName());
             t.setObstacle(o);
             obstacles.put(o, t);
             t.appear(pane);
         }
         for (StarShip s: gameField.getEnemyShips()) {
-            ShipTexture texture = shipsFactory.getTexture(s.getCodeName());
+            ShipTexture texture = shipsFactory.getObject(s.getCodeName());
             texture.setShip(s);
             enemyShips.put(s, texture);
             texture.appear(pane);
         }
         StarShip p = gameField.getPlayersShip();
-        ShipTexture texture = shipsFactory.getTexture(p.getCodeName());
+        ShipTexture texture = shipsFactory.getObject(p.getCodeName());
         texture.setShip(p);
         playerShipTexture = texture;
         texture.appear(pane);

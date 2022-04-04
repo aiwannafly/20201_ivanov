@@ -1,7 +1,7 @@
 package com.games.starwars.view;
 
 import com.games.starwars.ApplicationMainClass;
-import com.games.starwars.controller.Runner;
+import com.games.starwars.controller.RunnerImpl;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -18,7 +18,7 @@ public class SceneBuilder {
     private static final Scene pauseScene;
     private static final Scene deathScene;
     private static final Scene winScene;
-    private static Runner runner = null;
+    private static RunnerImpl runner = null;
     public final static int WIDTH = 1530;
     public final static int HEIGHT = 780;
     private static final String STYLESHEET = Objects.requireNonNull(ApplicationMainClass.class.getResource(
@@ -57,12 +57,12 @@ public class SceneBuilder {
         return lastLevelNum;
     }
 
-    public static Runner getGameRunner(Stage stage, int level) {
+    public static RunnerImpl getGameRunner(Stage stage, int level) {
         if (null == runner) {
-            runner = new Runner(stage, level);
+            runner = new RunnerImpl(stage, level);
         }
         if (!runner.isActive()) {
-            runner = new Runner(stage, level);
+            runner = new RunnerImpl(stage, level);
         }
         lastLevelNum = level;
         return runner;

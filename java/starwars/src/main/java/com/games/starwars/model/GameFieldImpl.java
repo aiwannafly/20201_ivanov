@@ -1,7 +1,7 @@
 package com.games.starwars.model;
 
 import com.games.starwars.ApplicationMainClass;
-import com.games.starwars.model.factory.*;
+import com.games.starwars.factory.*;
 import com.games.starwars.model.obstacles.*;
 import com.games.starwars.model.ships.*;
 import com.games.starwars.Settings;
@@ -39,13 +39,13 @@ public class GameFieldImpl implements GameField {
     }
 
     private void parseStringLayout(String stringLayout, int width, int height) throws LevelFailLoadException {
-        FactoryOfStarShips factoryOfStarShips = new FactoryOfShipsImpl();
+        Factory<StarShip> factoryOfStarShips = new FactoryImpl<>();
         try {
             factoryOfStarShips.setConfigs(Settings.MODEL_CONFIGS);
         } catch (FactoryBadConfigsException e) {
             throw new LevelFailLoadException(e.getMessage());
         }
-        FactoryOfObstacles factoryOfObstacles = new FactoryOfObstaclesImpl();
+        Factory<Obstacle> factoryOfObstacles = new FactoryImpl<>();
         try {
             factoryOfObstacles.setConfigs(Settings.MODEL_CONFIGS);
         } catch (FactoryBadConfigsException e) {
@@ -63,7 +63,7 @@ public class GameFieldImpl implements GameField {
                 double x = j * BLOCK_SIZE;
                 double y = i * BLOCK_SIZE;
                 try {
-                    StarShip ship = factoryOfStarShips.getStarShip(nextByte);
+                    StarShip ship = factoryOfStarShips.getObject(nextByte);
                     ship.setX(x);
                     ship.setY(y);
                     ship.setWidth(BLOCK_SIZE);
@@ -75,9 +75,9 @@ public class GameFieldImpl implements GameField {
                     } else {
                         enemyStarShips.add(ship);
                     }
-                } catch (FactoryFailureException exception) {
+                } catch (Exception exception) {
                     try {
-                        Obstacle o = factoryOfObstacles.getObstacle(nextByte);
+                        Obstacle o = factoryOfObstacles.getObject(nextByte);
                         o.setX(x);
                         o.setY(y);
                         o.setHeight(BLOCK_SIZE);

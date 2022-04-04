@@ -52,12 +52,12 @@ public class FXMLPauseMenu {
         if (Settings.musicON) {
             musicButton.setText("TURN ON MUSIC");
             Settings.musicON = false;
-            runner.mediaPlayer.stop();
+            runner.stopPlayingMusic();
             SoundsPlayer.stopMenuSoundtrack();
         } else {
             musicButton.setText("TURN OFF MUSIC");
             Settings.musicON = true;
-            runner.mediaPlayer.play();
+            runner.playMusic();
             SoundsPlayer.playMenuSoundtrack();
         }
     }
