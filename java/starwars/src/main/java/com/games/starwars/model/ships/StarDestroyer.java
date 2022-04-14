@@ -6,14 +6,16 @@ import com.games.starwars.model.GameField;
 import com.games.starwars.model.Point2D;
 
 public class StarDestroyer extends EmpireStarShip implements StarShip {
-    private final int BURST_VALUE = 3;
+    private int burstCount = 3;
     private final int BURST_RELOAD_TIME = 10;
     private final int SHOOT_RELOAD_TIME = 30;
     private final double BLAST_SIZE = 10;
+    private final int START_HP = 9;
     private GameField gameField;
     private int shotsCount = 0;
     private int burstReloadCount = 10;
     private int reload = 0;
+    private int speed = 0;
 
     public StarDestroyer() {
         super(0, 0, 0 , null);
@@ -21,8 +23,9 @@ public class StarDestroyer extends EmpireStarShip implements StarShip {
     }
 
     private void initStats() {
-        setSpeed(getSpeed() - 1);
-        setHP(9);
+        speed = getSpeed() - 1;
+        setSpeed(speed);
+        setHP(START_HP);
         setSingleDirTime(400);
     }
 
@@ -48,8 +51,12 @@ public class StarDestroyer extends EmpireStarShip implements StarShip {
         if (reload > 0) {
             return;
         }
-        if (shotsCount >= BURST_VALUE) {
+        if (shotsCount >= burstCount) {
             shotsCount = 0;
+            if (getHP() <= START_HP / 2) {
+                setSpeed(speed + 1);
+                burstCount = 4;
+            }
             reload = SHOOT_RELOAD_TIME;
         }
         burstReloadCount--;

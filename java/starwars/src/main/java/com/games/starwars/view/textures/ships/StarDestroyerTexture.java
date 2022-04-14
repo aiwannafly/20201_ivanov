@@ -19,6 +19,8 @@ public class StarDestroyerTexture extends TextureImpl implements ShipTexture {
     private final ArrayList<Rectangle> util = new ArrayList<>();
     private final double HEALTH_BAR_WIDTH = 60;
     private boolean healthBarIsSet = false;
+    private Color hpBarColor = Color.DARKRED;
+    private double rotationAngle = 0;
 
     public StarDestroyerTexture() {
         super(0, 0, 0, 0);
@@ -42,6 +44,16 @@ public class StarDestroyerTexture extends TextureImpl implements ShipTexture {
 
     @Override
     public void updateView(Pane pane) {
+//        switch (ship.getCurrentDirection()) {
+//            case RIGHT -> {
+//                rotationAngle += 1;
+//                getTexture().setRotate(rotationAngle);
+//            }
+//            case LEFT -> {
+//                rotationAngle -= 1;
+//                getTexture().setRotate(rotationAngle);
+//            }
+//        }
         setFill();
         getTexture().setX(ship.getX());
         getTexture().setY(ship.getY());
@@ -91,6 +103,10 @@ public class StarDestroyerTexture extends TextureImpl implements ShipTexture {
         return ship;
     }
 
+    protected void setHpBarColor(Color c) {
+        this.hpBarColor = c;
+    }
+
     protected void updateHealthBar() {
         double x = ship.getX() + healthBarXOffset;
         double y = ship.getY() + ship.getHeight() + healthBarYOffset;
@@ -114,7 +130,7 @@ public class StarDestroyerTexture extends TextureImpl implements ShipTexture {
         for (int i = 0; i < maxHP; i++) {
             Rectangle rect = new Rectangle(x, y, blockWidth, height);
             x += blockWidth;
-            rect.setFill(Color.DARKRED);
+            rect.setFill(hpBarColor);
             healthPoints.add(rect);
         }
     }

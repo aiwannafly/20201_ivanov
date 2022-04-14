@@ -25,6 +25,9 @@ public class XWing extends StarShipImpl implements StarShip {
 
     @Override
     public void shoot() {
+        if (isCrippled()) {
+            return;
+        }
         setReloadTime(0);
         Point2D p = calcBulletCoords();
         double betweenOffset = BLAST_SIZE * 2.4;

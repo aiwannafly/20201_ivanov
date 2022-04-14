@@ -1,6 +1,7 @@
 package com.games.starwars.view.textures.ships;
 
 import com.games.starwars.view.textures.TexturePack;
+import javafx.scene.paint.Color;
 
 public class XWingTexture extends StarDestroyerTexture implements ShipTexture {
 
@@ -11,11 +12,7 @@ public class XWingTexture extends StarDestroyerTexture implements ShipTexture {
 
     @Override
     protected void initHealthBar() {
-
-    }
-
-    @Override
-    protected void updateHealthBar() {
-
+        setHpBarColor(Color.LIMEGREEN);
+        super.initHealthBar();
     }
 }

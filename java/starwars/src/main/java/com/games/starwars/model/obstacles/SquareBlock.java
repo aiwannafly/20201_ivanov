@@ -148,10 +148,7 @@ abstract public class SquareBlock implements Obstacle {
         if (isPointInside(leftBottomThis, o.getX(), o.getY(), o.getWidth(), o.getHeight())) {
             return true;
         }
-        if (isPointInside(rightBottomThis, o.getX(), o.getY(), o.getWidth(), o.getHeight())) {
-            return true;
-        }
-        return false;
+        return isPointInside(rightBottomThis, o.getX(), o.getY(), o.getWidth(), o.getHeight());
     }
 
     private boolean isPointInside(Point2D p, double x, double y, double w, double h) {

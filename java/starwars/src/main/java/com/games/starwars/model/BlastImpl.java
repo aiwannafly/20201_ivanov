@@ -20,6 +20,7 @@ public class BlastImpl extends SquareBlock implements Blast {
         this.codeName = codeName;
     }
 
+
     @Override
     public void fly() {
         double newX = getX();

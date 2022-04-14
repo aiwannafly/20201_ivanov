@@ -46,6 +46,14 @@ public class FXMLLevels {
     }
 
     @FXML
+    protected void onLevelFourClick() {
+        if (Settings.soundsON) {
+            SoundsPlayer.playButtonClick();
+        }
+        setLevel(4);
+    }
+
+    @FXML
     protected void onBackClick() {
         if (Settings.soundsON) {
             SoundsPlayer.playButtonClick();

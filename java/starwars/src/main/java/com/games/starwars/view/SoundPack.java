@@ -16,8 +16,8 @@ public class SoundPack {
     public final static String LUKE_VS_VADER_FILE_PATH = SOUNDS_PATH + "Luke_vs_Vader.mp3";
     public final static String ALERT_FILE_PATH = SOUNDS_PATH + "level1.mp3";
     private final static String MAIN_TRACK_FILE_PATH = SOUNDS_PATH + "main_star_wars_theme.mp3";
-    public static double SOUNDTRACK_VOLUME = 0.5;
-    public static double GAME_SOUNDS_VOLUME = 0.25;
+    public static double SOUNDTRACK_VOLUME = 0.8;
+    public static double GAME_SOUNDS_VOLUME = 0.2;
     public static Media mainSoundtrack = null;
     public static Media cloneMarchSoundtrack = null;
     public static Media anakinVsObiwanSoundtrack = null;

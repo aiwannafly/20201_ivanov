@@ -20,9 +20,11 @@ public class RunnerImpl implements Runner {
         this.stage = stage;
         gameEngine = new EngineImpl(levelNum);
         switch (levelNum) {
+            case 4 -> mediaPlayer = new MediaPlayer(SoundPack.empireMarchSoundtrack);
             case 2 -> mediaPlayer = new MediaPlayer(SoundPack.lukeVsVaderSoundtrack);
             case 3 -> mediaPlayer = new MediaPlayer(SoundPack.cloneMarchSoundtrack);
             case 1 -> mediaPlayer = new MediaPlayer(SoundPack.anakinVsObiwanSoundtrack);
+            default -> mediaPlayer = new MediaPlayer(SoundPack.anakinVsObiwanSoundtrack);
         }
         mediaPlayer.setVolume(SoundPack.SOUNDTRACK_VOLUME);
     }

@@ -16,6 +16,7 @@ public class EmpireStarShip extends StarShipImpl implements StarShip {
     Random random = new Random();
     protected final double DANGER_DISTANCE = 1000;
     private GameField gameField = null;
+    private final int START_HP = 2;
 
     public EmpireStarShip() {
         super(0, 0,0, null);
@@ -37,7 +38,7 @@ public class EmpireStarShip extends StarShipImpl implements StarShip {
     }
 
     private void initStats() {
-        setHP(2);
+        setHP(START_HP);
         setReloadTime(50);
         initSides();
     }

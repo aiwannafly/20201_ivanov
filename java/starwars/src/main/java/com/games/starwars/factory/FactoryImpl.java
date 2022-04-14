@@ -7,8 +7,8 @@ public class FactoryImpl<Type> extends ReflexiveFactoryOfObjects implements Fact
         try {
             Object o = super.getObject(code);
             return (Type) o;
-        } catch (ClassCastException exception) {
-            throw new FactoryFailureException("Cast exception: " + exception.getMessage());
+        } catch (ClassCastException | FactoryFailureException exception) {
+            throw new FactoryFailureException(exception.getMessage());
         }
     }
 }
