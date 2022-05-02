@@ -1,0 +1,38 @@
+plugins {
+    id 'java'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    implementation files('libs/torrentparser-maven-plugin-1.0-SNAPSHOT.jar')
+    implementation 'commons-io:commons-io:2.6'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+jar {
+    manifest {
+        attributes('Implementation-Title': project.name,
+                'Implementation-Version': project.version)
+    }
+}
+
+task stream( type: JavaExec, dependsOn: assemble ){
+    standardInput = System.in
+    classpath sourceSets.main.runtimeClasspath
+}
+
+task run(type: JavaExec) {
+    mainClass = "torrent.Main"
+    classpath sourceSets.main.runtimeClasspath
+}
