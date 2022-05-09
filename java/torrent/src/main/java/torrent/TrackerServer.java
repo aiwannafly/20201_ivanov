@@ -22,7 +22,7 @@ class TrackerServer {
                 System.out.println("New client connected" + client.getInetAddress().getHostAddress()+
                         " " + client.getLocalPort());
                 clients.add(client);
-                Thread currentClientThread = new Thread(new TrackerCommunicator(client, this));
+                Thread currentClientThread = new Thread(new TrackerCommandHandler(client, this));
                 currentClientThread.start();
             }
         } catch (IOException e) {

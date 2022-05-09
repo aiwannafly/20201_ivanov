@@ -6,7 +6,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-public class TrackerCommunicator implements Runnable {
+public class TrackerCommandHandler implements Runnable {
     private final Socket clientSocket;
     private final TrackerServer server;
     private final static int PEER_ID_LENGTH = 20;
@@ -21,7 +21,7 @@ public class TrackerCommunicator implements Runnable {
     private PrintWriter out = null;
     private BufferedReader in = null;
 
-    public TrackerCommunicator(Socket socket, TrackerServer server) {
+    public TrackerCommandHandler(Socket socket, TrackerServer server) {
         this.clientSocket = socket;
         this.server = server;
     }
