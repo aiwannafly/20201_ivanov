@@ -169,7 +169,7 @@ class TorrentClient {
         TorrentClient client = new TorrentClient();
         Thread thread = new Thread(new ConnectionsHandler(client, client.connectionHandlerSocket));
         thread.start();
-        client.addTorrent("file.txt.torrent");
+        client.addTorrent("wallpaper.jpg.torrent");
         System.out.println("file.txt.torrent was uploaded");
         try (Scanner sc = new Scanner(System.in)) {
             String command = null;

@@ -34,7 +34,7 @@ public class ConnectionsHandler implements Runnable {
                     this.client.getPeers().add(newClient);
                     this.client.setOut(out);
                     this.client.setIn(in);
-                    Thread communicationThread = new Thread(new SeedCommunicator(newClient, "file.txt"));
+                    Thread communicationThread = new Thread(new SeedCommunicator(newClient, "wallpaper.jpg"));
                     communicationThread.start();
                     System.out.println("Added new client");
                 } else {

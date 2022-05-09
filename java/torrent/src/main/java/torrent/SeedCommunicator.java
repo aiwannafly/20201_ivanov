@@ -2,9 +2,10 @@ package torrent;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 public class SeedCommunicator implements Runnable {
-    private PrintWriter out;
+    private OutputStream out;
     private BufferedReader in;
     private final Socket seedSocket;
     private FileInputStream fileStream;
@@ -12,7 +13,7 @@ public class SeedCommunicator implements Runnable {
     public SeedCommunicator(Socket seedSocket, String fileName) {
         this.seedSocket = seedSocket;
         try {
-            this.out = new PrintWriter(seedSocket.getOutputStream(), true);
+            this.out = seedSocket.getOutputStream();
             this.in = new BufferedReader(new InputStreamReader(seedSocket.getInputStream()));
             File receivedFile = new File(Settings.PATH + fileName);
             this.fileStream = new FileInputStream(receivedFile);
@@ -37,17 +38,12 @@ public class SeedCommunicator implements Runnable {
             int length = BinaryOperations.convertFromBytes(message.substring(13, 17));
             // System.out.println("Trying to read " + length + " bytes...");
             byte[] piece = fileStream.readNBytes(length);
-            String data = BinaryOperations.getStringFromBytes(piece);
-            System.out.println("DATA: " + data);
-            for (int i = 0; i < length; i++) {
-                System.out.println((int) data.charAt(i));
-            }
             // System.out.println("Read");
             String reply = BinaryOperations.convertIntoBytes(9 + length) + "7" +
-                    BinaryOperations.convertIntoBytes(idx) + BinaryOperations.convertIntoBytes(begin) +
-                    data;
+                    BinaryOperations.convertIntoBytes(idx) + BinaryOperations.convertIntoBytes(begin);
             // System.out.println(13 + length + " = " + reply.length());
-            out.print(reply);
+            out.write(reply.getBytes(StandardCharsets.UTF_8));
+            out.write(piece);
             out.flush();
             return true;
         }

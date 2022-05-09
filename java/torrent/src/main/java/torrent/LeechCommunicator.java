@@ -8,7 +8,7 @@ import java.util.List;
 
 public class LeechCommunicator implements Runnable {
     private PrintWriter out;
-    private BufferedReader in;
+    private InputStream in;
     private final Socket leechSocket;
     private final Torrent torrent;
     private FileOutputStream fileStream;
@@ -18,7 +18,7 @@ public class LeechCommunicator implements Runnable {
         this.torrent = torrentFile;
         try {
             this.out = new PrintWriter(leechSocket.getOutputStream(), true);
-            this.in = new BufferedReader(new InputStreamReader(leechSocket.getInputStream()));
+            this.in = leechSocket.getInputStream();
             File receivedFile = new File(Settings.PATH + torrentFile.getName() + ".txt");
             this.fileStream = new FileOutputStream(receivedFile);
         } catch (IOException exception) {
@@ -66,11 +66,7 @@ public class LeechCommunicator implements Runnable {
         int begin = BinaryOperations.convertFromBytes(message.substring(9, 13));
         try {
             String data = message.substring(13);
-            System.out.println("DATA: " + data);
             byte[] bytes = BinaryOperations.getBytesFromString(data);
-            for (int i = 0; i < len - 9; i++) {
-                System.out.println((int) data.charAt(i));
-            }
             fileStream.write(bytes);
         } catch (IOException e) {
             e.printStackTrace();
