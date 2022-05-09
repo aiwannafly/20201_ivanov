@@ -8,8 +8,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class ConnectionsHandler implements Runnable {
-    private TorrentClient client;
-    private ServerSocket serverSocket;
+    private final TorrentClient client;
+    private final ServerSocket serverSocket;
 
     public ConnectionsHandler(TorrentClient client, ServerSocket serverSocket) {
         this.client = client;
@@ -32,10 +32,9 @@ public class ConnectionsHandler implements Runnable {
                 Handshake myHandshake = new Handshake(this.client.getHandShakeMessage());
                 if (handshake.getInfoHash().equals(myHandshake.getInfoHash())) {
                     this.client.getPeers().add(newClient);
-                    this.client.setOut(out);
-                    this.client.setIn(in);
-                    Thread communicationThread = new Thread(new SeedCommunicator(newClient, "wallpaper.jpg"));
-                    communicationThread.start();
+                    Thread seedThread = new Thread(new SeedCommunicator(newClient, "wallpaper.jpg"));
+                    seedThread.setName("Seed thread");
+                    seedThread.start();
                     System.out.println("Added new client");
                 } else {
                     System.out.println("Handshakes messages are different");

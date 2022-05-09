@@ -19,7 +19,7 @@ public class LeechCommunicator implements Runnable {
         try {
             this.out = new PrintWriter(leechSocket.getOutputStream(), true);
             this.in = leechSocket.getInputStream();
-            File receivedFile = new File(Settings.PATH + torrentFile.getName() + ".txt");
+            File receivedFile = new File(Settings.PATH + "[from_torrent]" + torrentFile.getName());
             this.fileStream = new FileOutputStream(receivedFile);
         } catch (IOException exception) {
             exception.printStackTrace();
@@ -35,7 +35,6 @@ public class LeechCommunicator implements Runnable {
     }
 
     private boolean receivePiece() {
-        System.out.println("Start to receive");
         StringBuilder messageBuilder = new StringBuilder();
         try {
             for (int i = 0; i < 4; i++) {

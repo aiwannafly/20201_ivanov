@@ -5,16 +5,19 @@ import java.nio.charset.StandardCharsets;
 
 public class BinaryOperations {
     private final static int INT_LEN = 32;
+    private final static int BYTE_LEN = 8;
+    private final static int BINARY_SYSTEM_MODE = 2;
 
     public static String convertIntoBytes(int number) {
         String bin = Integer.toBinaryString(number);
         String fullBinary = String.valueOf('0').repeat(INT_LEN - bin.length()) + bin;
-        StringBuilder str = new StringBuilder();
-        for (int i = 0; i < fullBinary.length() / 8; i++) {
-            int a = Integer.parseInt(fullBinary.substring(8 * i, (i + 1) * 8), 2);
-            str.append((char) (a));
+        StringBuilder bytesView = new StringBuilder();
+        for (int i = 0; i < fullBinary.length() / BYTE_LEN; i++) {
+            int nextByte = Integer.parseInt(fullBinary.substring(BYTE_LEN * i, (i + 1) * BYTE_LEN),
+                    BINARY_SYSTEM_MODE);
+            bytesView.append((char) (nextByte));
         }
-        return str.toString();
+        return bytesView.toString();
     }
 
     public static int convertFromBytes(String bytes) {

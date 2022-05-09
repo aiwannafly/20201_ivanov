@@ -8,25 +8,22 @@ import java.net.*;
 import java.util.*;
 
 class TorrentClient {
-    private static final String PATH = "src/main/resources/torrent/";
     private static final String STOP_WORD = "exit";
-    private Socket trackerSocket = null;
-    private Socket clientSocket = null;
     private ServerSocket connectionHandlerSocket = null;
     private PrintWriter out;
     private BufferedReader in;
     private final Set<Socket> peers = new HashSet<>();
     private Torrent torrent = null;
     private String peerId = null;
-    private ConnectionType currentConnection = ConnectionType.TRACKER_SERVER;
-
-    enum ConnectionType {
-        TRACKER_SERVER, OTHER_CLIENT
-    }
+    private final static String USAGE_GUIDE = "The list of the commands:\n" +
+            "show peers          | to print a list of all available peers\n" +
+            "handshake <port_id> | to try to make a connection with the peer\n" +
+            "add <file.torrent>  | to add a new .torrent file\n" +
+            "create <file>       | to make a .torrent file\n";
 
     public TorrentClient() {
         try {
-            trackerSocket = new Socket("localhost", TrackerServer.TRACKER_SERVER_PORT);
+            Socket trackerSocket = new Socket("localhost", TrackerServer.TRACKER_SERVER_PORT);
             connectionHandlerSocket = new ServerSocket(0);
             out = new PrintWriter(trackerSocket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(trackerSocket.getInputStream()));
@@ -41,7 +38,7 @@ class TorrentClient {
 
     public boolean addTorrent(String fileName) {
         try {
-            torrent = TorrentParser.parseTorrent(PATH + fileName);
+            torrent = TorrentParser.parseTorrent(Settings.PATH + fileName);
         } catch (IOException e) {
             System.out.println("Failed to load torrent: " + fileName);
             return false;
@@ -51,8 +48,8 @@ class TorrentClient {
 
     public boolean createTorrent(String fileName) {
         String torrentFileName = fileName + ".torrent";
-        File torrentFile = new File(PATH + torrentFileName);
-        File originalFile = new File(PATH + fileName);
+        File torrentFile = new File(Settings.PATH + torrentFileName);
+        File originalFile = new File(Settings.PATH + fileName);
         try {
             TorrentCreator.createTorrent(torrentFile, originalFile, "127.0.0.1");
         } catch (IOException e) {
@@ -129,7 +126,7 @@ class TorrentClient {
                 }
                 int peerPort = Integer.parseInt(words[1]);
                 try {
-                    clientSocket = new Socket("localhost", peerPort);
+                    Socket clientSocket = new Socket("localhost", peerPort);
                     PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
                     Handshake myHandshake = new Handshake(getHandShakeMessage());
                     out.println(myHandshake.getMessage());
@@ -139,11 +136,11 @@ class TorrentClient {
                     System.out.println("Reply: " + handshake.getMessage());
                     if (myHandshake.getInfoHash().equals(handshake.getInfoHash())) {
                         System.out.println("Successfully connected to " + peerPort);
-                        currentConnection = ConnectionType.OTHER_CLIENT;
                         this.in = in;
                         this.out = out;
-                        Thread communicationThread = new Thread(new LeechCommunicator(clientSocket, torrent));
-                        communicationThread.start();
+                        Thread leechThread = new Thread(new LeechCommunicator(clientSocket, torrent));
+                        leechThread.setName("Leech thread");
+                        leechThread.start();
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -168,9 +165,11 @@ class TorrentClient {
     public static void main(String[] args) {
         TorrentClient client = new TorrentClient();
         Thread thread = new Thread(new ConnectionsHandler(client, client.connectionHandlerSocket));
+        thread.setName("Connection handler thread");
         thread.start();
-        client.addTorrent("wallpaper.jpg.torrent");
-        System.out.println("file.txt.torrent was uploaded");
+        // client.addTorrent("wallpaper.jpg.torrent");
+        // System.out.println("wallpaper.jpg.torrent was uploaded");
+        System.out.println(USAGE_GUIDE);
         try (Scanner sc = new Scanner(System.in)) {
             String command = null;
             while (!(STOP_WORD.equalsIgnoreCase(command))) {

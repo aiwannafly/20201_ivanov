@@ -25,10 +25,8 @@ public class SeedCommunicator implements Runnable {
     private boolean handleMessage(String message) throws IOException {
         // request: <len=0013><id=6><index><begin><length>
         // piece: <len=0009+X><id=7><index><begin><block>
-        int len = BinaryOperations.convertFromBytes(message.substring(0, 4));
+        // int len = BinaryOperations.convertFromBytes(message.substring(0, 4));
         int id = Integer.parseInt(String.valueOf(message.charAt(4)));
-        // System.out.println("len: " + len);
-        // System.out.println("id: " + id);
         if (id == Settings.REQUEST_ID) {
             if (message.length() < 4 + 13) {
                 return false;

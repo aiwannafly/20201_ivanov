@@ -12,7 +12,6 @@ public class TrackerCommandHandler implements Runnable {
     private final static int PEER_ID_LENGTH = 20;
     private final static String GET_COMMAND = "get";
     private final static String SET_SERVER_SOCKET = "server-port";
-    private final static String HANDSHAKE_COMMAND = "handshake";
     private final static String SHOW_COMMAND = "show";
     private final static String PEERS_LIST = "peers";
     private final static String PEER_ID = "peer_id";
