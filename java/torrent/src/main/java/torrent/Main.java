@@ -1,18 +1,28 @@
 package torrent;
 
-import be.christophedetroyer.torrent.Torrent;
-import be.christophedetroyer.torrent.TorrentParser;
+import torrent.client.TorrentClient;
 
-import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Scanner;
 
 public class Main {
+    private final static String USAGE_GUIDE = """
+            The list of the commands:
+            show peers               | to print a list of all available peers
+            handshake <port_id>      | to try to make a connection with the peer
+            add <file.torrent>       | to add a new .torrent file
+            create <file>            | to make a .torrent file
+            download <file.torrent>  | to download a file
+            """;
 
-    public static void main(String[] args) throws IOException {
-        Map<Class, Integer> m = new HashMap<>();
-        Integer a = Integer.parseInt("10");
-        m.put(a.getClass(), 2);
-        System.out.println(m.get(a.getClass()));
+    public static void main(String[] args) {
+        TorrentClient client = new TorrentClient();
+        System.out.println(USAGE_GUIDE);
+        try (Scanner sc = new Scanner(System.in)) {
+            String command = null;
+            while (!(Settings.STOP_COMMAND.equalsIgnoreCase(command))) {
+                command = sc.nextLine();
+                client.executeCommand(command);
+            }
+        }
     }
 }
