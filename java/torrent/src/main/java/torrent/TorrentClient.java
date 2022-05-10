@@ -6,6 +6,10 @@ import be.christophedetroyer.torrent.TorrentParser;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 class TorrentClient {
     private static final String STOP_WORD = "exit";
@@ -15,11 +19,17 @@ class TorrentClient {
     private final Set<Socket> peers = new HashSet<>();
     private Torrent torrent = null;
     private String peerId = null;
-    private final static String USAGE_GUIDE = "The list of the commands:\n" +
-            "show peers          | to print a list of all available peers\n" +
-            "handshake <port_id> | to try to make a connection with the peer\n" +
-            "add <file.torrent>  | to add a new .torrent file\n" +
-            "create <file>       | to make a .torrent file\n";
+    private Thread connectionsHandlerThread = null;
+    private final ExecutorService threadPool = Executors.newFixedThreadPool(8);
+    private ExecutorService fileHandler = Executors.newFixedThreadPool(1);
+    private final static String USAGE_GUIDE = """
+            The list of the commands:
+            show peers               | to print a list of all available peers
+            handshake <port_id>      | to try to make a connection with the peer
+            add <file.torrent>       | to add a new .torrent file
+            create <file>            | to make a .torrent file
+            download <file.torrent>  | to download a file
+            """;
 
     public TorrentClient() {
         try {
@@ -34,6 +44,69 @@ class TorrentClient {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void giveFileTask(Runnable r) {
+        fileHandler.execute(r);
+    }
+
+    public Torrent getCurrentTorrent() {
+        return torrent;
+    }
+
+    public void waitToCompleteFileTasks() {
+        fileHandler.shutdown();
+        try {
+            boolean completed = fileHandler.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+            if (!completed) {
+                System.out.println("Execution was not completed");
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        fileHandler = Executors.newFixedThreadPool(1);
+    }
+
+    public boolean downloadTorrent(String torrentFileName) {
+        boolean added = addTorrent(torrentFileName);
+        if (!added) {
+            return false;
+        }
+        sendMessageToServer("show peers");
+        String message = receiveMessage();
+        String[] words = message.split(" ");
+        int peersCount = words.length - 1;
+        if (peersCount == 0) {
+            return false;
+        }
+        for (int i = 1; i <= peersCount; i++) {
+            int peerPort = Integer.parseInt(words[i]);
+            try {
+                Socket currentPeerSocket = new Socket("localhost", peerPort);
+                PrintWriter out = new PrintWriter(currentPeerSocket.getOutputStream(), true);
+                Handshake myHandshake = new Handshake(getHandShakeMessage());
+                out.println(myHandshake.getMessage());
+                out.flush();
+                BufferedReader in = new BufferedReader(new InputStreamReader(currentPeerSocket.getInputStream()));
+                Handshake peerHandshake = new Handshake(in.readLine());
+                if (myHandshake.getInfoHash().equals(peerHandshake.getInfoHash())) {
+                    System.out.println("Successfully connected to " + peerPort);
+                    threadPool.execute(new LeechCommunicator(this, currentPeerSocket, torrent));
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        threadPool.shutdown();
+        try {
+            boolean completed = threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+            if (!completed) {
+                System.out.println("Execution was not completed");
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return true;
     }
 
     public boolean addTorrent(String fileName) {
@@ -87,10 +160,6 @@ class TorrentClient {
         return null;
     }
 
-    public ServerSocket getServer() {
-        return connectionHandlerSocket;
-    }
-
     private void executeCommand(String command) {
         String[] words = command.split(" ");
         switch (words[0]) {
@@ -120,28 +189,31 @@ class TorrentClient {
                 }
                 break;
             }
-            case "handshake", "hs": {
+            case "download": {
                 if (words.length < 2) {
                     System.out.println("Incomplete command");
                 }
-                int peerPort = Integer.parseInt(words[1]);
+                String fileName = words[1];
+                boolean downloaded = downloadTorrent(fileName);
+                String postfix = ".torrent";
+                if (fileName.length() <= postfix.length()) {
+                    System.err.println("Bad file name, it should end with " + postfix);
+                    break;
+                }
+                int originalFileLength = fileName.length() - postfix.length();
+                String originalFileName = Settings.PREFIX + fileName.substring(0, originalFileLength);
+                if (downloaded) {
+                    System.out.println("Torrent file " + originalFileName + " was downloaded successfully");
+                } else {
+                    System.out.println("Could not download " + originalFileName);
+                }
+                break;
+            }
+            case STOP_WORD: {
+                sendMessageToServer("exit");
+                connectionsHandlerThread.interrupt();
                 try {
-                    Socket clientSocket = new Socket("localhost", peerPort);
-                    PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-                    Handshake myHandshake = new Handshake(getHandShakeMessage());
-                    out.println(myHandshake.getMessage());
-                    out.flush();
-                    BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                    Handshake handshake = new Handshake(in.readLine());
-                    System.out.println("Reply: " + handshake.getMessage());
-                    if (myHandshake.getInfoHash().equals(handshake.getInfoHash())) {
-                        System.out.println("Successfully connected to " + peerPort);
-                        this.in = in;
-                        this.out = out;
-                        Thread leechThread = new Thread(new LeechCommunicator(clientSocket, torrent));
-                        leechThread.setName("Leech thread");
-                        leechThread.start();
-                    }
+                    connectionHandlerSocket.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -154,21 +226,12 @@ class TorrentClient {
         }
     }
 
-    public void setOut(PrintWriter out) {
-        this.out = out;
-    }
-
-    public void setIn(BufferedReader in) {
-        this.in = in;
-    }
-
     public static void main(String[] args) {
         TorrentClient client = new TorrentClient();
-        Thread thread = new Thread(new ConnectionsHandler(client, client.connectionHandlerSocket));
-        thread.setName("Connection handler thread");
-        thread.start();
-        // client.addTorrent("wallpaper.jpg.torrent");
-        // System.out.println("wallpaper.jpg.torrent was uploaded");
+        client.connectionsHandlerThread = new Thread(new ConnectionsHandler(client, client.connectionHandlerSocket));
+        client.connectionsHandlerThread.setName("Connection handler thread");
+        client.connectionsHandlerThread.setDaemon(true);
+        client.connectionsHandlerThread.start();
         System.out.println(USAGE_GUIDE);
         try (Scanner sc = new Scanner(System.in)) {
             String command = null;

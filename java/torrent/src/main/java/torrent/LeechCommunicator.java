@@ -12,14 +12,16 @@ public class LeechCommunicator implements Runnable {
     private final Socket leechSocket;
     private final Torrent torrent;
     private FileOutputStream fileStream;
+    private final TorrentClient client;
 
-    public LeechCommunicator(Socket leechSocket, Torrent torrentFile) {
+    public LeechCommunicator(TorrentClient client, Socket leechSocket, Torrent torrentFile) {
         this.leechSocket = leechSocket;
         this.torrent = torrentFile;
+        this.client = client;
         try {
             this.out = new PrintWriter(leechSocket.getOutputStream(), true);
             this.in = leechSocket.getInputStream();
-            File receivedFile = new File(Settings.PATH + "[from_torrent]" + torrentFile.getName());
+            File receivedFile = new File(Settings.PATH + Settings.PREFIX + torrentFile.getName());
             this.fileStream = new FileOutputStream(receivedFile);
         } catch (IOException exception) {
             exception.printStackTrace();
@@ -63,20 +65,23 @@ public class LeechCommunicator implements Runnable {
         }
         int idx = BinaryOperations.convertFromBytes(message.substring(5, 9));
         int begin = BinaryOperations.convertFromBytes(message.substring(9, 13));
-        try {
-            String data = message.substring(13);
-            byte[] bytes = BinaryOperations.getBytesFromString(data);
-            fileStream.write(bytes);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
+        synchronized (client) {
+            client.giveFileTask(() -> {
+                try {
+                    String data = message.substring(13);
+                    byte[] bytes = BinaryOperations.getBytesFromString(data);
+                    fileStream.write(bytes);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
         }
         return true;
     }
 
     @Override
     public void run() {
-        System.out.println("Start requesting...");
+        // System.out.println("Start requesting...");
         List<String> pieces = torrent.getPieces();
         for (int i = 0; i < pieces.size(); i++) {
             int pieceLength;
@@ -86,14 +91,13 @@ public class LeechCommunicator implements Runnable {
                 pieceLength = torrent.getPieceLength().intValue();
             }
             requestPiece(i, 0, pieceLength);
-            System.out.println("Requested");
+            // System.out.println("Requested");
             boolean received = receivePiece();
-            System.out.println("Received");
+             System.out.println("=== Received piece " + (i + 1));
             if (!received) {
                 System.out.println("Failed to receive a piece");
             }
         }
-        System.out.println("Torrent file was downloaded successfully!");
         try {
             if (out != null) {
                 out.close();

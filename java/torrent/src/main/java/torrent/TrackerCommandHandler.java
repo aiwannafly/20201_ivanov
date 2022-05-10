@@ -11,6 +11,7 @@ public class TrackerCommandHandler implements Runnable {
     private final TrackerServer server;
     private final static int PEER_ID_LENGTH = 20;
     private final static String GET_COMMAND = "get";
+    private final static String EXIT_COMMAND = "exit";
     private final static String SET_SERVER_SOCKET = "server-port";
     private final static String SHOW_COMMAND = "show";
     private final static String PEERS_LIST = "peers";
@@ -81,6 +82,7 @@ public class TrackerCommandHandler implements Runnable {
             case SET_SERVER_SOCKET: {
                 Integer port = Integer.parseInt(words[1]);
                 server.getClientPorts().put(clientSocket, port);
+                break;
             }
         }
         return WRONG_COMMAND_MSG;
@@ -96,6 +98,11 @@ public class TrackerCommandHandler implements Runnable {
                     break;
                 }
                 System.out.printf("Sent from the client: %s\n", command);
+                if (command.equals(EXIT_COMMAND)) {
+                    server.getClients().remove(clientSocket);
+                    server.getClientPorts().remove(clientSocket);
+                    break;
+                }
                 String message = getResponse(command);
                 out.println(message);
             }
