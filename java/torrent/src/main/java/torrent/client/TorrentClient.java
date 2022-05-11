@@ -3,7 +3,7 @@ package torrent.client;
 import be.christophedetroyer.torrent.Torrent;
 import be.christophedetroyer.torrent.TorrentParser;
 import torrent.Handshake;
-import torrent.Settings;
+import torrent.Constants;
 import torrent.TorrentFileCreator;
 import torrent.tracker.TrackerServer;
 
@@ -22,8 +22,8 @@ public class TorrentClient {
     private Torrent torrent = null;
     private String peerId = null;
     private final Thread connectionsHandlerThread;
-    private final ExecutorService threadPool = Executors.newFixedThreadPool(8);
-    private ExecutorService fileHandler = Executors.newFixedThreadPool(1);
+    private final ExecutorService leechPool = Executors.newFixedThreadPool(8);
+    private ExecutorService fileThread = Executors.newFixedThreadPool(1);
     private final static String ADD_COMMAND = "add";
     private final static String CREATE_COMMAND = "create";
     private final static String DOWNLOAD_COMMAND = "download";
@@ -87,18 +87,21 @@ public class TorrentClient {
                     break;
                 }
                 int originalFileLength = fileName.length() - postfix.length();
-                String originalFileName = Settings.PREFIX + fileName.substring(0, originalFileLength);
+                String originalFileName = Constants.PREFIX + fileName.substring(0, originalFileLength);
                 if (downloaded) {
                     System.out.println("File " + originalFileName + " was downloaded successfully");
                 } else {
                     System.out.println("Could not download " + originalFileName);
                 }
             }
-            case Settings.STOP_COMMAND -> {
-                sendMessageToServer(Settings.STOP_COMMAND);
+            case Constants.STOP_COMMAND -> {
+                sendMessageToServer(Constants.STOP_COMMAND);
                 connectionsHandlerThread.interrupt();
+                fileThread.shutdown();
                 try {
                     connectionHandlerSocket.close();
+                    in.close();
+                    out.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -111,7 +114,7 @@ public class TorrentClient {
     }
 
     public void giveFileTask(Runnable r) {
-        fileHandler.execute(r);
+        fileThread.execute(r);
     }
 
     public Torrent getCurrentTorrent() {
@@ -119,16 +122,16 @@ public class TorrentClient {
     }
 
     public void waitToCompleteFileTasks() {
-        fileHandler.shutdown();
+        fileThread.shutdown();
         try {
-            boolean completed = fileHandler.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+            boolean completed = fileThread.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
             if (!completed) {
                 System.out.println("Execution was not completed");
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        fileHandler = Executors.newFixedThreadPool(1);
+        fileThread = Executors.newFixedThreadPool(1);
     }
 
     public boolean downloadTorrent(String torrentFileName) {
@@ -158,15 +161,15 @@ public class TorrentClient {
                 Handshake peerHandshake = new Handshake(in.readLine());
                 if (myHandshake.getInfoHash().equals(peerHandshake.getInfoHash())) {
                     System.out.println("Successfully connected to " + peerPort);
-                    threadPool.execute(new LeechCommunicator(this, currentPeerSocket, torrent));
+                    leechPool.execute(new LeechCommunicator(this, currentPeerSocket, torrent));
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        threadPool.shutdown();
+        leechPool.shutdown();
         try {
-            boolean completed = threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+            boolean completed = leechPool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
             if (!completed) {
                 System.out.println("Execution was not completed");
             }
@@ -178,7 +181,7 @@ public class TorrentClient {
 
     public boolean addTorrent(String fileName) {
         try {
-            torrent = TorrentParser.parseTorrent(Settings.PATH + fileName);
+            torrent = TorrentParser.parseTorrent(Constants.PATH + fileName);
         } catch (IOException e) {
             System.out.println("Failed to load torrent: " + fileName);
             return false;
@@ -188,8 +191,8 @@ public class TorrentClient {
 
     public boolean createTorrent(String fileName) {
         String torrentFileName = fileName + ".torrent";
-        File torrentFile = new File(Settings.PATH + torrentFileName);
-        File originalFile = new File(Settings.PATH + fileName);
+        File torrentFile = new File(Constants.PATH + torrentFileName);
+        File originalFile = new File(Constants.PATH + fileName);
         try {
             TorrentFileCreator.createTorrent(torrentFile, originalFile, "127.0.0.1");
         } catch (IOException e) {

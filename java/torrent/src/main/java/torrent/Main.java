@@ -19,7 +19,7 @@ public class Main {
         System.out.println(USAGE_GUIDE);
         try (Scanner sc = new Scanner(System.in)) {
             String command = null;
-            while (!(Settings.STOP_COMMAND.equalsIgnoreCase(command))) {
+            while (!(Constants.STOP_COMMAND.equalsIgnoreCase(command))) {
                 command = sc.nextLine();
                 client.executeCommand(command);
             }

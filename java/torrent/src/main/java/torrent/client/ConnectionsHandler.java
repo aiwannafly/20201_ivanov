@@ -1,8 +1,6 @@
 package torrent.client;
 
 import torrent.Handshake;
-import torrent.client.SeedCommunicator;
-import torrent.client.TorrentClient;
 
 import java.io.BufferedReader;
 import java.io.IOException;

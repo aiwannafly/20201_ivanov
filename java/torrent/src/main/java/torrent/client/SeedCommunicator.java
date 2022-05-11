@@ -1,7 +1,7 @@
 package torrent.client;
 
-import torrent.BinaryOperations;
-import torrent.Settings;
+import torrent.ByteOperations;
+import torrent.Constants;
 
 import java.io.*;
 import java.net.Socket;
@@ -23,7 +23,7 @@ class SeedCommunicator implements Runnable {
         try {
             this.out = seedSocket.getOutputStream();
             this.in = new BufferedReader(new InputStreamReader(seedSocket.getInputStream()));
-            File receivedFile = new File(Settings.PATH + fileName);
+            File receivedFile = new File(Constants.PATH + fileName);
             this.fileStream = new FileInputStream(receivedFile);
         } catch (IOException exception) {
             exception.printStackTrace();
@@ -39,7 +39,7 @@ class SeedCommunicator implements Runnable {
                 for (int i = 0; i < 4; i++) {
                     messageBuilder.append((char ) in.read());
                 }
-                int messageLength = BinaryOperations.convertFromBytes(messageBuilder.toString());
+                int messageLength = ByteOperations.convertFromBytes(messageBuilder.toString());
                 // System.out.println("Length: " + messageLength);
                 if (messageLength < 0) {
                     break;
@@ -78,15 +78,15 @@ class SeedCommunicator implements Runnable {
         // piece: <len=0009+X><id=7><index><begin><block>
         // int len = BinaryOperations.convertFromBytes(message.substring(0, 4));
         int id = Integer.parseInt(String.valueOf(message.charAt(4)));
-        if (id == Settings.REQUEST_ID) {
+        if (id == Constants.REQUEST_ID) {
             if (message.length() < 4 + 13) {
                 return false;
             }
-            int idx = BinaryOperations.convertFromBytes(message.substring(5, 9));
-            int begin = BinaryOperations.convertFromBytes(message.substring(9, 13));
-            int length = BinaryOperations.convertFromBytes(message.substring(13, 17));
-            String reply = BinaryOperations.convertIntoBytes(9 + length) + "7" +
-                    BinaryOperations.convertIntoBytes(idx) + BinaryOperations.convertIntoBytes(begin);
+            int idx = ByteOperations.convertFromBytes(message.substring(5, 9));
+            int begin = ByteOperations.convertFromBytes(message.substring(9, 13));
+            int length = ByteOperations.convertFromBytes(message.substring(13, 17));
+            String reply = ByteOperations.convertIntoBytes(9 + length) + "7" +
+                    ByteOperations.convertIntoBytes(idx) + ByteOperations.convertIntoBytes(begin);
             out.write(reply.getBytes(StandardCharsets.UTF_8));
             // System.out.println("Trying to read " + length + " bytes...");
             byte[] piece = new byte[length];

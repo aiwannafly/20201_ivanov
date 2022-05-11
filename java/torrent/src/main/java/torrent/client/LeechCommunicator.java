@@ -1,8 +1,8 @@
 package torrent.client;
 
 import be.christophedetroyer.torrent.Torrent;
-import torrent.BinaryOperations;
-import torrent.Settings;
+import torrent.ByteOperations;
+import torrent.Constants;
 
 import java.io.*;
 import java.net.Socket;
@@ -23,7 +23,7 @@ class LeechCommunicator implements Runnable {
         try {
             this.out = new PrintWriter(leechSocket.getOutputStream(), true);
             this.in = leechSocket.getInputStream();
-            File receivedFile = new File(Settings.PATH + Settings.PREFIX + torrentFile.getName());
+            File receivedFile = new File(Constants.PATH + Constants.PREFIX + torrentFile.getName());
             this.fileStream = new FileOutputStream(receivedFile);
         } catch (IOException exception) {
             exception.printStackTrace();
@@ -63,9 +63,9 @@ class LeechCommunicator implements Runnable {
     }
 
     private void requestPiece(int index, int begin, int length) {
-        String message = BinaryOperations.convertIntoBytes(13) + "6" +
-                BinaryOperations.convertIntoBytes(index) + BinaryOperations.convertIntoBytes(begin) +
-                BinaryOperations.convertIntoBytes(length);
+        String message = ByteOperations.convertIntoBytes(13) + "6" +
+                ByteOperations.convertIntoBytes(index) + ByteOperations.convertIntoBytes(begin) +
+                ByteOperations.convertIntoBytes(length);
         out.print(message);
         out.flush();
     }
@@ -76,7 +76,7 @@ class LeechCommunicator implements Runnable {
             for (int i = 0; i < 4; i++) {
                 messageBuilder.append((char) in.read());
             }
-            int messageLength = BinaryOperations.convertFromBytes(messageBuilder.toString());
+            int messageLength = ByteOperations.convertFromBytes(messageBuilder.toString());
             // System.out.println("Message length: " + messageLength);
             for (int i = 0; i < messageLength; i++) {
                 messageBuilder.append((char) in.read());
@@ -90,20 +90,20 @@ class LeechCommunicator implements Runnable {
             return false;
         }
         // piece: <len=0009+X><id=7><index><begin><block>
-        int len = BinaryOperations.convertFromBytes(message.substring(0, 4));
+        int len = ByteOperations.convertFromBytes(message.substring(0, 4));
         int id = Integer.parseInt(String.valueOf(message.charAt(4)));
         // System.out.println("len: " + len);
         // System.out.println("id: " + id);
-        if (id != Settings.PIECE_ID) {
+        if (id != Constants.PIECE_ID) {
             return false;
         }
-        int idx = BinaryOperations.convertFromBytes(message.substring(5, 9));
-        int begin = BinaryOperations.convertFromBytes(message.substring(9, 13));
+        int idx = ByteOperations.convertFromBytes(message.substring(5, 9));
+        int begin = ByteOperations.convertFromBytes(message.substring(9, 13));
         synchronized (client) {
             client.giveFileTask(() -> {
                 try {
                     String data = message.substring(13);
-                    byte[] bytes = BinaryOperations.getBytesFromString(data);
+                    byte[] bytes = ByteOperations.getBytesFromString(data);
                     fileStream.write(bytes);
                 } catch (IOException e) {
                     e.printStackTrace();
