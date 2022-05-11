@@ -6,4 +6,5 @@ public class Constants {
     public static final String PATH = "src/main/resources/torrent/";
     public static final int REQUEST_ID = 6;
     public static final int PIECE_ID = 7;
+    public static final String CONNECTIONS_THREAD_NAME = "Connection handler thread";
 }

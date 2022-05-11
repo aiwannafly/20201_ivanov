@@ -9,15 +9,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-class SeedCommunicator implements Runnable {
+class UploadHandler implements Runnable {
     private OutputStream out;
     private BufferedReader in;
     private final Socket seedSocket;
     private FileInputStream fileStream;
     private final ExecutorService fileHandler = Executors.newFixedThreadPool(1);
-    private final TorrentClient client;
+    private final BitTorrentClient client;
 
-    public SeedCommunicator(TorrentClient client, Socket seedSocket, String fileName) {
+    public UploadHandler(BitTorrentClient client, Socket seedSocket, String fileName) {
         this.seedSocket = seedSocket;
         this.client = client;
         try {

@@ -1,5 +1,6 @@
 package torrent.client;
 
+import torrent.BitTorrentHandshake;
 import torrent.Handshake;
 
 import java.io.BufferedReader;
@@ -13,11 +14,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 class ConnectionsHandler implements Runnable {
-    private final TorrentClient client;
+    private final BitTorrentClient client;
     private final ServerSocket serverSocket;
     private final ExecutorService threadPool = Executors.newFixedThreadPool(8);
 
-    public ConnectionsHandler(TorrentClient client, ServerSocket serverSocket) {
+    public ConnectionsHandler(BitTorrentClient client, ServerSocket serverSocket) {
         this.client = client;
         this.serverSocket = serverSocket;
     }
@@ -25,7 +26,6 @@ class ConnectionsHandler implements Runnable {
     @Override
     public void run() {
         try {
-            System.out.println("Client server is running");
             while (true) {
                 Socket newConnection;
                 try {
@@ -38,12 +38,11 @@ class ConnectionsHandler implements Runnable {
                 PrintWriter out = new PrintWriter(newConnection.getOutputStream(), true);
                 BufferedReader in = new BufferedReader(new InputStreamReader(newConnection.getInputStream()));
                 String handShakeMessage = in.readLine();
-                Handshake handshake = new Handshake(handShakeMessage);
+                Handshake handshake = new BitTorrentHandshake(handShakeMessage);
                 synchronized (client) {
-                    Handshake myHandshake = new Handshake(this.client.getHandShakeMessage());
+                    Handshake myHandshake = new BitTorrentHandshake(this.client.getHandShakeMessage());
                     if (handshake.getInfoHash().equals(myHandshake.getInfoHash())) {
-                        this.client.getPeers().add(newConnection);
-                        threadPool.execute(new SeedCommunicator(this.client, newConnection, client.getCurrentTorrent().
+                        threadPool.execute(new UploadHandler(this.client, newConnection, client.getCurrentTorrentFile().
                                 getName()));
                         System.out.println("Added new client");
                     } else {

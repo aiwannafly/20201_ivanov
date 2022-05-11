@@ -8,15 +8,15 @@ import java.io.*;
 import java.net.Socket;
 import java.util.List;
 
-class LeechCommunicator implements Runnable {
+class DownloadHandler implements Runnable {
     private PrintWriter out;
     private InputStream in;
     private final Socket leechSocket;
     private final Torrent torrent;
     private FileOutputStream fileStream;
-    private final TorrentClient client;
+    private final BitTorrentClient client;
 
-    public LeechCommunicator(TorrentClient client, Socket leechSocket, Torrent torrentFile) {
+    public DownloadHandler(BitTorrentClient client, Socket leechSocket, Torrent torrentFile) {
         this.leechSocket = leechSocket;
         this.torrent = torrentFile;
         this.client = client;
