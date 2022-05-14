@@ -16,13 +16,12 @@ public class Main {
     private final static String USAGE_GUIDE = """
             The list of the commands:
             show peers               | to print a list of all available peers
-            handshake <port_id>      | to try to make a connection with the peer
-            add <file.torrent>       | to add a new .torrent file
+            add <file.torrent>       | to add (distribute) a new .torrent file
             create <file>            | to make a .torrent file
             download <file.torrent>  | to download a file
             """;
 
-    public static void executeCommand(TorrentClient client, String command) {
+    private static void executeCommand(TorrentClient client, String command) {
         String[] words = command.split(" ");
         String instruction = words[0];
         switch (instruction) {
@@ -32,8 +31,8 @@ public class Main {
                 }
                 String torrentFileName = words[1];
                 try {
-                    client.upload(torrentFileName);
-                    System.out.println("Torrent file " + torrentFileName + " was uploaded successfully");
+                    client.distribute(torrentFileName);
+                    System.out.println("Torrent file " + torrentFileName + " is distributed");
                 } catch (BadTorrentFileException e) {
                     System.err.println("Could not upload " + torrentFileName);
                     System.err.println(e.getMessage());
@@ -80,8 +79,8 @@ public class Main {
             }
             case Constants.STOP_COMMAND -> client.shutdown();
             default -> {
-                client.sendToTracker(command);
-                System.out.println("=== Tracker === " + client.receiveFromTracker());
+                client.getTrackerCommunicator().sendToTracker(command);
+                System.out.println("=== Tracker === " + client.getTrackerCommunicator().receiveFromTracker());
             }
         }
     }

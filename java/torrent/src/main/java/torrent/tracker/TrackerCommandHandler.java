@@ -10,10 +10,10 @@ public class TrackerCommandHandler implements Runnable {
     private final Socket clientSocket;
     private final TrackerServer server;
     private final static int PEER_ID_LENGTH = 20;
-    private final static String GET_COMMAND = "get";
-    private final static String EXIT_COMMAND = "exit";
-    private final static String SET_SERVER_SOCKET = "server-port";
-    private final static String SHOW_COMMAND = "show";
+    public final static String GET_COMMAND = "get";
+    public final static String EXIT_COMMAND = "exit";
+    public final static String SET_LISTENING_SOCKET = "listen-port";
+    public final static String SHOW_COMMAND = "show";
     private final static String PEERS_LIST = "peers";
     private final static String PEER_ID = "peer_id";
     private final static String WRONG_COMMAND_MSG = "Wrong command";
@@ -99,7 +99,7 @@ public class TrackerCommandHandler implements Runnable {
                 }
                 return WRONG_COMMAND_MSG;
             }
-            case SET_SERVER_SOCKET -> {
+            case SET_LISTENING_SOCKET -> {
                 Integer port = Integer.parseInt(words[1]);
                 synchronized (server) {
                     server.getClientPorts().put(clientSocket, port);

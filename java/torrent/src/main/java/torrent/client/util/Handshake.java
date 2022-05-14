@@ -1,4 +1,4 @@
-package torrent;
+package torrent.client.util;
 
 public interface Handshake {
     String getMessage();

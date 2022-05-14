@@ -1,7 +1,7 @@
 package torrent.client;
 
 import be.christophedetroyer.torrent.Torrent;
-import torrent.ByteOperations;
+import torrent.client.util.ByteOperations;
 import torrent.Constants;
 
 import java.io.*;

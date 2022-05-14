@@ -1,7 +1,7 @@
 package torrent.client;
 
-import torrent.BitTorrentHandshake;
-import torrent.Handshake;
+import torrent.client.util.BitTorrentHandshake;
+import torrent.client.util.Handshake;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -33,7 +33,7 @@ class ConnectionsHandler implements Runnable {
                 } catch (SocketException e) {
                     break;
                 }
-                System.out.println("New peer appeared: " + newConnection.getInetAddress().getHostAddress()+
+                System.out.println("New peer connected: " + newConnection.getInetAddress().getHostAddress()+
                          " " + newConnection.getLocalPort());
                 PrintWriter out = new PrintWriter(newConnection.getOutputStream(), true);
                 BufferedReader in = new BufferedReader(new InputStreamReader(newConnection.getInputStream()));
@@ -44,9 +44,8 @@ class ConnectionsHandler implements Runnable {
                     if (handshake.getInfoHash().equals(myHandshake.getInfoHash())) {
                         threadPool.execute(new UploadHandler(this.client, newConnection, client.getCurrentTorrentFile().
                                 getName()));
-                        System.out.println("Added new client");
                     } else {
-                        System.out.println("Handshakes messages are different");
+                        System.err.println("Handshakes messages are different");
                     }
                     out.println(this.client.getHandShakeMessage());
                     out.flush();

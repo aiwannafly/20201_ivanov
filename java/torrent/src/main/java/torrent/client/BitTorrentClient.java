@@ -2,15 +2,15 @@ package torrent.client;
 
 import be.christophedetroyer.torrent.Torrent;
 import be.christophedetroyer.torrent.TorrentParser;
-import torrent.BitTorrentHandshake;
+import torrent.client.util.BitTorrentHandshake;
 import torrent.Constants;
-import torrent.Handshake;
-import torrent.TorrentFileCreator;
+import torrent.client.util.Handshake;
+import torrent.client.util.TorrentFileCreator;
 import torrent.client.exceptions.BadTorrentFileException;
 import torrent.client.exceptions.NoSeedsException;
 import torrent.client.exceptions.ServerNotCorrespondsException;
 import torrent.client.exceptions.TorrentCreateFailureException;
-import torrent.tracker.TrackerServer;
+import torrent.tracker.TrackerCommandHandler;
 
 import java.io.*;
 import java.net.*;
@@ -19,52 +19,30 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class BitTorrentClient implements TorrentClient {
-    private ConnectionsReceiver connectionsReceiver;
-    private PrintWriter out;
-    private BufferedReader in;
+    private final ConnectionsReceiver connReceiver;
     private Torrent torrentFile = null;
     private String peerId = null;
     private final ExecutorService leechPool = Executors.newFixedThreadPool(8);
     private ExecutorService fileThread = Executors.newFixedThreadPool(1);
+    private final TrackerCommunicator trackerComm;
 
     public BitTorrentClient() {
-        try {
-            Socket trackerSocket = new Socket("localhost", TrackerServer.TRACKER_SERVER_PORT);
-            out = new PrintWriter(trackerSocket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(trackerSocket.getInputStream()));
-            connectionsReceiver = new ConnectionsReceiver(this);
-            connectionsReceiver.run();
-            sendPortToTracker();
-            receiveFromTracker();
-            sendToTracker("get peer_id");
-            peerId = receiveFromTracker();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void sendToTracker(String msg) {
-        out.println(msg);
-        out.flush();
-    }
-
-    @Override
-    public String receiveFromTracker() {
-        try {
-            return in.readLine();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
+        connReceiver = new ConnectionsReceiver(this);
+        connReceiver.run();
+        trackerComm = new TrackerCommunicatorImpl();
+        String command = TrackerCommandHandler.SET_LISTENING_SOCKET + " " + connReceiver.getListeningPort();
+        trackerComm.sendToTracker(command);
+        trackerComm.receiveFromTracker();
+        trackerComm.sendToTracker("get peer_id");
+        peerId = trackerComm.receiveFromTracker();
     }
 
     @Override
     public void download(String torrentFileName) throws BadTorrentFileException,
             NoSeedsException, ServerNotCorrespondsException {
-        upload(torrentFileName);
-        sendToTracker("show peers");
-        String message = receiveFromTracker();
+        distribute(torrentFileName);
+        trackerComm.sendToTracker("show peers");
+        String message = trackerComm.receiveFromTracker();
         if (null == message) {
             throw new ServerNotCorrespondsException("Server did not show peers");
         }
@@ -103,7 +81,7 @@ public class BitTorrentClient implements TorrentClient {
     }
 
     @Override
-    public void upload(String fileName) throws BadTorrentFileException {
+    public void distribute(String fileName) throws BadTorrentFileException {
         try {
             torrentFile = TorrentParser.parseTorrent(Constants.PATH + fileName);
         } catch (IOException e) {
@@ -123,7 +101,7 @@ public class BitTorrentClient implements TorrentClient {
             throw new TorrentCreateFailureException("Could not make .torrent file");
         }
         try {
-            upload(torrentFileName);
+            distribute(torrentFileName);
         } catch (BadTorrentFileException e) {
             throw e;
         }
@@ -131,15 +109,15 @@ public class BitTorrentClient implements TorrentClient {
 
     @Override
     public void shutdown() {
-        sendToTracker(Constants.STOP_COMMAND);
+        trackerComm.sendToTracker(Constants.STOP_COMMAND);
         fileThread.shutdown();
-        connectionsReceiver.shutdown();
-        try {
-            in.close();
-            out.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        connReceiver.shutdown();
+        trackerComm.close();
+    }
+
+    @Override
+    public TrackerCommunicator getTrackerCommunicator() {
+        return trackerComm;
     }
 
     public String getHandShakeMessage() {
@@ -147,12 +125,6 @@ public class BitTorrentClient implements TorrentClient {
             return null;
         }
         return new BitTorrentHandshake(torrentFile.getInfo_hash(), peerId).getMessage();
-    }
-
-    private void sendPortToTracker() {
-        String msg = "server-port " + connectionsReceiver.getListeningPort();
-        out.println(msg);
-        out.flush();
     }
 
     public void giveFileTask(Runnable r) {

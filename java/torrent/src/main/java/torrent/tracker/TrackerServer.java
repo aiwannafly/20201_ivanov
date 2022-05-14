@@ -7,14 +7,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TrackerServer {
-    public static final int TRACKER_SERVER_PORT = 1000;
+    public static final int PORT = 1000;
     private final ArrayList<Socket> clients = new ArrayList<>();
     private final static Map<Socket, Integer> clientPorts = new HashMap<>();
 
     public void run() {
         ServerSocket server = null;
         try {
-            server = new ServerSocket(TRACKER_SERVER_PORT);
+            server = new ServerSocket(PORT);
             server.setReuseAddress(true);
             System.out.println("Server is running");
             while (true) {

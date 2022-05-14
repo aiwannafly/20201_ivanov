@@ -1,4 +1,4 @@
-package torrent;
+package torrent.client.util;
 
 public class BitTorrentHandshake implements Handshake {
     private static final String PSTR = "BitTorrent protocol";

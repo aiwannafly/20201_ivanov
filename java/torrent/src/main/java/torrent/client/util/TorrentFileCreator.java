@@ -1,4 +1,4 @@
-package torrent;
+package torrent.client.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;

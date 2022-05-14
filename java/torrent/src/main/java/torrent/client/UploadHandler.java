@@ -1,6 +1,6 @@
 package torrent.client;
 
-import torrent.ByteOperations;
+import torrent.client.util.ByteOperations;
 import torrent.Constants;
 
 import java.io.*;
