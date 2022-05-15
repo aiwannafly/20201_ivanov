@@ -13,18 +13,16 @@ class DownloadHandler implements Runnable {
     private InputStream in;
     private final Socket leechSocket;
     private final Torrent torrent;
-    private FileOutputStream fileStream;
-    private final BitTorrentClient client;
+    private FileManager fileManager;
 
-    public DownloadHandler(BitTorrentClient client, Socket leechSocket, Torrent torrentFile) {
+    public DownloadHandler(Socket leechSocket, Torrent torrentFile) {
         this.leechSocket = leechSocket;
         this.torrent = torrentFile;
-        this.client = client;
         try {
             this.out = new PrintWriter(leechSocket.getOutputStream(), true);
             this.in = leechSocket.getInputStream();
-            File receivedFile = new File(Constants.PATH + Constants.PREFIX + torrentFile.getName());
-            this.fileStream = new FileOutputStream(receivedFile);
+            fileManager = new FileManagerImpl(Constants.PREFIX + torrentFile.getName(),
+                    FileManagerImpl.Mode.WRITE);
         } catch (IOException exception) {
             exception.printStackTrace();
         }
@@ -99,16 +97,12 @@ class DownloadHandler implements Runnable {
         }
         int idx = ByteOperations.convertFromBytes(message.substring(5, 9));
         int begin = ByteOperations.convertFromBytes(message.substring(9, 13));
-        synchronized (client) {
-            client.giveFileTask(() -> {
-                try {
-                    String data = message.substring(13);
-                    byte[] bytes = ByteOperations.getBytesFromString(data);
-                    fileStream.write(bytes);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
+        String data = message.substring(13);
+        byte[] bytes = ByteOperations.getBytesFromString(data);
+        try {
+            fileManager.writePiece(idx, begin, bytes);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         return true;
     }

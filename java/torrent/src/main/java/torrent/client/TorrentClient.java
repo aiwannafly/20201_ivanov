@@ -5,7 +5,7 @@ import torrent.client.exceptions.NoSeedsException;
 import torrent.client.exceptions.ServerNotCorrespondsException;
 import torrent.client.exceptions.TorrentCreateFailureException;
 
-public interface TorrentClient {
+public interface TorrentClient extends AutoCloseable {
 
     void download(String torrentFileName) throws BadTorrentFileException,
             NoSeedsException, ServerNotCorrespondsException;
@@ -15,8 +15,6 @@ public interface TorrentClient {
     void createTorrent(String fileName) throws TorrentCreateFailureException,
             BadTorrentFileException;
 
-    TrackerCommunicator getTrackerCommunicator();
-
-    void shutdown();
+    void close();
 
 }

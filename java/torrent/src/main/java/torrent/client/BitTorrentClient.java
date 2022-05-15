@@ -20,11 +20,10 @@ import java.util.concurrent.TimeUnit;
 
 public class BitTorrentClient implements TorrentClient {
     private final ConnectionsReceiver connReceiver;
-    private Torrent torrentFile = null;
-    private String peerId = null;
-    private final ExecutorService leechPool = Executors.newFixedThreadPool(8);
-    private ExecutorService fileThread = Executors.newFixedThreadPool(1);
+    private final String peerId;
     private final TrackerCommunicator trackerComm;
+    private final ExecutorService leechPool = Executors.newFixedThreadPool(8);
+    private Torrent torrentFile = null;
 
     public BitTorrentClient() {
         connReceiver = new ConnectionsReceiver(this);
@@ -63,7 +62,7 @@ public class BitTorrentClient implements TorrentClient {
                 Handshake peerHandshake = new BitTorrentHandshake(in.readLine());
                 if (myHandshake.getInfoHash().equals(peerHandshake.getInfoHash())) {
                     System.out.println("Successfully connected to " + peerPort);
-                    leechPool.execute(new DownloadHandler(this, currentPeerSocket, torrentFile));
+                    leechPool.execute(new DownloadHandler(currentPeerSocket, torrentFile));
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -82,6 +81,13 @@ public class BitTorrentClient implements TorrentClient {
 
     @Override
     public void distribute(String fileName) throws BadTorrentFileException {
+        String postfix = ".torrent";
+        if (fileName.length() <= postfix.length()) {
+            throw new BadTorrentFileException("Bad name");
+        }
+        if (!fileName.endsWith(postfix)) {
+            throw new BadTorrentFileException("Bad name");
+        }
         try {
             torrentFile = TorrentParser.parseTorrent(Constants.PATH + fileName);
         } catch (IOException e) {
@@ -108,16 +114,10 @@ public class BitTorrentClient implements TorrentClient {
     }
 
     @Override
-    public void shutdown() {
+    public void close() {
         trackerComm.sendToTracker(Constants.STOP_COMMAND);
-        fileThread.shutdown();
         connReceiver.shutdown();
         trackerComm.close();
-    }
-
-    @Override
-    public TrackerCommunicator getTrackerCommunicator() {
-        return trackerComm;
     }
 
     public String getHandShakeMessage() {
@@ -127,24 +127,8 @@ public class BitTorrentClient implements TorrentClient {
         return new BitTorrentHandshake(torrentFile.getInfo_hash(), peerId).getMessage();
     }
 
-    public void giveFileTask(Runnable r) {
-        fileThread.execute(r);
-    }
-
     public Torrent getCurrentTorrentFile() {
         return torrentFile;
     }
 
-    public void waitToCompleteFileTasks() {
-        fileThread.shutdown();
-        try {
-            boolean completed = fileThread.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
-            if (!completed) {
-                System.out.println("Execution was not completed");
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        fileThread = Executors.newFixedThreadPool(1);
-    }
 }

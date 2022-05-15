@@ -6,25 +6,19 @@ import torrent.Constants;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 class UploadHandler implements Runnable {
     private OutputStream out;
     private BufferedReader in;
     private final Socket seedSocket;
-    private FileInputStream fileStream;
-    private final ExecutorService fileHandler = Executors.newFixedThreadPool(1);
-    private final BitTorrentClient client;
+    private FileManager fileManager;
 
-    public UploadHandler(BitTorrentClient client, Socket seedSocket, String fileName) {
+    public UploadHandler(Socket seedSocket, String fileName) {
         this.seedSocket = seedSocket;
-        this.client = client;
         try {
             this.out = seedSocket.getOutputStream();
             this.in = new BufferedReader(new InputStreamReader(seedSocket.getInputStream()));
-            File receivedFile = new File(Constants.PATH + fileName);
-            this.fileStream = new FileInputStream(receivedFile);
+            fileManager = new FileManagerImpl(fileName, FileManagerImpl.Mode.READ);
         } catch (IOException exception) {
             exception.printStackTrace();
         }
@@ -89,20 +83,7 @@ class UploadHandler implements Runnable {
                     ByteOperations.convertIntoBytes(idx) + ByteOperations.convertIntoBytes(begin);
             out.write(reply.getBytes(StandardCharsets.UTF_8));
             // System.out.println("Trying to read " + length + " bytes...");
-            byte[] piece = new byte[length];
-            synchronized (client) {
-                client.giveFileTask(() -> {
-                    try {
-                        int readBytes = fileStream.read(piece);
-                        if (readBytes != length) {
-                            System.out.println("Read " + readBytes + " / " + length);
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                });
-                client.waitToCompleteFileTasks();
-            }
+            byte[] piece = fileManager.readPiece(idx, begin, length);
 //            byte[] piece = fileStream.readNBytes(length);
              // System.out.println("Read " + readBytes);
             out.write(piece);

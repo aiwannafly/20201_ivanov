@@ -19,7 +19,7 @@ public class TrackerServer {
             System.out.println("Server is running");
             while (true) {
                 Socket client = server.accept();
-                System.out.println("New client connected" + client.getInetAddress().getHostAddress()+
+                System.out.println("=== New client connected: " + client.getInetAddress().getHostAddress()+
                         " " + client.getLocalPort());
                 synchronized (clients) {
                     clients.add(client);
