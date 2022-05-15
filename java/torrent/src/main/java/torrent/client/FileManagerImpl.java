@@ -2,30 +2,27 @@ package torrent.client;
 
 import torrent.Constants;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class FileManagerImpl implements FileManager {
-    private final Map<String, FileOutputStream> outputStreams = new HashMap<>();
-    private final Map<String, FileInputStream> inputStreams = new HashMap<>();
+    private final Map<String, RandomAccessFile> files = new HashMap<>();
     private final ExecutorService executor = Executors.newFixedThreadPool(1);
 
     @Override
-    public synchronized byte[] readPiece(String fileName, int idx, int begin, int length) throws IOException {
-        if (!inputStreams.containsKey(fileName)) {
-            File file = new File(Constants.PATH + fileName);
-            inputStreams.put(fileName, new FileInputStream(file));
+    public synchronized byte[] readPiece(String fileName, int offset, int length) throws IOException {
+        if (!files.containsKey(fileName)) {
+            RandomAccessFile randomAccessFile = new RandomAccessFile(Constants.PATH + fileName, "r");
+            files.put(fileName, randomAccessFile);
         }
-        FileInputStream fileInputStream = inputStreams.get(fileName);
+        RandomAccessFile file = files.get(fileName);
         byte[] piece = new byte[length];
         try {
-            int readBytes = fileInputStream.read(piece);
+            file.seek(offset);
+            int readBytes = file.read(piece);
             if (readBytes != length) {
                 System.err.println("Read " + readBytes + " / " + length);
             }
@@ -36,15 +33,16 @@ public class FileManagerImpl implements FileManager {
     }
 
     @Override
-    public synchronized void writePiece(String fileName, int idx, int begin, byte[] piece) throws IOException {
-        if (!outputStreams.containsKey(fileName)) {
-            File file = new File(Constants.PATH + fileName);
-            outputStreams.put(fileName, new FileOutputStream(file));
+    public synchronized void writePiece(String fileName, int offset, byte[] piece) throws IOException {
+        if (!files.containsKey(fileName)) {
+            RandomAccessFile randomAccessFile = new RandomAccessFile(Constants.PATH + fileName, "rw");
+            files.put(fileName, randomAccessFile);
         }
-        FileOutputStream fileOutputStream = outputStreams.get(fileName);
+        RandomAccessFile file = files.get(fileName);
         executor.execute((() -> {
             try {
-                fileOutputStream.write(piece);
+                file.seek(offset);
+                file.write(piece);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -52,13 +50,10 @@ public class FileManagerImpl implements FileManager {
     }
 
     @Override
-    public synchronized void close() throws IOException {
+    public void close() throws IOException {
         executor.shutdown();
-        for (FileInputStream stream: inputStreams.values()) {
-            stream.close();
-        }
-        for (FileOutputStream stream: outputStreams.values()) {
-            stream.close();
+        for (RandomAccessFile file: files.values()) {
+            file.close();
         }
     }
 }

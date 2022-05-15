@@ -42,8 +42,8 @@ class ConnectionsHandler implements Runnable {
                 synchronized (client) {
                     Handshake myHandshake = new BitTorrentHandshake(this.client.getHandShakeMessage());
                     if (handshake.getInfoHash().equals(myHandshake.getInfoHash())) {
-                        threadPool.execute(new UploadHandler(newConnection, client.getCurrentTorrentFile().
-                                getName(), client.getFileManager()));
+                        threadPool.execute(new UploadHandler(newConnection, client.getCurrentTorrentFile(),
+                                client.getFileManager()));
                     } else {
                         System.err.println("Handshakes messages are different");
                     }

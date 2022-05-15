@@ -1,5 +1,6 @@
 package torrent.client;
 
+import be.christophedetroyer.torrent.Torrent;
 import torrent.client.util.ByteOperations;
 import torrent.Constants;
 
@@ -13,10 +14,12 @@ class UploadHandler implements Runnable {
     private final Socket seedSocket;
     private FileManager fileManager;
     private final String fileName;
+    private final Torrent torrent;
 
-    public UploadHandler(Socket seedSocket, String fileName, FileManager fileManager) {
+    public UploadHandler(Socket seedSocket, Torrent torrent, FileManager fileManager) {
         this.seedSocket = seedSocket;
-        this.fileName = fileName;
+        this.torrent = torrent;
+        this.fileName = torrent.getName();
         try {
             this.out = seedSocket.getOutputStream();
             this.in = new BufferedReader(new InputStreamReader(seedSocket.getInputStream()));
@@ -85,7 +88,8 @@ class UploadHandler implements Runnable {
                     ByteOperations.convertIntoBytes(idx) + ByteOperations.convertIntoBytes(begin);
             out.write(reply.getBytes(StandardCharsets.UTF_8));
             // System.out.println("Trying to read " + length + " bytes...");
-            byte[] piece = fileManager.readPiece(fileName, idx, begin, length);
+            int offset = idx * torrent.getPieceLength().intValue() + begin;
+            byte[] piece = fileManager.readPiece(fileName, offset, length);
 //            byte[] piece = fileStream.readNBytes(length);
              // System.out.println("Read " + readBytes);
             out.write(piece);

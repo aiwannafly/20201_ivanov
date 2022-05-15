@@ -43,9 +43,10 @@ class DownloadHandler implements Runnable {
             requestPiece(i, 0, pieceLength);
             // System.out.println("Requested");
             boolean received = receivePiece();
-            System.out.println("=== Received piece " + (i + 1));
             if (!received) {
-                System.out.println("Failed to receive a piece");
+                System.err.println("=== Failed to receive a piece");
+            } else {
+                System.out.println("=== Received piece " + (i + 1));
             }
         }
         try {
@@ -101,7 +102,8 @@ class DownloadHandler implements Runnable {
         String data = message.substring(13);
         byte[] bytes = ByteOperations.getBytesFromString(data);
         try {
-            fileManager.writePiece(fileName, idx, begin, bytes);
+            int offset = idx * torrent.getPieceLength().intValue() + begin;
+            fileManager.writePiece(fileName, offset, bytes);
         } catch (IOException e) {
             e.printStackTrace();
         }

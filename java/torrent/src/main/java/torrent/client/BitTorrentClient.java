@@ -104,15 +104,11 @@ public class BitTorrentClient implements TorrentClient {
         File torrentFile = new File(Constants.PATH + torrentFileName);
         File originalFile = new File(Constants.PATH + fileName);
         try {
-            TorrentFileCreator.createTorrent(torrentFile, originalFile, "127.0.0.1");
+            TorrentFileCreator.createTorrent(torrentFile, originalFile, Constants.TRACKER_URL);
         } catch (IOException e) {
             throw new TorrentCreateFailureException("Could not make .torrent file");
         }
-        try {
-            distribute(torrentFileName);
-        } catch (BadTorrentFileException e) {
-            throw e;
-        }
+        distribute(torrentFileName);
     }
 
     @Override

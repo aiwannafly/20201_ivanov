@@ -1,6 +1,7 @@
 package torrent;
 
 public class Constants {
+    public static final String TRACKER_URL = "127.0.0.1";
     public static final String STOP_COMMAND = "exit";
     public static final String PREFIX = "[torrent]";
     public static final String PATH = "src/main/resources/torrent/";
