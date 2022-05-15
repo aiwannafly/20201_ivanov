@@ -23,9 +23,11 @@ public class BitTorrentClient implements TorrentClient {
     private final String peerId;
     private final TrackerCommunicator trackerComm;
     private final ExecutorService leechPool = Executors.newFixedThreadPool(8);
+    private final FileManager fileManager;
     private Torrent torrentFile = null;
 
     public BitTorrentClient() {
+        fileManager = new FileManagerImpl();
         connReceiver = new ConnectionsReceiver(this);
         connReceiver.run();
         trackerComm = new TrackerCommunicatorImpl();
@@ -62,7 +64,7 @@ public class BitTorrentClient implements TorrentClient {
                 Handshake peerHandshake = new BitTorrentHandshake(in.readLine());
                 if (myHandshake.getInfoHash().equals(peerHandshake.getInfoHash())) {
                     System.out.println("Successfully connected to " + peerPort);
-                    leechPool.execute(new DownloadHandler(currentPeerSocket, torrentFile));
+                    leechPool.execute(new DownloadHandler(currentPeerSocket, torrentFile, fileManager));
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -118,6 +120,15 @@ public class BitTorrentClient implements TorrentClient {
         trackerComm.sendToTracker(Constants.STOP_COMMAND);
         connReceiver.shutdown();
         trackerComm.close();
+        try {
+            fileManager.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public FileManager getFileManager() {
+        return fileManager;
     }
 
     public String getHandShakeMessage() {

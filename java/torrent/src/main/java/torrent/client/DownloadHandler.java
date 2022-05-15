@@ -14,15 +14,16 @@ class DownloadHandler implements Runnable {
     private final Socket leechSocket;
     private final Torrent torrent;
     private FileManager fileManager;
+    private final String fileName;
 
-    public DownloadHandler(Socket leechSocket, Torrent torrentFile) {
+    public DownloadHandler(Socket leechSocket, Torrent torrentFile, FileManager fileManager) {
         this.leechSocket = leechSocket;
         this.torrent = torrentFile;
+        this.fileName = Constants.PREFIX + torrentFile.getName();
         try {
             this.out = new PrintWriter(leechSocket.getOutputStream(), true);
             this.in = leechSocket.getInputStream();
-            fileManager = new FileManagerImpl(Constants.PREFIX + torrentFile.getName(),
-                    FileManagerImpl.Mode.WRITE);
+            this.fileManager = fileManager;
         } catch (IOException exception) {
             exception.printStackTrace();
         }
@@ -100,7 +101,7 @@ class DownloadHandler implements Runnable {
         String data = message.substring(13);
         byte[] bytes = ByteOperations.getBytesFromString(data);
         try {
-            fileManager.writePiece(idx, begin, bytes);
+            fileManager.writePiece(fileName, idx, begin, bytes);
         } catch (IOException e) {
             e.printStackTrace();
         }

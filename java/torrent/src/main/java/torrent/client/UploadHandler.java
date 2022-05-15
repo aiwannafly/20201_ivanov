@@ -12,13 +12,15 @@ class UploadHandler implements Runnable {
     private BufferedReader in;
     private final Socket seedSocket;
     private FileManager fileManager;
+    private final String fileName;
 
-    public UploadHandler(Socket seedSocket, String fileName) {
+    public UploadHandler(Socket seedSocket, String fileName, FileManager fileManager) {
         this.seedSocket = seedSocket;
+        this.fileName = fileName;
         try {
             this.out = seedSocket.getOutputStream();
             this.in = new BufferedReader(new InputStreamReader(seedSocket.getInputStream()));
-            fileManager = new FileManagerImpl(fileName, FileManagerImpl.Mode.READ);
+            this.fileManager = fileManager;
         } catch (IOException exception) {
             exception.printStackTrace();
         }
@@ -83,7 +85,7 @@ class UploadHandler implements Runnable {
                     ByteOperations.convertIntoBytes(idx) + ByteOperations.convertIntoBytes(begin);
             out.write(reply.getBytes(StandardCharsets.UTF_8));
             // System.out.println("Trying to read " + length + " bytes...");
-            byte[] piece = fileManager.readPiece(idx, begin, length);
+            byte[] piece = fileManager.readPiece(fileName, idx, begin, length);
 //            byte[] piece = fileStream.readNBytes(length);
              // System.out.println("Read " + readBytes);
             out.write(piece);
