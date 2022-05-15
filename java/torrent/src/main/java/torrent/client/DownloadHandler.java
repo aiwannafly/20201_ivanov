@@ -6,7 +6,7 @@ import torrent.Constants;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.List;
+import java.util.*;
 
 class DownloadHandler implements Runnable {
     private PrintWriter out;
@@ -15,10 +15,13 @@ class DownloadHandler implements Runnable {
     private final Torrent torrent;
     private FileManager fileManager;
     private final String fileName;
+    private final ArrayList<Integer> leftPieces;
 
-    public DownloadHandler(Socket leechSocket, Torrent torrentFile, FileManager fileManager) {
+    public DownloadHandler(Socket leechSocket, Torrent torrentFile,
+                           FileManager fileManager, ArrayList<Integer> leftPieces) {
         this.leechSocket = leechSocket;
         this.torrent = torrentFile;
+        this.leftPieces = leftPieces;
         this.fileName = Constants.PREFIX + torrentFile.getName();
         try {
             this.out = new PrintWriter(leechSocket.getOutputStream(), true);
@@ -32,21 +35,30 @@ class DownloadHandler implements Runnable {
     @Override
     public void run() {
         // System.out.println("Start requesting...");
-        List<String> pieces = torrent.getPieces();
-        for (int i = 0; i < pieces.size(); i++) {
+        int piecesCount = torrent.getPieces().size();
+        Random random = new Random();
+        while (true) {
+            int nextPieceIdx;
+            synchronized (leftPieces) {
+                if (leftPieces.size() == 0) {
+                    break;
+                }
+                int randomIdx = random.nextInt(leftPieces.size());
+                nextPieceIdx = leftPieces.remove(randomIdx);
+            }
             int pieceLength;
-            if (i == pieces.size() - 1) {
+            if (nextPieceIdx == piecesCount - 1) {
                 pieceLength = torrent.getTotalSize().intValue() % torrent.getPieceLength().intValue();
             } else {
                 pieceLength = torrent.getPieceLength().intValue();
             }
-            requestPiece(i, 0, pieceLength);
+            requestPiece(nextPieceIdx, 0, pieceLength);
             // System.out.println("Requested");
             boolean received = receivePiece();
             if (!received) {
                 System.err.println("=== Failed to receive a piece");
             } else {
-                System.out.println("=== Received piece " + (i + 1));
+                System.out.println("=== Received piece " + (nextPieceIdx + 1));
             }
         }
         try {

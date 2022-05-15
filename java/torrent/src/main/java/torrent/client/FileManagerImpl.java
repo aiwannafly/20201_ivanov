@@ -24,7 +24,7 @@ public class FileManagerImpl implements FileManager {
             file.seek(offset);
             int readBytes = file.read(piece);
             if (readBytes != length) {
-                System.err.println("Read " + readBytes + " / " + length);
+                System.err.println("Read just " + readBytes + " / " + length);
             }
         } catch (IOException e) {
             e.printStackTrace();

@@ -14,6 +14,7 @@ import torrent.tracker.TrackerCommandHandler;
 
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +53,10 @@ public class BitTorrentClient implements TorrentClient {
         if (peersCount == 0) {
             throw new NoSeedsException("No peers are uploading the file at the moment");
         }
+        ArrayList<Integer> leftPieces = new ArrayList<>();
+        for (int i = 0; i < torrentFile.getPieces().size(); i++) {
+            leftPieces.add(i);
+        }
         for (int i = 1; i <= peersCount; i++) {
             int peerPort = Integer.parseInt(words[i]);
             try {
@@ -64,7 +69,7 @@ public class BitTorrentClient implements TorrentClient {
                 Handshake peerHandshake = new BitTorrentHandshake(in.readLine());
                 if (myHandshake.getInfoHash().equals(peerHandshake.getInfoHash())) {
                     System.out.println("Successfully connected to " + peerPort);
-                    leechPool.execute(new DownloadHandler(currentPeerSocket, torrentFile, fileManager));
+                    leechPool.execute(new DownloadHandler(currentPeerSocket, torrentFile, fileManager, leftPieces));
                 }
             } catch (IOException e) {
                 e.printStackTrace();
