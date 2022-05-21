@@ -1,8 +1,10 @@
 package torrent.client;
 
+import be.christophedetroyer.torrent.Torrent;
 import torrent.Constants;
 import torrent.client.handlers.UploadHandler;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
@@ -11,10 +13,14 @@ import java.util.Random;
 public class ConnectionsReceiver {
     private ServerSocketChannel serverSocketChannel;
     private Thread connectionsHandlerThread;
-    private final BitTorrentClient client;
+    private final Torrent torrentFile;
+    private final FileManager fileManager;
+    private final String peerId;
 
-    public ConnectionsReceiver(BitTorrentClient client) {
-        this.client = client;
+    public ConnectionsReceiver(Torrent torrentFile, FileManager fileManager, String peerId) {
+        this.torrentFile = torrentFile;
+        this.fileManager = fileManager;
+        this.peerId = peerId;
         try {
             this.serverSocketChannel = ServerSocketChannel.open();
             InetSocketAddress address = new InetSocketAddress("localhost", 0);
@@ -26,7 +32,8 @@ public class ConnectionsReceiver {
     }
 
     public void run() {
-        connectionsHandlerThread = new Thread(new UploadHandler(client, this.serverSocketChannel));
+        connectionsHandlerThread = new Thread(new UploadHandler(this.torrentFile,
+                this.fileManager, this.peerId, this.serverSocketChannel));
         connectionsHandlerThread.setName(Constants.CONNECTIONS_THREAD_NAME);
         connectionsHandlerThread.setDaemon(true);
         connectionsHandlerThread.start();

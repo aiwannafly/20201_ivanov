@@ -3,8 +3,11 @@ package torrent.client.handlers;
 import be.christophedetroyer.torrent.Torrent;
 import torrent.Constants;
 import torrent.client.BitTorrentClient;
+import torrent.client.FileManager;
+import torrent.client.util.BitTorrentHandshake;
 import torrent.client.util.ByteOperations;
 
+import java.awt.datatransfer.FlavorEvent;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
@@ -13,11 +16,16 @@ import java.util.Iterator;
 import java.util.Set;
 
 public class UploadHandler implements Runnable {
-    private final BitTorrentClient torrentClient;
     private final ServerSocketChannel serverSocketChannel;
+    private final Torrent torrentFile;
+    private final FileManager fileManager;
+    private final String peerId;
 
-    public UploadHandler(BitTorrentClient torrentClient, ServerSocketChannel serverSocket) {
-        this.torrentClient = torrentClient;
+    public UploadHandler(Torrent torrentFile, FileManager fileManager, String peerId,
+                         ServerSocketChannel serverSocket) {
+        this.torrentFile = torrentFile;
+        this.fileManager = fileManager;
+        this.peerId = peerId;
         this.serverSocketChannel = serverSocket;
     }
 
@@ -54,7 +62,7 @@ public class UploadHandler implements Runnable {
             SelectionKey myKey = keysIterator.next();
             if (myKey.isAcceptable()) {
                 SocketChannel client = serverSocketChannel.accept();
-                String myHandshake = this.torrentClient.getHandShakeMessage();
+                String myHandshake = new BitTorrentHandshake(torrentFile.getInfo_hash(), peerId).getMessage();
                 ByteBuffer buf = ByteBuffer.allocate(myHandshake.length());
                 client.read(buf);
                 PrintWriter out = new PrintWriter(client.socket().getOutputStream(), true);
@@ -111,9 +119,8 @@ public class UploadHandler implements Runnable {
             String reply = ByteOperations.convertIntoBytes(9 + length) + "7" +
                     ByteOperations.convertIntoBytes(idx) + ByteOperations.convertIntoBytes(begin);
             client.write(ByteBuffer.wrap(reply.getBytes(StandardCharsets.UTF_8)));
-            Torrent torrent = this.torrentClient.getCurrentTorrentFile();
-            int offset = idx * torrent.getPieceLength().intValue() + begin;
-            byte[] piece = this.torrentClient.getFileManager().readPiece(torrent.getName(), offset, length);
+            int offset = idx * torrentFile.getPieceLength().intValue() + begin;
+            byte[] piece = fileManager.readPiece(torrentFile.getName(), offset, length);
             client.write(ByteBuffer.wrap(piece));
             return true;
         }

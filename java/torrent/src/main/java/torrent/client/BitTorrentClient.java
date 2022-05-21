@@ -2,7 +2,6 @@ package torrent.client;
 
 import be.christophedetroyer.torrent.Torrent;
 import be.christophedetroyer.torrent.TorrentParser;
-import torrent.client.util.BitTorrentHandshake;
 import torrent.Constants;
 import torrent.client.util.TorrentFileCreator;
 import torrent.client.exceptions.BadTorrentFileException;
@@ -18,7 +17,6 @@ public class BitTorrentClient implements TorrentClient {
     private final String peerId;
     private final TrackerCommunicator trackerComm;
     private final FileManager fileManager;
-    private Torrent torrentFile = null;
 
     public BitTorrentClient() {
         fileManager = new FileManagerImpl();
@@ -45,7 +43,13 @@ public class BitTorrentClient implements TorrentClient {
         for (int i = 1; i <= peersCount; i++) {
             peerPorts[i - 1] = Integer.parseInt(words[i]);
         }
-        DownloadManager downloadManager = new DownloadManager(this, fileManager, torrentFile, peerPorts);
+        Torrent torrentFile;
+        try {
+            torrentFile = TorrentParser.parseTorrent(Constants.PATH + torrentFileName);
+        } catch (IOException e) {
+            throw new BadTorrentFileException("Could not open torrent file " + torrentFileName);
+        }
+        DownloadManager downloadManager = new DownloadManager(torrentFile, fileManager, peerId, peerPorts);
         downloadManager.download();
     }
 
@@ -58,12 +62,13 @@ public class BitTorrentClient implements TorrentClient {
         if (!fileName.endsWith(postfix)) {
             throw new BadTorrentFileException("Bad name");
         }
+        Torrent torrentFile;
         try {
             torrentFile = TorrentParser.parseTorrent(Constants.PATH + fileName);
         } catch (IOException e) {
             throw new BadTorrentFileException("Failed to load torrent: " + fileName);
         }
-        connReceiver = new ConnectionsReceiver(this);
+        connReceiver = new ConnectionsReceiver(torrentFile, fileManager, peerId);
         connReceiver.run();
         String command = TrackerCommandHandler.SET_LISTENING_SOCKET + " " + connReceiver.getListeningPort();
         trackerComm.sendToTracker(command);
@@ -96,18 +101,4 @@ public class BitTorrentClient implements TorrentClient {
         }
     }
 
-    public FileManager getFileManager() {
-        return fileManager;
-    }
-
-    public String getHandShakeMessage() {
-        if (null == torrentFile) {
-            return null;
-        }
-        return new BitTorrentHandshake(torrentFile.getInfo_hash(), peerId).getMessage();
-    }
-
-    public Torrent getCurrentTorrentFile() {
-        return torrentFile;
-    }
 }

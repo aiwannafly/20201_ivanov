@@ -29,15 +29,15 @@ public class DownloadManager {
     private final ArrayList<Integer> leftPieces = new ArrayList<>();
     private final Map<Integer, InputStream> ins = new HashMap<>();
     private final Map<Integer, PrintWriter> outs = new HashMap<>();
-    private final BitTorrentClient torrentClient;
     private final FileManager fileManager;
     private final String fileName;
     private int missRequestsCounter = 0;
     private final int MISS_LIMIT = 100;
+    private final String peerId;
 
-    public DownloadManager(BitTorrentClient torrentClient, FileManager
-            fileManager, Torrent torrentFile, int[] peerPorts) {
-        this.torrentClient = torrentClient;
+    public DownloadManager(Torrent torrentFile, FileManager
+            fileManager, String peerId, int[] peerPorts) {
+        this.peerId = peerId;
         this.fileManager = fileManager;
         this.peerPorts = peerPorts;
         this.peersCount = peerPorts.length;
@@ -118,7 +118,7 @@ public class DownloadManager {
         SocketChannel currentPeerChannel = SocketChannel.open();
         InetSocketAddress address = new InetSocketAddress("localhost", peerPort);
         currentPeerChannel.connect(address);
-        Handshake myHandshake = new BitTorrentHandshake(torrentClient.getHandShakeMessage());
+        Handshake myHandshake = new BitTorrentHandshake(torrentFile.getInfo_hash(), peerId);
         PrintWriter out = new PrintWriter(currentPeerChannel.socket().getOutputStream(), true);
         out.print(myHandshake.getMessage());
         out.flush();
