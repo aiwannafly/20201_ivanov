@@ -1,85 +1,108 @@
 package torrent.client.handlers;
 
 import be.christophedetroyer.torrent.Torrent;
-import torrent.client.FileManager;
-import torrent.client.util.ByteOperations;
 import torrent.Constants;
+import torrent.client.BitTorrentClient;
+import torrent.client.util.ByteOperations;
 
 import java.io.*;
-import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
+import java.util.Set;
 
 public class UploadHandler implements Runnable {
-    private OutputStream out;
-    private BufferedReader in;
-    private final Socket seedSocket;
-    private FileManager fileManager;
-    private final String fileName;
-    private final Torrent torrent;
+    private final BitTorrentClient torrentClient;
+    private final ServerSocketChannel serverSocketChannel;
 
-    public UploadHandler(Socket seedSocket, Torrent torrent, FileManager fileManager) {
-        this.seedSocket = seedSocket;
-        this.torrent = torrent;
-        this.fileName = torrent.getName();
-        try {
-            this.out = seedSocket.getOutputStream();
-            this.in = new BufferedReader(new InputStreamReader(seedSocket.getInputStream()));
-            this.fileManager = fileManager;
-        } catch (IOException exception) {
-            exception.printStackTrace();
-        }
+    public UploadHandler(BitTorrentClient torrentClient, ServerSocketChannel serverSocket) {
+        this.torrentClient = torrentClient;
+        this.serverSocketChannel = serverSocket;
     }
 
     @Override
     public void run() {
+        Selector selector; // selector is open here
         try {
-            while (true) {
-                // System.out.println("Waiting for new messages...");
-                StringBuilder messageBuilder = new StringBuilder();
-                for (int i = 0; i < 4; i++) {
-                    messageBuilder.append((char ) in.read());
-                }
-                int messageLength = ByteOperations.convertFromBytes(messageBuilder.toString());
-                // System.out.println("Length: " + messageLength);
-                if (messageLength < 0) {
-                    break;
-                }
-                char[] data = new char[messageLength];
-                int count = in.read(data);
-                if (count != messageLength) {
-                    System.err.println("Read just " + count + " / " + messageLength + " bytes.");
-                }
-                messageBuilder.append(String.valueOf(data));
-                String message = messageBuilder.toString();
-                boolean handled = handleMessage(message);
-                if (!handled) {
-                    System.out.println("Failed to handle the message");
-                }
-            }
+            selector = Selector.open();
+            int ops = serverSocketChannel.validOps();
+            serverSocketChannel.register(selector, ops, null);
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
+            return;
+        }
+        while (true) {
             try {
-                if (out != null) {
-                    out.close();
+                handleEvents(selector);
+                if (Thread.currentThread().isInterrupted()) {
+                    break;
                 }
-                if (in != null) {
-                    in.close();
-                }
-                seedSocket.close();
             } catch (IOException e) {
                 e.printStackTrace();
+                break;
             }
         }
     }
 
-    private boolean handleMessage(String message) throws IOException {
-        // request: <len=0013><id=6><index><begin><length>
-        // piece: <len=0009+X><id=7><index><begin><block>
-        // int len = BinaryOperations.convertFromBytes(message.substring(0, 4));
+    private void handleEvents(Selector selector) throws IOException {
+        selector.select();
+        Set<SelectionKey> selectedKeys = selector.selectedKeys();
+        Iterator<SelectionKey> keysIterator = selectedKeys.iterator();
+        ByteBuffer lengthBuf = ByteBuffer.allocate(4);
+        while (keysIterator.hasNext()) {
+            SelectionKey myKey = keysIterator.next();
+            if (myKey.isAcceptable()) {
+                SocketChannel client = serverSocketChannel.accept();
+                String myHandshake = this.torrentClient.getHandShakeMessage();
+                ByteBuffer buf = ByteBuffer.allocate(myHandshake.length());
+                client.read(buf);
+                PrintWriter out = new PrintWriter(client.socket().getOutputStream(), true);
+                out.print(myHandshake);
+                out.flush();
+                client.configureBlocking(false);
+                client.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+                System.out.println("=== Connection accepted: " + client.getLocalAddress());
+            } else if (myKey.isReadable()) {
+                SocketChannel client = (SocketChannel) myKey.channel();
+                StringBuilder messageBuilder = new StringBuilder();
+                int read = client.read(lengthBuf);
+                String result = new String(lengthBuf.array());
+                messageBuilder.append(result);
+                int messageLength = ByteOperations.convertFromBytes(messageBuilder.toString());
+                // System.out.println("=== Length (from msg): " + messageLength);
+                if (messageLength <= 0) {
+                    myKey.cancel();
+                    break;
+                }
+                if (messageLength > 50) {
+                    System.err.println("Too long msg: " + messageLength);
+                    keysIterator.remove();
+                    return;
+                }
+                ByteBuffer messageBuf = ByteBuffer.allocate(messageLength);
+                int count = client.read(messageBuf);
+                result = new String(messageBuf.array());
+                if (count != messageLength) {
+                    System.err.println("Read just " + count + " / " + messageLength + " bytes.");
+                }
+                messageBuilder.append(result);
+                String message = messageBuilder.toString();
+                boolean handled = handleMessage(client, message);
+                if (!handled) {
+                    System.out.println("Failed to handle the message");
+                }
+            }
+            keysIterator.remove();
+        }
+
+    }
+
+    private boolean handleMessage(SocketChannel client, String message) throws IOException {
         int id = Integer.parseInt(String.valueOf(message.charAt(4)));
         if (id == Constants.REQUEST_ID) {
             if (message.length() < 4 + 13) {
+                System.err.println("=== Bad msg length");
                 return false;
             }
             int idx = ByteOperations.convertFromBytes(message.substring(5, 9));
@@ -87,14 +110,11 @@ public class UploadHandler implements Runnable {
             int length = ByteOperations.convertFromBytes(message.substring(13, 17));
             String reply = ByteOperations.convertIntoBytes(9 + length) + "7" +
                     ByteOperations.convertIntoBytes(idx) + ByteOperations.convertIntoBytes(begin);
-            out.write(reply.getBytes(StandardCharsets.UTF_8));
-            // System.out.println("Trying to read " + length + " bytes...");
+            client.write(ByteBuffer.wrap(reply.getBytes(StandardCharsets.UTF_8)));
+            Torrent torrent = this.torrentClient.getCurrentTorrentFile();
             int offset = idx * torrent.getPieceLength().intValue() + begin;
-            byte[] piece = fileManager.readPiece(fileName, offset, length);
-//            byte[] piece = fileStream.readNBytes(length);
-             // System.out.println("Read " + readBytes);
-            out.write(piece);
-            out.flush();
+            byte[] piece = this.torrentClient.getFileManager().readPiece(torrent.getName(), offset, length);
+            client.write(ByteBuffer.wrap(piece));
             return true;
         }
         return false;

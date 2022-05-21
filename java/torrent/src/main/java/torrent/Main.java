@@ -45,7 +45,8 @@ public class Main {
                 String fileName = words[1];
                 try {
                     client.createTorrent(fileName);
-                    System.out.println("Torrent file " + fileName + ".torrent was created successfully");
+                    System.out.println("Torrent file " + fileName + ".torrent was created successfully. " +
+                            "It is distributed for others clients.");
                 } catch (BadTorrentFileException | TorrentCreateFailureException e) {
                     System.err.println("Could not create a torrent for " + fileName +
                             ": " + e.getMessage());
@@ -68,9 +69,7 @@ public class Main {
                     client.download(fileName);
                     if (fileName.length() <= postfix.length()) {
                         System.err.println("Bad file name, it should end with " + postfix);
-                        break;
                     }
-                    System.out.println("File " + originalFileName + " was downloaded successfully");
                 } catch (BadTorrentFileException |
                         NoSeedsException | ServerNotCorrespondsException e) {
                     System.err.println("Could not download " + originalFileName

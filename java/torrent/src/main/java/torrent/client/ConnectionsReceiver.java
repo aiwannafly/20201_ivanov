@@ -1,29 +1,23 @@
 package torrent.client;
 
 import torrent.Constants;
-import torrent.client.handlers.ConnectionsHandler;
+import torrent.client.handlers.UploadHandler;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Random;
 
 public class ConnectionsReceiver {
     private ServerSocketChannel serverSocketChannel;
-    private InetSocketAddress address;
     private Thread connectionsHandlerThread;
     private final BitTorrentClient client;
-    private static int port = 65200;
 
     public ConnectionsReceiver(BitTorrentClient client) {
         this.client = client;
         try {
             this.serverSocketChannel = ServerSocketChannel.open();
-            Random random = new Random();
-            port += random.nextInt(10);
-            this.address = new InetSocketAddress("localhost", port);
-            System.out.println("PORT: " + address.getPort());
+            InetSocketAddress address = new InetSocketAddress("localhost", 0);
             this.serverSocketChannel.bind(address);
             this.serverSocketChannel.configureBlocking(false);
         } catch (IOException e) {
@@ -32,14 +26,28 @@ public class ConnectionsReceiver {
     }
 
     public void run() {
-        connectionsHandlerThread = new Thread(new ConnectionsHandler(client, this.serverSocketChannel));
+        connectionsHandlerThread = new Thread(new UploadHandler(client, this.serverSocketChannel));
         connectionsHandlerThread.setName(Constants.CONNECTIONS_THREAD_NAME);
         connectionsHandlerThread.setDaemon(true);
         connectionsHandlerThread.start();
     }
 
     public int getListeningPort() {
-        return address.getPort();
+        String addr;
+        try {
+            addr = serverSocketChannel.getLocalAddress().toString();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return 0;
+        }
+        int port_idx = 0;
+        for (int i = 0; i < addr.length(); i++) {
+            if (addr.charAt(i) == ':') {
+                port_idx = i + 1;
+                break;
+            }
+        }
+        return Integer.parseInt(addr.substring(port_idx));
     }
 
     public void shutdown() {
