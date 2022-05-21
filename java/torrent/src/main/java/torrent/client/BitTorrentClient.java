@@ -2,6 +2,7 @@ package torrent.client;
 
 import be.christophedetroyer.torrent.Torrent;
 import be.christophedetroyer.torrent.TorrentParser;
+import torrent.client.handlers.DownloadHandler;
 import torrent.client.util.BitTorrentHandshake;
 import torrent.Constants;
 import torrent.client.util.Handshake;
@@ -14,6 +15,8 @@ import torrent.tracker.TrackerCommandHandler;
 
 import java.io.*;
 import java.net.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,7 +26,8 @@ public class BitTorrentClient implements TorrentClient {
     private final ConnectionsReceiver connReceiver;
     private final String peerId;
     private final TrackerCommunicator trackerComm;
-    private final ExecutorService leechPool = Executors.newFixedThreadPool(8);
+    private final ExecutorService leechPool = Executors.newFixedThreadPool(
+            Constants.DOWNLOAD_MAX_THREADS_COUNT);
     private final FileManager fileManager;
     private Torrent torrentFile = null;
 
@@ -60,29 +64,28 @@ public class BitTorrentClient implements TorrentClient {
         for (int i = 1; i <= peersCount; i++) {
             int peerPort = Integer.parseInt(words[i]);
             try {
-                Socket currentPeerSocket = new Socket("localhost", peerPort);
-                PrintWriter out = new PrintWriter(currentPeerSocket.getOutputStream(), true);
+                SocketChannel currentPeerChannel = SocketChannel.open();
+                InetSocketAddress address = new InetSocketAddress("localhost", peerPort);
+                currentPeerChannel.connect(address);
+                // currentPeerChannel.configureBlocking(false);
                 Handshake myHandshake = new BitTorrentHandshake(getHandShakeMessage());
-                out.println(myHandshake.getMessage());
+                PrintWriter out = new PrintWriter(currentPeerChannel.socket().getOutputStream(), true);
+                out.print(myHandshake.getMessage());
                 out.flush();
-                BufferedReader in = new BufferedReader(new InputStreamReader(currentPeerSocket.getInputStream()));
-                Handshake peerHandshake = new BitTorrentHandshake(in.readLine());
+                ByteBuffer buf = ByteBuffer.allocate(myHandshake.getMessage().length());
+                currentPeerChannel.read(buf);
+                Handshake peerHandshake = new BitTorrentHandshake(new String(buf.array()));
+                System.out.println("=== Seed  HS: " + peerHandshake.getMessage());
+                System.out.println("=== Leech HS: " + myHandshake.getMessage());
                 if (myHandshake.getInfoHash().equals(peerHandshake.getInfoHash())) {
                     System.out.println("Successfully connected to " + peerPort);
-                    leechPool.execute(new DownloadHandler(currentPeerSocket, torrentFile, fileManager, leftPieces));
+                    leechPool.execute(new DownloadHandler(currentPeerChannel, torrentFile, fileManager, leftPieces));
+                } else {
+                    System.err.println("Handshakes are different, reject connection");
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-        leechPool.shutdown();
-        try {
-            boolean completed = leechPool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
-            if (!completed) {
-                System.out.println("Execution was not completed");
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
     }
 
@@ -124,6 +127,15 @@ public class BitTorrentClient implements TorrentClient {
         try {
             fileManager.close();
         } catch (Exception e) {
+            e.printStackTrace();
+        }
+        leechPool.shutdown();
+        try {
+            boolean completed = leechPool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+            if (!completed) {
+                System.out.println("Execution was not completed");
+            }
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }

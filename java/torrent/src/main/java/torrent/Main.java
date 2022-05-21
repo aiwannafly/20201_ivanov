@@ -22,7 +22,7 @@ public class Main {
             download <file.torrent>  | to download a file
             """;
 
-    private static void executeCommand(TorrentClient client, String command) {
+    private static void executeCommand(TorrentClient client, String command) throws Exception {
         String[] words = command.split(" ");
         String instruction = words[0];
         switch (instruction) {
@@ -82,7 +82,7 @@ public class Main {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         try (TorrentClient client = new BitTorrentClient()) {
             System.out.println(USAGE_GUIDE);
             System.out.println("Enter command: ");
