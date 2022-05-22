@@ -29,7 +29,7 @@ public class BitTorrentClient implements TorrentClient {
     public void download(String torrentFileName) throws BadTorrentFileException,
             NoSeedsException, ServerNotCorrespondsException {
         distribute(torrentFileName);
-        trackerComm.sendToTracker("show peers");
+        trackerComm.sendToTracker("show peers " + torrentFileName);
         String message = trackerComm.receiveFromTracker();
         if (null == message) {
             throw new ServerNotCorrespondsException("Server did not show peers");
@@ -71,7 +71,8 @@ public class BitTorrentClient implements TorrentClient {
         }
         connReceiver = new ConnectionsReceiver(torrentFile, fileManager, peerId);
         connReceiver.run();
-        String command = TrackerCommandHandler.SET_LISTENING_SOCKET + " " + connReceiver.getListeningPort();
+        String command = TrackerCommandHandler.SET_LISTENING_SOCKET + " " + connReceiver.getListeningPort() +
+                " " + fileName;
         trackerComm.sendToTracker(command);
         trackerComm.receiveFromTracker();
     }
@@ -88,6 +89,16 @@ public class BitTorrentClient implements TorrentClient {
             throw new TorrentCreateFailureException("Could not make .torrent file");
         }
         distribute(torrentFileName);
+    }
+
+    @Override
+    public void stopDownloading() {
+
+    }
+
+    @Override
+    public void resumeDownloading() {
+
     }
 
     @Override

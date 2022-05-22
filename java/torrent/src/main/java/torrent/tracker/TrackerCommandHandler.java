@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
 
 public class TrackerCommandHandler implements Runnable {
     private final Socket clientSocket;
@@ -80,13 +81,15 @@ public class TrackerCommandHandler implements Runnable {
                     return INCOMPLETE_COMMAND_MSG;
                 }
                 if (PEERS_LIST.equals(words[1])) {
+                    if (words.length < 3) {
+                        return INCOMPLETE_COMMAND_MSG;
+                    }
+                    String torrentFileName = words[2];
                     StringBuilder message = new StringBuilder();
                     message.append("Peers: ");
                     synchronized (server) {
-                        if (server.getClients().size() == 1) {
-                            message.append("none");
-                        }
-                        for (Socket client : server.getClients()) {
+                        ArrayList<Socket> fileSeeds = server.getSeedPorts().get(torrentFileName);
+                        for (Socket client : fileSeeds) {
                             if (client == clientSocket) {
                                 continue;
                             }
@@ -100,8 +103,16 @@ public class TrackerCommandHandler implements Runnable {
                 return WRONG_COMMAND_MSG;
             }
             case SET_LISTENING_SOCKET -> {
+                if (words.length < 3) {
+                    return INCOMPLETE_COMMAND_MSG;
+                }
                 Integer port = Integer.parseInt(words[1]);
+                String torrentFileName = words[2];
                 synchronized (server) {
+                    server.getSeedPorts().computeIfAbsent(torrentFileName, k -> new ArrayList<>());
+                    if (!server.getSeedPorts().get(torrentFileName).contains(clientSocket)) {
+                        server.getSeedPorts().get(torrentFileName).add(clientSocket);
+                    }
                     server.getClientPorts().put(clientSocket, port);
                 }
             }

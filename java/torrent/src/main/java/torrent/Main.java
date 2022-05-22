@@ -33,7 +33,7 @@ public class Main {
                 String torrentFileName = words[1];
                 try {
                     client.distribute(torrentFileName);
-                    System.out.println("Torrent file " + torrentFileName + " is distributed");
+                    System.out.println("Torrent file " + torrentFileName + " is distributed");;
                 } catch (BadTorrentFileException e) {
                     System.err.println("Could not upload " + torrentFileName + ": " + e.getMessage());
                 }

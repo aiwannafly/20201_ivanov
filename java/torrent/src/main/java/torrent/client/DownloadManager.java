@@ -6,7 +6,6 @@ import torrent.client.exceptions.DifferentHandshakesException;
 import torrent.client.exceptions.NoSeedsException;
 import torrent.client.handlers.DownloadPieceHandler;
 import torrent.client.util.BitTorrentHandshake;
-import torrent.client.util.ByteOperations;
 import torrent.client.util.Handshake;
 
 import java.io.IOException;
@@ -54,7 +53,7 @@ public class DownloadManager {
         if (0 == workingPeersCount) {
             throw new NoSeedsException("No seeds uploading file " + torrentFile.getName());
         }
-        this.leechPool = Executors.newFixedThreadPool(workingPeersCount);
+        this.leechPool = Executors.newFixedThreadPool(Constants.DOWNLOAD_MAX_THREADS_COUNT);
         this.service = new ExecutorCompletionService<>(this.leechPool);
         for (int i = 0; i < torrentFile.getPieces().size(); i++) {
             leftPieces.add(i);
@@ -64,7 +63,7 @@ public class DownloadManager {
     public void download() {
         Random random = new Random();
         boolean submittedFirstTasks = false;
-        while (leftPieces.size() > 0) {
+        while (true) {
             if (!submittedFirstTasks) {
                 for (int portId = 0; portId < workingPeersCount; portId++) {
                     requestRandomPiece(random, portId);
@@ -86,6 +85,9 @@ public class DownloadManager {
                     // System.out.println("=== Requested " + (pieceIdx + 1) + " again");
                 } else {
                     System.out.println("=== Received piece            " + (pieceIdx + 1));
+                    if (leftPieces.size() == 0) {
+                        break;
+                    }
                     requestRandomPiece(random, portIdx);
                 }
             } catch (InterruptedException | ExecutionException e) {
@@ -119,7 +121,6 @@ public class DownloadManager {
         int randomIdx = random.nextInt(leftPieces.size());
         int nextPieceIdx = leftPieces.remove(randomIdx);
         int pieceLength = getPieceLength(nextPieceIdx);
-        // System.out.println("=== Requested                 " + (nextPieceIdx + 1));
         service.submit(new DownloadPieceHandler(torrentFile, fileManager,
                 fileName, portIdx, nextPieceIdx, pieceLength, outs.get(peerPorts[portIdx]), ins.get(peerPorts[portIdx])));
     }

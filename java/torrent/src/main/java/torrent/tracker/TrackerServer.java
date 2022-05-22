@@ -10,6 +10,7 @@ public class TrackerServer {
     public static final int PORT = 1000;
     private final ArrayList<Socket> clients = new ArrayList<>();
     private final static Map<Socket, Integer> clientPorts = new HashMap<>();
+    private final static Map<String, ArrayList<Socket>> seedPorts = new HashMap<>();
 
     public void run() {
         ServerSocket server = null;
@@ -46,6 +47,10 @@ public class TrackerServer {
 
     public Map<Socket, Integer> getClientPorts() {
         return clientPorts;
+    }
+
+    public Map<String, ArrayList<Socket>> getSeedPorts() {
+        return seedPorts;
     }
 
     public static void main(String[] args) {

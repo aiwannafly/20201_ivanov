@@ -79,19 +79,13 @@ public class UploadHandler implements Runnable {
             } else if (myKey.isReadable()) {
                 SocketChannel client = (SocketChannel) myKey.channel();
                 StringBuilder messageBuilder = new StringBuilder();
-                int read = client.read(lengthBuf);
+                client.read(lengthBuf);
                 String result = new String(lengthBuf.array());
                 messageBuilder.append(result);
                 int messageLength = ByteOperations.convertFromBytes(messageBuilder.toString());
-                // System.out.println("=== Length (from msg): " + messageLength);
                 if (messageLength <= 0) {
                     myKey.cancel();
                     break;
-                }
-                if (messageLength > 50) {
-                    System.err.println("Too long msg: " + messageLength);
-                    keysIterator.remove();
-                    return;
                 }
                 ByteBuffer messageBuf = ByteBuffer.allocate(messageLength);
                 int count = client.read(messageBuf);
