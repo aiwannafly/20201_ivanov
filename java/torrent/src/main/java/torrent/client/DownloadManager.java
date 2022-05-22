@@ -17,27 +17,34 @@ import java.nio.channels.SocketChannel;
 import java.util.*;
 import java.util.concurrent.*;
 
-public class DownloadManager {
+public class DownloadManager implements Callable<DownloadManager.Status> {
     private final Torrent torrentFile;
     private final int[] peerPorts;
     private final ExecutorService leechPool;
     private final CompletionService<DownloadPieceHandler.Result> service;
     private int workingPeersCount;
-    private final ArrayList<Integer> leftPieces = new ArrayList<>();
+    private final ArrayList<Integer> leftPieces;
     private final Map<Integer, InputStream> ins = new HashMap<>();
     private final Map<Integer, PrintWriter> outs = new HashMap<>();
     private final FileManager fileManager;
     private final String fileName;
     private final String peerId;
+    private boolean stopped = false;
+    private boolean submittedFirstTasks = false;
+
+    public enum Status {
+        FINISHED, NOT_FINISHED
+    }
 
     public DownloadManager(Torrent torrentFile, FileManager
-            fileManager, String peerId, int[] peerPorts) throws NoSeedsException {
+            fileManager, String peerId, int[] peerPorts, ArrayList<Integer> leftPieces) throws NoSeedsException {
         this.peerId = peerId;
         this.fileManager = fileManager;
         this.peerPorts = peerPorts;
         this.torrentFile = torrentFile;
         this.fileName = Constants.PREFIX + torrentFile.getName();
         this.workingPeersCount = 0;
+        this.leftPieces = leftPieces;
         for (int i = 0; i < peerPorts.length && i < Constants.DOWNLOAD_MAX_THREADS_COUNT; i++) {
             try {
                 establishConnection(peerPorts[i]);
@@ -60,10 +67,13 @@ public class DownloadManager {
         }
     }
 
-    public void download() {
+    @Override
+    public Status call() {
         Random random = new Random();
-        boolean submittedFirstTasks = false;
-        while (true) {
+        while (leftPieces.size() > 0) {
+            if (stopped) {
+                return Status.NOT_FINISHED;
+            }
             if (!submittedFirstTasks) {
                 for (int portId = 0; portId < workingPeersCount; portId++) {
                     requestRandomPiece(random, portId);
@@ -103,6 +113,7 @@ public class DownloadManager {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        System.out.println("=== File " + fileName + " was downloaded successfully!");
         for (int i = 0; i < workingPeersCount; i++) {
             try {
                 if (outs.get(peerPorts[i]) != null) {
@@ -115,6 +126,15 @@ public class DownloadManager {
                 e.printStackTrace();
             }
         }
+        return Status.FINISHED;
+    }
+
+    public void stop() {
+        stopped = true;
+    }
+
+    public void resume() {
+        stopped = false;
     }
 
     private void requestRandomPiece(Random random, int portIdx) {

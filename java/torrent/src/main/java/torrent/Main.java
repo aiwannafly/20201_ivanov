@@ -15,11 +15,15 @@ public class Main {
     private final static String ADD_COMMAND = "add";
     private final static String CREATE_COMMAND = "create";
     private final static String DOWNLOAD_COMMAND = "download";
+    private final static String STOP_DOWNLOAD_COMMAND = "stop";
+    private final static String RESUME_DOWNLOAD_COMMAND = "resume";
     private final static String USAGE_GUIDE = """
             The list of the commands:
             add <file.torrent>       | to add (distribute) a new .torrent file
             create <file>            | to make a .torrent file
             download <file.torrent>  | to download a file
+            stop <file.torrent>      | to stop downloading a file
+            resume <file.torrent>    | to resume downloading a file
             """;
 
     private static void executeCommand(TorrentClient client, String command) throws Exception {
@@ -29,6 +33,7 @@ public class Main {
             case ADD_COMMAND -> {
                 if (words.length < 2) {
                     System.err.println(INCOMPLETE_COMMAND);
+                    break;
                 }
                 String torrentFileName = words[1];
                 try {
@@ -41,6 +46,7 @@ public class Main {
             case CREATE_COMMAND -> {
                 if (words.length < 2) {
                     System.err.println(INCOMPLETE_COMMAND);
+                    break;
                 }
                 String fileName = words[1];
                 try {
@@ -55,6 +61,7 @@ public class Main {
             case DOWNLOAD_COMMAND -> {
                 if (words.length < 2) {
                     System.err.println("Incomplete command");
+                    break;
                 }
                 String fileName = words[1];
                 String postfix = ".torrent";
@@ -75,9 +82,38 @@ public class Main {
                         NoSeedsException | ServerNotCorrespondsException e) {
                     System.err.println("Could not download " + originalFileName
                             + ": " + e.getMessage());
+                    // break;
+                }
+                // System.out.println("=== File " + fileName + " was downloaded successfully!");
+            }
+            case STOP_DOWNLOAD_COMMAND -> {
+                if (words.length < 2) {
+                    System.err.println(INCOMPLETE_COMMAND);
                     break;
                 }
-                System.out.println("=== File " + fileName + " was downloaded successfully!");
+                String torrentFileName = words[1];
+                try {
+                    client.stopDownloading(torrentFileName);
+                } catch (BadTorrentFileException e) {
+                    System.err.println("=== Bad file name");
+                    break;
+                }
+                System.out.println("=== Downloading of a file " + torrentFileName + " was stopped.");
+            }
+            case RESUME_DOWNLOAD_COMMAND -> {
+                if (words.length < 2) {
+                    System.err.println(INCOMPLETE_COMMAND);
+                    break;
+                }
+                String torrentFileName = words[1];
+                try {
+                    client.resumeDownloading(torrentFileName);
+                } catch (BadTorrentFileException |
+                        NoSeedsException | ServerNotCorrespondsException e) {
+                    System.err.println("=== Could not resume: " + e.getMessage());
+                    break;
+                }
+                System.out.println("=== Downloading of a file " + torrentFileName + " was resumed.");
             }
             case Constants.STOP_COMMAND -> client.close();
             default -> System.err.println(INVALID_COMMAND);
