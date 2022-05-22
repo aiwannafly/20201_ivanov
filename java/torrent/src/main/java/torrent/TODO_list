@@ -1,13 +1,5 @@
-1. Сделать так, что если сид раздает файл 1, а я хочу скачать файл 2,
-   то мне выведут ошибку.
-2. Поставить трэкер на конкретный IP,  не localhost
-3. Добавить keep-alive сообщения и их обработку.
-// Executors.newSingleThreadExecutor();
-
-Сделать DifferentHandshakesException
-Нам на вход дают пиров --- пытаемся с ними соединиться.
-Работаем лишь с теми, с тем кол-вом, с которым соединились.
-Если их осталось 0, то кидаем специальный Exception
+1. Поставить трэкер на конкретный IP,  не localhost
+2. Добавить keep-alive сообщения и их обработку.
 
 В каких-то местах я читаю через InputStream, а в каких-то через
 ByteBuffer.
@@ -16,60 +8,3 @@ ByteBuffer.
 
 А вообще, трекеру мы должны послать не только listening-port, но
 и название файла
-
-
-=== Successfully connected to 49461
-=== Successfully connected to 49464
-=== Successfully connected to 49465
-=== Requested 3 in 18      <
-=== Requested 22 in 16       <
-=== Requested 5 in 17          <
-=== Received piece 3 in 18 <
-=== Received piece 22 in 16  <
-=== Requested 25 in 16           <
-=== Requested 12 in 18             < ???
-=== Received piece 5 in 17     <
-=== Requested 23 in 17
-=== Received piece 25 in 16      <
-=== Requested 11 in 16          ???
-=== Requested 9 in 16           ???
-=== Received piece 23 in 17
-=== Requested 16 in 17
-=== Requested 26 in 18             < ?????????????????
-=== Bad length: 4
-=== Failed to receive a piece 11 in 16
-=== Bad hash
-=== Failed to receive a piece 12 in 18
-=== Received piece 16 in 17
-=== Requested 19 in 17
-=== Requested 17 in 17
-=== Requested 2 in 16
-=== Bad length: 4
-=== Failed to receive a piece 19 in 17
-=== Bad hash
-=== Failed to receive a piece 9 in 16
-=== Received piece 17 in 17
-=== Requested 15 in 17
-
-
-*************
-=== Requested                 27 in 16
-=== Requested                 23 in 18
-=== Requested                 10 in 17
-=== Received piece            27 in 16
-=== Requested                 26 in 16
-=== Received piece            23 in 18
-=== Requested                 7  in 18
-=== Failed to receive a piece 10 in 17
-=== Requested                 12 in 17
-=== Bad hash
-=== Received piece            26 in 16
-=== Requested                 14 in 16
-=== Received piece            12 in 17
-=== Requested                 24 in 17
-=== Received piece            14 in 16
-=== Requested                 9 in 16
-=== Received piece            9 in 16
-=== Requested                 25 in 16
-=== Received piece            25 in 16
-=== Requested                 18 in 16

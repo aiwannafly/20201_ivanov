@@ -68,6 +68,11 @@ public class UploadHandler implements Runnable {
                 PrintWriter out = new PrintWriter(client.socket().getOutputStream(), true);
                 out.print(myHandshake);
                 out.flush();
+                String leechHandshake = new String(buf.array());
+                if (!myHandshake.equals(leechHandshake)) {
+                    System.err.println("=== Handshakes are different, reject connection");
+                    continue;
+                }
                 client.configureBlocking(false);
                 client.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
                 System.out.println("=== Connection accepted: " + client.getLocalAddress());

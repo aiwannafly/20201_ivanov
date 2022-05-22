@@ -2,6 +2,8 @@ package torrent.client;
 
 import be.christophedetroyer.torrent.Torrent;
 import torrent.Constants;
+import torrent.client.exceptions.DifferentHandshakesException;
+import torrent.client.exceptions.NoSeedsException;
 import torrent.client.handlers.DownloadPieceHandler;
 import torrent.client.util.BitTorrentHandshake;
 import torrent.client.util.ByteOperations;
@@ -21,7 +23,7 @@ public class DownloadManager {
     private final int[] peerPorts;
     private final ExecutorService leechPool;
     private final CompletionService<DownloadPieceHandler.Result> service;
-    private final int workingPeersCount;
+    private int workingPeersCount;
     private final ArrayList<Integer> leftPieces = new ArrayList<>();
     private final Map<Integer, InputStream> ins = new HashMap<>();
     private final Map<Integer, PrintWriter> outs = new HashMap<>();
@@ -30,29 +32,32 @@ public class DownloadManager {
     private final String peerId;
 
     public DownloadManager(Torrent torrentFile, FileManager
-            fileManager, String peerId, int[] peerPorts) {
+            fileManager, String peerId, int[] peerPorts) throws NoSeedsException {
         this.peerId = peerId;
         this.fileManager = fileManager;
         this.peerPorts = peerPorts;
-        int peersCount = peerPorts.length;
         this.torrentFile = torrentFile;
         this.fileName = Constants.PREFIX + torrentFile.getName();
-        this.workingPeersCount = Math.min(peersCount, Constants.DOWNLOAD_MAX_THREADS_COUNT);
-        this.leechPool = Executors.newFixedThreadPool(workingPeersCount);
-        this.service = new ExecutorCompletionService<>(this.leechPool);
-
-        for (int i = 0; i < torrentFile.getPieces().size(); i++) {
-            leftPieces.add(i);
-        }
-        for (int i = 0; i < workingPeersCount; i++) {
+        this.workingPeersCount = 0;
+        for (int i = 0; i < peerPorts.length && i < Constants.DOWNLOAD_MAX_THREADS_COUNT; i++) {
             try {
-                boolean established = establishConnection(peerPorts[i]);
-                if (!established) {
-                    System.err.println("=== Failed to establish connection with " + peerPorts[i]);
-                }
+                establishConnection(peerPorts[i]);
+            } catch (DifferentHandshakesException e) {
+                System.err.println("=== " + e.getMessage());
+                continue;
             } catch (IOException e) {
                 e.printStackTrace();
+                continue;
             }
+            this.workingPeersCount++;
+        }
+        if (0 == workingPeersCount) {
+            throw new NoSeedsException("No seeds uploading file " + torrentFile.getName());
+        }
+        this.leechPool = Executors.newFixedThreadPool(workingPeersCount);
+        this.service = new ExecutorCompletionService<>(this.leechPool);
+        for (int i = 0; i < torrentFile.getPieces().size(); i++) {
+            leftPieces.add(i);
         }
     }
 
@@ -73,12 +78,12 @@ public class DownloadManager {
                 int portIdx = result.seedId;
                 // System.out.println(result);
                 if (result.status == DownloadPieceHandler.DownloadStatus.LOST) {
-                    System.out.println("=== Failed to receive a piece " + (pieceIdx + 1));
+                    // System.out.println("=== Failed to receive a piece " + (pieceIdx + 1));
                     int pieceLength = getPieceLength(pieceIdx);
                     service.submit(new DownloadPieceHandler(torrentFile, fileManager,
                             fileName, portIdx, pieceIdx, pieceLength, outs.get(peerPorts[portIdx]),
                             ins.get(peerPorts[portIdx])));
-                    System.out.println("=== Requested " + (pieceIdx + 1) + " again");
+                    // System.out.println("=== Requested " + (pieceIdx + 1) + " again");
                 } else {
                     System.out.println("=== Received piece            " + (pieceIdx + 1));
                     requestRandomPiece(random, portIdx);
@@ -114,7 +119,7 @@ public class DownloadManager {
         int randomIdx = random.nextInt(leftPieces.size());
         int nextPieceIdx = leftPieces.remove(randomIdx);
         int pieceLength = getPieceLength(nextPieceIdx);
-        System.out.println("=== Requested                 " + (nextPieceIdx + 1));
+        // System.out.println("=== Requested                 " + (nextPieceIdx + 1));
         service.submit(new DownloadPieceHandler(torrentFile, fileManager,
                 fileName, portIdx, nextPieceIdx, pieceLength, outs.get(peerPorts[portIdx]), ins.get(peerPorts[portIdx])));
     }
@@ -129,7 +134,7 @@ public class DownloadManager {
         return pieceLength;
     }
 
-    private boolean establishConnection(int peerPort) throws IOException {
+    private void establishConnection(int peerPort) throws IOException, DifferentHandshakesException {
         SocketChannel currentPeerChannel = SocketChannel.open();
         InetSocketAddress address = new InetSocketAddress("localhost", peerPort);
         currentPeerChannel.connect(address);
@@ -141,13 +146,10 @@ public class DownloadManager {
         currentPeerChannel.read(buf);
         Handshake peerHandshake = new BitTorrentHandshake(new String(buf.array()));
         if (myHandshake.getInfoHash().equals(peerHandshake.getInfoHash())) {
-            System.out.println("=== Successfully connected to " + peerPort);
             ins.put(peerPort, currentPeerChannel.socket().getInputStream());
             outs.put(peerPort, out);
-            return true;
         } else {
-            System.err.println("=== Handshakes are different, reject connection");
-            return false;
+            throw new DifferentHandshakesException("Handshakes are different, reject connection");
         }
     }
 }

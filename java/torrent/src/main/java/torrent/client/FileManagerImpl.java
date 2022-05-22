@@ -10,7 +10,7 @@ import java.util.concurrent.Executors;
 
 public class FileManagerImpl implements FileManager {
     private final Map<String, RandomAccessFile> files = new HashMap<>();
-    private final ExecutorService executor = Executors.newFixedThreadPool(1);
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     @Override
     public synchronized byte[] readPiece(String fileName, int offset, int length) throws IOException {

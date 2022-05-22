@@ -49,7 +49,8 @@ public class BitTorrentClient implements TorrentClient {
         } catch (IOException e) {
             throw new BadTorrentFileException("Could not open torrent file " + torrentFileName);
         }
-        DownloadManager downloadManager = new DownloadManager(torrentFile, fileManager, peerId, peerPorts);
+        DownloadManager downloadManager;
+        downloadManager = new DownloadManager(torrentFile, fileManager, peerId, peerPorts);
         downloadManager.download();
     }
 
