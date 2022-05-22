@@ -69,12 +69,15 @@ public class Main {
                     client.download(fileName);
                     if (fileName.length() <= postfix.length()) {
                         System.err.println("Bad file name, it should end with " + postfix);
+                        break;
                     }
                 } catch (BadTorrentFileException |
                         NoSeedsException | ServerNotCorrespondsException e) {
                     System.err.println("Could not download " + originalFileName
                             + ": " + e.getMessage());
+                    break;
                 }
+                System.out.println("=== File " + fileName + " was downloaded successfully!");
             }
             case Constants.STOP_COMMAND -> client.close();
             default -> System.err.println(INVALID_COMMAND);
