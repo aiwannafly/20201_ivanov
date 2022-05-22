@@ -17,7 +17,7 @@ import java.nio.channels.SocketChannel;
 import java.util.*;
 import java.util.concurrent.*;
 
-public class DownloadManager implements Callable<DownloadManager.Status> {
+public class DownloadManager implements Callable<DownloadManager.Result> {
     private final Torrent torrentFile;
     private final int[] peerPorts;
     private final ExecutorService leechPool;
@@ -31,9 +31,15 @@ public class DownloadManager implements Callable<DownloadManager.Status> {
     private final String peerId;
     private boolean stopped = false;
     private boolean submittedFirstTasks = false;
+    private boolean closed = false;
 
     public enum Status {
         FINISHED, NOT_FINISHED
+    }
+
+    public static class Result {
+        Status status;
+        String torrentFileName;
     }
 
     public DownloadManager(Torrent torrentFile, FileManager
@@ -68,11 +74,14 @@ public class DownloadManager implements Callable<DownloadManager.Status> {
     }
 
     @Override
-    public Status call() {
+    public Result call() {
+        Result downloadResult = new Result();
+        downloadResult.torrentFileName = torrentFile.getName() + Constants.POSTFIX;
+        downloadResult.status = Status.NOT_FINISHED;
         Random random = new Random();
         while (leftPieces.size() > 0) {
             if (stopped) {
-                return Status.NOT_FINISHED;
+                return downloadResult;
             }
             if (!submittedFirstTasks) {
                 for (int portId = 0; portId < workingPeersCount; portId++) {
@@ -94,7 +103,7 @@ public class DownloadManager implements Callable<DownloadManager.Status> {
                             ins.get(peerPorts[portIdx])));
                     // System.out.println("=== Requested " + (pieceIdx + 1) + " again");
                 } else {
-                    System.out.println("=== Received piece            " + (pieceIdx + 1));
+//                    System.out.println("=== Received piece            " + (pieceIdx + 1));
                     if (leftPieces.size() == 0) {
                         break;
                     }
@@ -103,6 +112,25 @@ public class DownloadManager implements Callable<DownloadManager.Status> {
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
+        }
+        shutdown();
+        System.out.println("=== File " + fileName + " was downloaded successfully!");
+        closed = true;
+        downloadResult.status = Status.FINISHED;
+        return downloadResult;
+    }
+
+    public void stop() {
+        stopped = true;
+    }
+
+    public void resume() {
+        stopped = false;
+    }
+
+    public void shutdown() {
+        if (closed) {
+            return;
         }
         leechPool.shutdown();
         try {
@@ -113,7 +141,6 @@ public class DownloadManager implements Callable<DownloadManager.Status> {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        System.out.println("=== File " + fileName + " was downloaded successfully!");
         for (int i = 0; i < workingPeersCount; i++) {
             try {
                 if (outs.get(peerPorts[i]) != null) {
@@ -126,15 +153,6 @@ public class DownloadManager implements Callable<DownloadManager.Status> {
                 e.printStackTrace();
             }
         }
-        return Status.FINISHED;
-    }
-
-    public void stop() {
-        stopped = true;
-    }
-
-    public void resume() {
-        stopped = false;
     }
 
     private void requestRandomPiece(Random random, int portIdx) {

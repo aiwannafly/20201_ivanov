@@ -26,7 +26,7 @@ public class Main {
             resume <file.torrent>    | to resume downloading a file
             """;
 
-    private static void executeCommand(TorrentClient client, String command) throws Exception {
+    private static void executeCommand(TorrentClient client, String command) {
         String[] words = command.split(" ");
         String instruction = words[0];
         switch (instruction) {
@@ -38,7 +38,7 @@ public class Main {
                 String torrentFileName = words[1];
                 try {
                     client.distribute(torrentFileName);
-                    System.out.println("Torrent file " + torrentFileName + " is distributed");;
+                    System.out.println("Torrent file " + torrentFileName + " is distributed");
                 } catch (BadTorrentFileException e) {
                     System.err.println("Could not upload " + torrentFileName + ": " + e.getMessage());
                 }
@@ -76,7 +76,6 @@ public class Main {
                     client.download(fileName);
                     if (fileName.length() <= postfix.length()) {
                         System.err.println("Bad file name, it should end with " + postfix);
-                        break;
                     }
                 } catch (BadTorrentFileException |
                         NoSeedsException | ServerNotCorrespondsException e) {
@@ -106,21 +105,21 @@ public class Main {
                     break;
                 }
                 String torrentFileName = words[1];
-                try {
-                    client.resumeDownloading(torrentFileName);
-                } catch (BadTorrentFileException |
-                        NoSeedsException | ServerNotCorrespondsException e) {
-                    System.err.println("=== Could not resume: " + e.getMessage());
-                    break;
-                }
+                client.resumeDownloading(torrentFileName);
                 System.out.println("=== Downloading of a file " + torrentFileName + " was resumed.");
             }
-            case Constants.STOP_COMMAND -> client.close();
+            case Constants.STOP_COMMAND -> {
+                try {
+                    client.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
             default -> System.err.println(INVALID_COMMAND);
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         try (TorrentClient client = new BitTorrentClient()) {
             System.out.println(USAGE_GUIDE);
             System.out.println("Enter command: ");
@@ -131,6 +130,8 @@ public class Main {
                     executeCommand(client, command);
                 }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

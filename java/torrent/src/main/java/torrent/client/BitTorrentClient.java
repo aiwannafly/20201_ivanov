@@ -3,7 +3,6 @@ package torrent.client;
 import be.christophedetroyer.torrent.Torrent;
 import be.christophedetroyer.torrent.TorrentParser;
 import torrent.Constants;
-import torrent.client.handlers.DownloadPieceHandler;
 import torrent.client.util.TorrentFileCreator;
 import torrent.client.exceptions.BadTorrentFileException;
 import torrent.client.exceptions.NoSeedsException;
@@ -25,8 +24,9 @@ public class BitTorrentClient implements TorrentClient {
     private final Map<String, ArrayList<Integer>> filesLeftPieces = new HashMap<>();
     private final ExecutorService downloadPool = Executors.newFixedThreadPool(
             Constants.DOWNLOAD_MAX_THREADS_COUNT);
-    private final CompletionService<DownloadManager.Status> service = new ExecutorCompletionService<>(downloadPool);
-    private DownloadManager downloadManager;
+    private final CompletionService<DownloadManager.Result> downloadService =
+            new ExecutorCompletionService<>(downloadPool);
+    private final Map<String, DownloadManager> downloadManagers = new HashMap<>();
 
     public BitTorrentClient() {
         fileManager = new FileManagerImpl();
@@ -59,13 +59,15 @@ public class BitTorrentClient implements TorrentClient {
         } catch (IOException e) {
             throw new BadTorrentFileException("Could not open torrent file " + torrentFileName);
         }
-//        DownloadManager downloadManager;
         if (!filesLeftPieces.containsKey(torrentFileName)) {
             filesLeftPieces.put(torrentFileName, new ArrayList<>());
         }
-        downloadManager = new DownloadManager(torrentFile, fileManager, peerId, peerPorts,
-                filesLeftPieces.get(torrentFileName));
-        service.submit(downloadManager);
+        if (!downloadManagers.containsKey(torrentFileName)) {
+            downloadManagers.put(torrentFileName, new DownloadManager(torrentFile, fileManager, peerId, peerPorts,
+                    filesLeftPieces.get(torrentFileName)));
+        }
+        downloadManagers.get(torrentFileName).resume();
+        downloadService.submit(downloadManagers.get(torrentFileName));
     }
 
     @Override
@@ -107,23 +109,26 @@ public class BitTorrentClient implements TorrentClient {
 
     @Override
     public void stopDownloading(String torrentFileName) throws BadTorrentFileException {
-        if (!filesLeftPieces.containsKey(torrentFileName) || downloadManager == null) {
+        if (!downloadManagers.containsKey(torrentFileName)) {
             throw new BadTorrentFileException("No such file");
         }
-        downloadManager.stop();
+        downloadManagers.get(torrentFileName).stop();
     }
 
     @Override
-    public void resumeDownloading(String torrentFileName)
-            throws NoSeedsException, ServerNotCorrespondsException, BadTorrentFileException {
-        // download(torrentFileName);
-        downloadManager.resume();
-        try {
-            service.take();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+    public void resumeDownloading(String torrentFileName) {
+        downloadManagers.get(torrentFileName).resume();
+        while (true) {
+            try {
+                Future<DownloadManager.Result> result = downloadService.take();
+                if (result.get().torrentFileName.equals(torrentFileName)) {
+                    break;
+                }
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
         }
-        service.submit(downloadManager);
+        downloadService.submit(downloadManagers.get(torrentFileName));
     }
 
     @Override
@@ -132,6 +137,9 @@ public class BitTorrentClient implements TorrentClient {
         connReceiver.shutdown();
         trackerComm.close();
         downloadPool.shutdown();
+        for (DownloadManager downloadManager: downloadManagers.values()) {
+            downloadManager.shutdown();
+        }
         try {
             fileManager.close();
         } catch (Exception e) {
