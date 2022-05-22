@@ -2,6 +2,7 @@ package torrent.client;
 
 import be.christophedetroyer.torrent.Torrent;
 import torrent.Constants;
+import torrent.client.handlers.DownloadPieceHandler;
 import torrent.client.util.BitTorrentHandshake;
 import torrent.client.util.ByteOperations;
 import torrent.client.util.Handshake;
@@ -64,6 +65,10 @@ public class DownloadManager {
         Random random = new Random();
         int portIdx = 0;
         int piecesCount = torrentFile.getPieces().size();
+        for (int i = 0; i < piecesCount; i++) {
+            System.out.print(torrentFile.getPieces().get(i) + " ");
+        }
+        System.out.println();
         while (leftPieces.size() > 0) {
             int randomIdx = random.nextInt(leftPieces.size());
             int nextPieceIdx = leftPieces.remove(randomIdx);
@@ -73,22 +78,12 @@ public class DownloadManager {
             } else {
                 pieceLength = torrentFile.getPieceLength().intValue();
             }
-            leechPool.execute(() -> {
-                requestPiece(nextPieceIdx, 0, pieceLength, outs.get(peerPorts[portIdx]));
-                // System.out.println("Requested");
-                boolean received = receivePiece(ins.get(peerPorts[portIdx]));
-                if (!received) {
-                    System.err.println("=== Failed to receive a piece " + (nextPieceIdx + 1));
-                    missRequestsCounter++;
-                    if (missRequestsCounter >= MISS_LIMIT) {
-                        System.err.println("=== Failed to download");
-                        return;
-                    }
-                    leftPieces.add(nextPieceIdx);
-                } else {
-                    System.out.println("=== Received piece " + (nextPieceIdx + 1));
-                }
-            });
+            leechPool.execute(new DownloadPieceHandler(torrentFile, fileManager,
+                    fileName, nextPieceIdx, pieceLength, outs.get(peerPorts[portIdx]), ins.get(peerPorts[portIdx])));
+            portIdx++;
+            if (portIdx == workingPeersCount) {
+                portIdx = 0;
+            }
         }
         // System.out.println("=== File " + fileName + " was downloaded successfully!");
         leechPool.shutdown();
@@ -134,71 +129,5 @@ public class DownloadManager {
             System.err.println("=== Handshakes are different, reject connection");
             return false;
         }
-    }
-
-    private void requestPiece(int index, int begin, int length, PrintWriter out) {
-        String message = ByteOperations.convertIntoBytes(13) + "6" +
-                ByteOperations.convertIntoBytes(index) + ByteOperations.convertIntoBytes(begin) +
-                ByteOperations.convertIntoBytes(length);
-        out.print(message);
-        out.flush();
-    }
-
-    private boolean receivePiece(InputStream in) {
-        StringBuilder messageBuilder = new StringBuilder();
-        try {
-            for (int i = 0; i < 4; i++) {
-                messageBuilder.append((char) in.read());
-            }
-            int messageLength = ByteOperations.convertFromBytes(messageBuilder.toString());
-            // System.out.println("Message length: " + messageLength);
-            for (int i = 0; i < messageLength; i++) {
-                messageBuilder.append((char) in.read());
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-        String message = messageBuilder.toString();
-        if (message.length() < 4 + 1 + 4 + 4) {
-            return false;
-        }
-        // piece: <len=0009+X><id=7><index><begin><block>
-        int len = ByteOperations.convertFromBytes(message.substring(0, 4));
-        int id = Integer.parseInt(String.valueOf(message.charAt(4)));
-        // System.out.println("len: " + len);
-        // System.out.println("id: " + id);
-        if (id != Constants.PIECE_ID) {
-            return false;
-        }
-        int idx = ByteOperations.convertFromBytes(message.substring(5, 9));
-        int begin = ByteOperations.convertFromBytes(message.substring(9, 13));
-        String data = message.substring(13);
-        byte[] bytes = ByteOperations.getBytesFromString(data);
-        String origHash = torrentFile.getPieces().get(idx);
-        String receivedHash;
-        try {
-            receivedHash = getSha1(bytes);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            return false;
-        }
-        if (!receivedHash.equals(origHash)) {
-            return false;
-        }
-        try {
-            int offset = idx * torrentFile.getPieceLength().intValue() + begin;
-            fileManager.writePiece(fileName, offset, bytes);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return true;
-    }
-
-    private String getSha1(byte[] bytes) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-1");
-        digest.reset();
-        digest.update(bytes);
-        return String.format("%040x", new BigInteger(1, digest.digest())).toUpperCase(Locale.ROOT);
     }
 }

@@ -98,12 +98,11 @@ public class UploadHandler implements Runnable {
                 String message = messageBuilder.toString();
                 boolean handled = handleMessage(client, message);
                 if (!handled) {
-                    System.out.println("Failed to handle the message");
+                    System.err.println("=== Failed to handle the message");
                 }
             }
             keysIterator.remove();
         }
-
     }
 
     private boolean handleMessage(SocketChannel client, String message) throws IOException {

@@ -4,11 +4,9 @@ import be.christophedetroyer.torrent.Torrent;
 import torrent.Constants;
 import torrent.client.handlers.UploadHandler;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
-import java.util.Random;
 
 public class ConnectionsReceiver {
     private ServerSocketChannel serverSocketChannel;
