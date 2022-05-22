@@ -12,8 +12,9 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
+import java.util.concurrent.Callable;
 
-public class DownloadPieceHandler implements Runnable {
+public class DownloadPieceHandler implements Callable<DownloadPieceHandler.Result> {
     private final Torrent torrentFile;
     private final FileManager fileManager;
     private final String fileName;
@@ -21,11 +22,29 @@ public class DownloadPieceHandler implements Runnable {
     private final int pieceLength;
     private final PrintWriter out;
     private final InputStream in;
+    private final int peerId;
+
+    public enum DownloadStatus {
+        RECEIVED, LOST
+    }
+
+    public static class Result {
+        public DownloadStatus status;
+        public int seedId;
+        public int pieceId;
+
+        public Result(DownloadStatus status, int seedId, int pieceId) {
+            this.status = status;
+            this.seedId = seedId;
+            this.pieceId = pieceId;
+        }
+    }
 
     public DownloadPieceHandler(Torrent torrentFile, FileManager fileManager,
-                                String fileName, int pieceIdx, int pieceLength,
+                                String fileName, int peerId, int pieceIdx, int pieceLength,
                                 PrintWriter out, InputStream in) {
         this.fileManager = fileManager;
+        this.peerId = peerId;
         this.torrentFile = torrentFile;
         this.fileName = fileName;
         this.pieceIdx = pieceIdx;
@@ -35,18 +54,14 @@ public class DownloadPieceHandler implements Runnable {
     }
 
     @Override
-    public void run() {
+    public Result call() {
+        Result result = new Result(DownloadStatus.RECEIVED, peerId, pieceIdx);
         requestPiece(pieceIdx, 0, pieceLength);
-        System.out.println("=== Requested                 " + (pieceIdx + 1) + " in " + Thread.currentThread().getId());
-        System.out.flush();
         boolean received = receivePiece();
         if (!received) {
-            System.out.println("=== Failed to receive a piece " + (pieceIdx + 1) + " in " + Thread.currentThread().getId());
-            System.out.flush();
-        } else {
-            System.out.println("=== Received piece            " + (pieceIdx + 1) + " in " + Thread.currentThread().getId());
-            System.out.flush();
+            result.status = DownloadStatus.LOST;
         }
+        return result;
     }
 
     private void requestPiece(int index, int begin, int length) {
@@ -77,7 +92,6 @@ public class DownloadPieceHandler implements Runnable {
             System.err.println("=== Bad length: " + message.length());
             return false;
         }
-        System.err.println("Message length: " + message.length());
         // piece: <len=0009+X><id=7><index><begin><block>
         int len = ByteOperations.convertFromBytes(message.substring(0, 4));
         int id = Integer.parseInt(String.valueOf(message.charAt(4)));
@@ -104,8 +118,10 @@ public class DownloadPieceHandler implements Runnable {
             System.err.println(origHash);
             return false;
         }
+
         try {
-            int offset = idx * torrentFile.getPieceLength().intValue() + begin;
+            int offset;
+            offset = idx * torrentFile.getPieceLength().intValue() + begin;
             fileManager.writePiece(fileName, offset, bytes);
         } catch (IOException e) {
             e.printStackTrace();

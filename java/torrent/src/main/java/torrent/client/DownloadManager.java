@@ -10,30 +10,23 @@ import torrent.client.util.Handshake;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class DownloadManager {
     private final Torrent torrentFile;
     private final int[] peerPorts;
-    private final int peersCount;
     private final ExecutorService leechPool;
-    private int workingPeersCount;
+    private final CompletionService<DownloadPieceHandler.Result> service;
+    private final int workingPeersCount;
     private final ArrayList<Integer> leftPieces = new ArrayList<>();
     private final Map<Integer, InputStream> ins = new HashMap<>();
     private final Map<Integer, PrintWriter> outs = new HashMap<>();
     private final FileManager fileManager;
     private final String fileName;
-    private int missRequestsCounter = 0;
-    private final int MISS_LIMIT = 100;
     private final String peerId;
 
     public DownloadManager(Torrent torrentFile, FileManager
@@ -41,11 +34,13 @@ public class DownloadManager {
         this.peerId = peerId;
         this.fileManager = fileManager;
         this.peerPorts = peerPorts;
-        this.peersCount = peerPorts.length;
+        int peersCount = peerPorts.length;
         this.torrentFile = torrentFile;
         this.fileName = Constants.PREFIX + torrentFile.getName();
         this.workingPeersCount = Math.min(peersCount, Constants.DOWNLOAD_MAX_THREADS_COUNT);
         this.leechPool = Executors.newFixedThreadPool(workingPeersCount);
+        this.service = new ExecutorCompletionService<>(this.leechPool);
+
         for (int i = 0; i < torrentFile.getPieces().size(); i++) {
             leftPieces.add(i);
         }
@@ -63,29 +58,35 @@ public class DownloadManager {
 
     public void download() {
         Random random = new Random();
-        int portIdx = 0;
-        int piecesCount = torrentFile.getPieces().size();
-        for (int i = 0; i < piecesCount; i++) {
-            System.out.print(torrentFile.getPieces().get(i) + " ");
-        }
-        System.out.println();
+        boolean submittedFirstTasks = false;
         while (leftPieces.size() > 0) {
-            int randomIdx = random.nextInt(leftPieces.size());
-            int nextPieceIdx = leftPieces.remove(randomIdx);
-            int pieceLength;
-            if (nextPieceIdx == piecesCount - 1) {
-                pieceLength = torrentFile.getTotalSize().intValue() % torrentFile.getPieceLength().intValue();
-            } else {
-                pieceLength = torrentFile.getPieceLength().intValue();
+            if (!submittedFirstTasks) {
+                for (int portId = 0; portId < workingPeersCount; portId++) {
+                    requestRandomPiece(random, portId);
+                }
             }
-            leechPool.execute(new DownloadPieceHandler(torrentFile, fileManager,
-                    fileName, nextPieceIdx, pieceLength, outs.get(peerPorts[portIdx]), ins.get(peerPorts[portIdx])));
-            portIdx++;
-            if (portIdx == workingPeersCount) {
-                portIdx = 0;
+            submittedFirstTasks = true;
+            try {
+                Future<DownloadPieceHandler.Result> future = service.take();
+                DownloadPieceHandler.Result result = future.get();
+                int pieceIdx = result.pieceId;
+                int portIdx = result.seedId;
+                // System.out.println(result);
+                if (result.status == DownloadPieceHandler.DownloadStatus.LOST) {
+                    System.out.println("=== Failed to receive a piece " + (pieceIdx + 1));
+                    int pieceLength = getPieceLength(pieceIdx);
+                    service.submit(new DownloadPieceHandler(torrentFile, fileManager,
+                            fileName, portIdx, pieceIdx, pieceLength, outs.get(peerPorts[portIdx]),
+                            ins.get(peerPorts[portIdx])));
+                    System.out.println("=== Requested " + (pieceIdx + 1) + " again");
+                } else {
+                    System.out.println("=== Received piece            " + (pieceIdx + 1));
+                    requestRandomPiece(random, portIdx);
+                }
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
             }
         }
-        // System.out.println("=== File " + fileName + " was downloaded successfully!");
         leechPool.shutdown();
         try {
             boolean completed = leechPool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
@@ -107,6 +108,25 @@ public class DownloadManager {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void requestRandomPiece(Random random, int portIdx) {
+        int randomIdx = random.nextInt(leftPieces.size());
+        int nextPieceIdx = leftPieces.remove(randomIdx);
+        int pieceLength = getPieceLength(nextPieceIdx);
+        System.out.println("=== Requested                 " + (nextPieceIdx + 1));
+        service.submit(new DownloadPieceHandler(torrentFile, fileManager,
+                fileName, portIdx, nextPieceIdx, pieceLength, outs.get(peerPorts[portIdx]), ins.get(peerPorts[portIdx])));
+    }
+
+    private int getPieceLength(int pieceIdx) {
+        int pieceLength;
+        if (pieceIdx == torrentFile.getPieces().size() - 1) {
+            pieceLength = torrentFile.getTotalSize().intValue() % torrentFile.getPieceLength().intValue();
+        } else {
+            pieceLength = torrentFile.getPieceLength().intValue();
+        }
+        return pieceLength;
     }
 
     private boolean establishConnection(int peerPort) throws IOException {
