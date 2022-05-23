@@ -103,7 +103,7 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
                             ins.get(peerPorts[portIdx])));
                     // System.out.println("=== Requested " + (pieceIdx + 1) + " again");
                 } else {
-//                    System.out.println("=== Received piece            " + (pieceIdx + 1));
+                    System.out.println("=== Received piece            " + (pieceIdx + 1));
                     if (leftPieces.size() == 0) {
                         break;
                     }

@@ -116,7 +116,10 @@ public class BitTorrentClient implements TorrentClient {
     }
 
     @Override
-    public void resumeDownloading(String torrentFileName) {
+    public void resumeDownloading(String torrentFileName) throws BadTorrentFileException {
+        if (!downloadManagers.containsKey(torrentFileName)) {
+            throw new BadTorrentFileException("No such file");
+        }
         downloadManagers.get(torrentFileName).resume();
         while (true) {
             try {

@@ -81,9 +81,7 @@ public class Main {
                         NoSeedsException | ServerNotCorrespondsException e) {
                     System.err.println("Could not download " + originalFileName
                             + ": " + e.getMessage());
-                    // break;
                 }
-                // System.out.println("=== File " + fileName + " was downloaded successfully!");
             }
             case STOP_DOWNLOAD_COMMAND -> {
                 if (words.length < 2) {
@@ -94,7 +92,7 @@ public class Main {
                 try {
                     client.stopDownloading(torrentFileName);
                 } catch (BadTorrentFileException e) {
-                    System.err.println("=== Bad file name");
+                    System.err.println("=== The file is not downloading now");
                     break;
                 }
                 System.out.println("=== Downloading of a file " + torrentFileName + " was stopped.");
@@ -105,7 +103,12 @@ public class Main {
                     break;
                 }
                 String torrentFileName = words[1];
-                client.resumeDownloading(torrentFileName);
+                try {
+                    client.resumeDownloading(torrentFileName);
+                } catch (BadTorrentFileException e) {
+                    System.err.println("=== The file is not downloading now");
+                    break;
+                }
                 System.out.println("=== Downloading of a file " + torrentFileName + " was resumed.");
             }
             case Constants.STOP_COMMAND -> {

@@ -1,9 +1,9 @@
 package torrent.client.handlers;
 
 import be.christophedetroyer.torrent.Torrent;
-import torrent.Constants;
 import torrent.client.FileManager;
 import torrent.client.util.ByteOperations;
+import torrent.client.util.MessageType;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -97,7 +97,7 @@ public class DownloadPieceHandler implements Callable<DownloadPieceHandler.Resul
         int id = Integer.parseInt(String.valueOf(message.charAt(4)));
         // System.out.println("len: " + len);
         // System.out.println("id: " + id);
-        if (id != Constants.PIECE_ID) {
+        if (id != MessageType.PIECE) {
             return false;
         }
         int idx = ByteOperations.convertFromBytes(message.substring(5, 9));

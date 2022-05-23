@@ -2,12 +2,11 @@ package torrent.client.handlers;
 
 import be.christophedetroyer.torrent.Torrent;
 import torrent.Constants;
-import torrent.client.BitTorrentClient;
 import torrent.client.FileManager;
 import torrent.client.util.BitTorrentHandshake;
 import torrent.client.util.ByteOperations;
+import torrent.client.util.MessageType;
 
-import java.awt.datatransfer.FlavorEvent;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
@@ -20,6 +19,7 @@ public class UploadHandler implements Runnable {
     private final Torrent torrentFile;
     private final FileManager fileManager;
     private final String peerId;
+    private long lastKeepAliveReceivedTime = 0;
 
     public UploadHandler(Torrent torrentFile, FileManager fileManager, String peerId,
                          ServerSocketChannel serverSocket) {
@@ -83,7 +83,16 @@ public class UploadHandler implements Runnable {
                 String result = new String(lengthBuf.array());
                 messageBuilder.append(result);
                 int messageLength = ByteOperations.convertFromBytes(messageBuilder.toString());
-                if (messageLength <= 0) {
+                if (messageLength == 0) {
+                    if (getTimeFromLastKeepAlive() > 0 &&
+                        getTimeFromLastKeepAlive() < Constants.MIN_KEEP_ALIVE_INTERVAL) {
+                        myKey.cancel(); // connection was closed from client side
+                        break;
+                    }
+                    lastKeepAliveReceivedTime = System.currentTimeMillis();
+                    continue;
+                }
+                if (messageLength < 0) {
                     myKey.cancel();
                     break;
                 }
@@ -106,7 +115,7 @@ public class UploadHandler implements Runnable {
 
     private boolean handleMessage(SocketChannel client, String message) throws IOException {
         int id = Integer.parseInt(String.valueOf(message.charAt(4)));
-        if (id == Constants.REQUEST_ID) {
+        if (id == MessageType.REQUEST) {
             if (message.length() < 4 + 13) {
                 System.err.println("=== Bad msg length");
                 return false;
@@ -123,5 +132,12 @@ public class UploadHandler implements Runnable {
             return true;
         }
         return false;
+    }
+
+    private long getTimeFromLastKeepAlive() {
+        if (0 == lastKeepAliveReceivedTime) {
+            return 0;
+        }
+        return System.currentTimeMillis() - lastKeepAliveReceivedTime;
     }
 }
