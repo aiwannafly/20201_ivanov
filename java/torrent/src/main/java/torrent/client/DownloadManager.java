@@ -77,7 +77,7 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
     public Result call() {
         Result downloadResult = new Result();
         downloadResult.torrentFileName = torrentFile.getName() + Constants.POSTFIX;
-        downloadResult.status = Status.NOT_FINISHED;
+        downloadResult.status = DownloadManager.Status.NOT_FINISHED;
         Random random = new Random();
         while (leftPieces.size() > 0) {
             if (stopped) {
@@ -95,7 +95,7 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
                 int pieceIdx = result.pieceId;
                 int portIdx = result.seedId;
                 // System.out.println(result);
-                if (result.status == DownloadPieceHandler.DownloadStatus.LOST) {
+                if (result.status == DownloadPieceHandler.Status.LOST) {
                     // System.out.println("=== Failed to receive a piece " + (pieceIdx + 1));
                     int pieceLength = getPieceLength(pieceIdx);
                     service.submit(new DownloadPieceHandler(torrentFile, fileManager,
@@ -116,7 +116,7 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
         shutdown();
         System.out.println("=== File " + fileName + " was downloaded successfully!");
         closed = true;
-        downloadResult.status = Status.FINISHED;
+        downloadResult.status = DownloadManager.Status.FINISHED;
         return downloadResult;
     }
 

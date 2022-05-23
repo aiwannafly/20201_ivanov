@@ -24,16 +24,18 @@ public class DownloadPieceHandler implements Callable<DownloadPieceHandler.Resul
     private final InputStream in;
     private final int peerId;
 
-    public enum DownloadStatus {
-        RECEIVED, LOST
+    public enum Status {
+        RECEIVED, LOST, GOT_KEEP_ALIVE
     }
 
     public static class Result {
-        public DownloadStatus status;
+        public Status status;
         public int seedId;
         public int pieceId;
+        public boolean receivedKeepAlive = false;
+        public long keepAliveTimeMillis = 0;
 
-        public Result(DownloadStatus status, int seedId, int pieceId) {
+        public Result(Status status, int seedId, int pieceId) {
             this.status = status;
             this.seedId = seedId;
             this.pieceId = pieceId;
@@ -55,11 +57,19 @@ public class DownloadPieceHandler implements Callable<DownloadPieceHandler.Resul
 
     @Override
     public Result call() {
-        Result result = new Result(DownloadStatus.RECEIVED, peerId, pieceIdx);
+        Result result = new Result(Status.RECEIVED, peerId, pieceIdx);
         requestPiece(pieceIdx, 0, pieceLength);
-        boolean received = receivePiece();
-        if (!received) {
-            result.status = DownloadStatus.LOST;
+        while (true) {
+            Status received = receivePiece();
+            if (received == Status.GOT_KEEP_ALIVE) {
+                result.receivedKeepAlive = true;
+                result.keepAliveTimeMillis = System.currentTimeMillis();
+            } else if (received == Status.LOST) {
+                result.status = Status.LOST;
+                return result;
+            } else if (received == Status.RECEIVED) {
+                break;
+            }
         }
         return result;
     }
@@ -72,33 +82,33 @@ public class DownloadPieceHandler implements Callable<DownloadPieceHandler.Resul
         out.flush();
     }
 
-    private boolean receivePiece() {
+    private Status receivePiece() {
         StringBuilder messageBuilder = new StringBuilder();
         try {
             for (int i = 0; i < 4; i++) {
                 messageBuilder.append((char) in.read());
             }
             int messageLength = ByteOperations.convertFromBytes(messageBuilder.toString());
-            // System.out.println("Message length: " + messageLength);
+            if (messageLength == 0) {
+                return Status.GOT_KEEP_ALIVE;
+            }
             for (int i = 0; i < messageLength; i++) {
                 messageBuilder.append((char) in.read());
             }
         } catch (IOException e) {
             e.printStackTrace();
-            return false;
+            return Status.LOST;
         }
         String message = messageBuilder.toString();
         if (message.length() < 4 + 1 + 4 + 4) {
             System.err.println("=== Bad length: " + message.length());
-            return false;
+            return Status.LOST;
         }
         // piece: <len=0009+X><id=7><index><begin><block>
         int len = ByteOperations.convertFromBytes(message.substring(0, 4));
         int id = Integer.parseInt(String.valueOf(message.charAt(4)));
-        // System.out.println("len: " + len);
-        // System.out.println("id: " + id);
         if (id != MessageType.PIECE) {
-            return false;
+            return Status.LOST;
         }
         int idx = ByteOperations.convertFromBytes(message.substring(5, 9));
         int begin = ByteOperations.convertFromBytes(message.substring(9, 13));
@@ -110,15 +120,14 @@ public class DownloadPieceHandler implements Callable<DownloadPieceHandler.Resul
             receivedHash = getSha1(bytes);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
-            return false;
+            return Status.LOST;
         }
         if (!receivedHash.equals(origHash)) {
             System.err.println("=== Bad hash, r and o:");
             System.err.println(receivedHash);
             System.err.println(origHash);
-            return false;
+            return Status.LOST;
         }
-
         try {
             int offset;
             offset = idx * torrentFile.getPieceLength().intValue() + begin;
@@ -126,7 +135,7 @@ public class DownloadPieceHandler implements Callable<DownloadPieceHandler.Resul
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return true;
+        return Status.RECEIVED;
     }
 
     private String getSha1(byte[] bytes) throws NoSuchAlgorithmException {

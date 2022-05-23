@@ -8,18 +8,22 @@ import torrent.client.util.ByteOperations;
 import torrent.client.util.MessageType;
 
 import java.io.*;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 public class UploadHandler implements Runnable {
     private final ServerSocketChannel serverSocketChannel;
     private final Torrent torrentFile;
     private final FileManager fileManager;
     private final String peerId;
-    private long lastKeepAliveReceivedTime = 0;
+    private final Timer keepAliveSendTimer;
+    private final Timer keepAliveRecvTimer;
+    private final Map<SocketChannel, Long> lastKeepAliveTimes = new HashMap<>();
+    private Selector selector;
+    private final ArrayList<SocketChannel> removalList = new ArrayList<>();
 
     public UploadHandler(Torrent torrentFile, FileManager fileManager, String peerId,
                          ServerSocketChannel serverSocket) {
@@ -27,11 +31,13 @@ public class UploadHandler implements Runnable {
         this.fileManager = fileManager;
         this.peerId = peerId;
         this.serverSocketChannel = serverSocket;
+        this.keepAliveSendTimer = new Timer();
+        this.keepAliveRecvTimer = new Timer();
     }
 
     @Override
     public void run() {
-        Selector selector; // selector is open here
+        // selector is open here
         try {
             selector = Selector.open();
             int ops = serverSocketChannel.validOps();
@@ -40,6 +46,10 @@ public class UploadHandler implements Runnable {
             e.printStackTrace();
             return;
         }
+        TimerTask sendKeepALiveMsgs = new SendKeepAliveTask();
+        TimerTask recvKeepAliveMsgs = new RecvKeepAliveTask();
+        keepAliveSendTimer.schedule(sendKeepALiveMsgs, 0, 1000);
+        keepAliveRecvTimer.schedule(recvKeepAliveMsgs, 0, 2000);
         while (true) {
             try {
                 handleEvents(selector);
@@ -51,6 +61,8 @@ public class UploadHandler implements Runnable {
                 break;
             }
         }
+        keepAliveSendTimer.cancel();
+        keepAliveRecvTimer.cancel();
     }
 
     private void handleEvents(Selector selector) throws IOException {
@@ -75,24 +87,34 @@ public class UploadHandler implements Runnable {
                 }
                 client.configureBlocking(false);
                 client.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+                lastKeepAliveTimes.put(client, System.currentTimeMillis());
                 System.out.println("=== Connection accepted: " + client.getLocalAddress());
             } else if (myKey.isReadable()) {
                 SocketChannel client = (SocketChannel) myKey.channel();
                 StringBuilder messageBuilder = new StringBuilder();
-                client.read(lengthBuf);
+                try {
+                    client.read(lengthBuf);
+                } catch (SocketException e) {
+                    System.out.println("=== Closed connection");
+                    lastKeepAliveTimes.remove(client);
+                    myKey.cancel();
+                    break;
+                }
                 String result = new String(lengthBuf.array());
                 messageBuilder.append(result);
                 int messageLength = ByteOperations.convertFromBytes(messageBuilder.toString());
                 if (messageLength == 0) {
-                    if (getTimeFromLastKeepAlive() > 0 &&
-                        getTimeFromLastKeepAlive() < Constants.MIN_KEEP_ALIVE_INTERVAL) {
+                    if (getTimeFromLastKeepAlive(client) > 0 &&
+                        getTimeFromLastKeepAlive(client) < Constants.MIN_KEEP_ALIVE_INTERVAL) {
                         myKey.cancel(); // connection was closed from client side
+                        lastKeepAliveTimes.remove(client);
                         break;
                     }
-                    lastKeepAliveReceivedTime = System.currentTimeMillis();
+                    lastKeepAliveTimes.replace(client, System.currentTimeMillis());
                     continue;
                 }
                 if (messageLength < 0) {
+                    lastKeepAliveTimes.remove(client);
                     myKey.cancel();
                     break;
                 }
@@ -134,10 +156,52 @@ public class UploadHandler implements Runnable {
         return false;
     }
 
-    private long getTimeFromLastKeepAlive() {
-        if (0 == lastKeepAliveReceivedTime) {
+    private long getTimeFromLastKeepAlive(SocketChannel client) {
+        if (0 == lastKeepAliveTimes.get(client)) {
             return 0;
         }
-        return System.currentTimeMillis() - lastKeepAliveReceivedTime;
+        return System.currentTimeMillis() - lastKeepAliveTimes.get(client);
+    }
+
+    private class SendKeepAliveTask extends TimerTask {
+        @Override
+        public void run() {
+            for (SocketChannel client: lastKeepAliveTimes.keySet()) {
+                String keepAliveMsg = "\0\0\0\0";
+                try {
+                    client.write(ByteBuffer.wrap(keepAliveMsg.getBytes(StandardCharsets.UTF_8)));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private class RecvKeepAliveTask extends TimerTask {
+        @Override
+        public void run() {
+            removalList.clear();
+            for (SocketChannel client: lastKeepAliveTimes.keySet()) {
+                if (getTimeFromLastKeepAlive(client) > Constants.MAX_KEEP_ALIVE_INTERVAL) {
+                    // close connection
+                    removalList.add(client);
+                }
+            }
+            if (removalList.isEmpty()) {
+                return;
+            }
+            for (SocketChannel client: removalList) {
+                lastKeepAliveTimes.remove(client);
+            }
+            Set<SelectionKey> selectedKeys = selector.selectedKeys();
+            Iterator<SelectionKey> keysIterator = selectedKeys.iterator();
+            while (keysIterator.hasNext()) {
+                SelectionKey myKey = keysIterator.next();
+                if (removalList.contains((SocketChannel) myKey.channel())) {
+                    myKey.cancel();
+                }
+                keysIterator.remove();
+            }
+        }
     }
 }
