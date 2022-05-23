@@ -97,13 +97,10 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
                 // System.out.println(result);
                 if (result.status == DownloadPieceHandler.Status.LOST) {
                     // System.out.println("=== Failed to receive a piece " + (pieceIdx + 1));
-                    int pieceLength = getPieceLength(pieceIdx);
-                    service.submit(new DownloadPieceHandler(torrentFile, fileManager,
-                            fileName, portIdx, pieceIdx, pieceLength, outs.get(peerPorts[portIdx]),
-                            ins.get(peerPorts[portIdx])));
+                    requestPiece(pieceIdx, portIdx);
                     // System.out.println("=== Requested " + (pieceIdx + 1) + " again");
                 } else {
-                    System.out.println("=== Received piece            " + (pieceIdx + 1));
+//                    System.out.println("=== Received piece            " + (pieceIdx + 1));
                     if (leftPieces.size() == 0) {
                         break;
                     }
@@ -158,9 +155,14 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
     private void requestRandomPiece(Random random, int portIdx) {
         int randomIdx = random.nextInt(leftPieces.size());
         int nextPieceIdx = leftPieces.remove(randomIdx);
-        int pieceLength = getPieceLength(nextPieceIdx);
+        requestPiece(nextPieceIdx, portIdx);
+    }
+
+    private void requestPiece(int pieceIdx, int portIdx) {
+        int pieceLength = getPieceLength(pieceIdx);
         service.submit(new DownloadPieceHandler(torrentFile, fileManager,
-                fileName, portIdx, nextPieceIdx, pieceLength, outs.get(peerPorts[portIdx]), ins.get(peerPorts[portIdx])));
+                fileName, portIdx, pieceIdx, pieceLength,
+                outs.get(peerPorts[portIdx]), ins.get(peerPorts[portIdx])));
     }
 
     private int getPieceLength(int pieceIdx) {

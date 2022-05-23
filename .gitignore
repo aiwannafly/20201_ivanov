@@ -10,4 +10,11 @@ gradlew
 
 *.class
 
+resources
+
+*.jpg
+
+*.pptx
+
+*.torrent
 
