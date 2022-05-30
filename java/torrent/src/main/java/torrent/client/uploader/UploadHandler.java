@@ -26,7 +26,8 @@ public class UploadHandler implements Runnable {
 
     public static class LeechInfo {
         Long lastKeepAliveTime;
-        ArrayList<Integer> sentPieces;
+        ArrayList<Integer> sentPieces = new ArrayList<>();
+        Queue<String> myReplies = new ArrayDeque<>();
     }
 
     public UploadHandler(Torrent torrentFile, FileManager fileManager, String peerId,
@@ -69,6 +70,7 @@ public class UploadHandler implements Runnable {
     }
 
     private void handleEvents(Selector selector) throws IOException {
+        System.out.println("=== Wait on select...");
         selector.select();
         Set<SelectionKey> selectedKeys = selector.selectedKeys();
         Iterator<SelectionKey> keysIterator = selectedKeys.iterator();
@@ -82,7 +84,8 @@ public class UploadHandler implements Runnable {
                     System.err.println(e.getMessage());
                 }
                 System.out.println("=== Connection accepted: " + client.getLocalAddress());
-            } else if (selectionKey.isReadable()) {
+            }
+            if (selectionKey.isReadable()) {
                 SocketChannel client = (SocketChannel) selectionKey.channel();
                 String message;
                 try {
@@ -107,10 +110,22 @@ public class UploadHandler implements Runnable {
                     keysIterator.remove();
                     continue;
                 }
-                try {
-                    sendReply(client, message);
-                } catch (BadMessageException e) {
-                    System.err.println(e.getMessage());
+                leechesInfo.get(client).myReplies.add(message);
+                client.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+            }
+            if (selectionKey.isWritable()) {
+                SocketChannel client = (SocketChannel) selectionKey.channel();
+                client.register(selector, SelectionKey.OP_READ);
+                if (leechesInfo.get(client).myReplies.isEmpty()) {
+                    continue;
+                }
+                while (!leechesInfo.get(client).myReplies.isEmpty()) {
+                    String message = leechesInfo.get(client).myReplies.remove();
+                    try {
+                        sendMessage(client, message);
+                    } catch (BadMessageException e) {
+                        System.err.println(e.getMessage());
+                    }
                 }
             }
             keysIterator.remove();
@@ -130,10 +145,9 @@ public class UploadHandler implements Runnable {
             throw new DifferentHandshakesException("=== Handshakes are different, reject connection");
         }
         client.configureBlocking(false);
-        client.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+        client.register(selector, SelectionKey.OP_READ);
         LeechInfo leechInfo = new LeechInfo();
         leechInfo.lastKeepAliveTime = 0L;
-        leechInfo.sentPieces = new ArrayList<>();
         leechesInfo.put(client, leechInfo);
     }
 
@@ -164,7 +178,7 @@ public class UploadHandler implements Runnable {
         return messageBuilder.toString();
     }
 
-    private void sendReply(SocketChannel client, String message) throws IOException,
+    private void sendMessage(SocketChannel client, String message) throws IOException,
             BadMessageException {
         int id = Integer.parseInt(String.valueOf(message.charAt(4)));
         if (id == MessageType.REQUEST) {
@@ -185,5 +199,4 @@ public class UploadHandler implements Runnable {
         }
         throw new BadMessageException("=== Unknown message type: " + id);
     }
-
 }
