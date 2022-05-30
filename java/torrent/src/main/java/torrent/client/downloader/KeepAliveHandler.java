@@ -9,12 +9,12 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class KeepAliveHandler {
-    private final Map<Integer, DownloadManager.SeedInfo> seedsInfo;
+    private final Map<Integer, DownloadFileManager.SeedInfo> seedsInfo;
     private final Timer keepAliveSendTimer = new Timer();
     private final Timer keepAliveReceiveTimer = new Timer();
     private final ArrayList<Integer> removalList = new ArrayList<>();
 
-    public KeepAliveHandler(Map<Integer, DownloadManager.SeedInfo> seedsInfo) {
+    public KeepAliveHandler(Map<Integer, DownloadFileManager.SeedInfo> seedsInfo) {
         this.seedsInfo = seedsInfo;
     }
 
@@ -33,7 +33,7 @@ public class KeepAliveHandler {
     private class SendKeepAliveTask extends TimerTask {
         @Override
         public void run() {
-            for (DownloadManager.SeedInfo info : seedsInfo.values()) {
+            for (DownloadFileManager.SeedInfo info : seedsInfo.values()) {
                 info.out.print(Constants.KEEP_ALIVE_MESSAGE);
                 info.out.flush();
             }
@@ -47,11 +47,10 @@ public class KeepAliveHandler {
                 removalList.clear();
             }
             for (Integer peerPort : seedsInfo.keySet()) {
-                System.out.println(getTimeFromLastKeepAlive(peerPort));
                 if (getTimeFromLastKeepAlive(peerPort) > Constants.MAX_KEEP_ALIVE_INTERVAL) {
                     System.out.println("=== Close connection");
                     // close connection
-                    DownloadManager.SeedInfo info = seedsInfo.get(peerPort);
+                    DownloadFileManager.SeedInfo info = seedsInfo.get(peerPort);
                     try {
                         info.in.close();
                     } catch (IOException e) {

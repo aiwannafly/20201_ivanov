@@ -17,7 +17,7 @@ import java.nio.channels.SocketChannel;
 import java.util.*;
 import java.util.concurrent.*;
 
-public class DownloadManager {
+public class DownloadFileManager {
     private final Torrent torrentFile;
     private final ExecutorService leechPool;
     private final CompletionService<DownloadPieceHandler.Result> service;
@@ -26,7 +26,6 @@ public class DownloadManager {
     private final FileManager fileManager;
     private final String fileName;
     private final String peerId;
-    private boolean stopped = false;
     private boolean submittedFirstTasks = false;
     private boolean closed = false;
     private KeepAliveHandler keepAliveHandler;
@@ -46,15 +45,15 @@ public class DownloadManager {
         Long lastKeepAliveTimeMillis;
     }
 
-    public DownloadManager(Torrent torrentFile, FileManager
-            fileManager, String peerId, int[] peerPorts, ArrayList<Integer> leftPieces,
-                           ExecutorService leechPool) throws NoSeedsException {
+    public DownloadFileManager(Torrent torrentFile, FileManager
+            fileManager, String peerId, int[] peerPorts,
+                               ExecutorService leechPool) throws NoSeedsException {
         this.peerId = peerId;
         this.fileManager = fileManager;
         this.torrentFile = torrentFile;
         this.fileName = Constants.PREFIX + torrentFile.getName();
         int workingPeersCount = 0;
-        this.leftPieces = leftPieces;
+        this.leftPieces = new ArrayList<>();
         for (int i = 0; i < peerPorts.length && i < Constants.DOWNLOAD_MAX_THREADS_COUNT; i++) {
             try {
                 establishConnection(peerPorts[i]);
@@ -84,16 +83,13 @@ public class DownloadManager {
         }
         Result downloadResult = new Result();
         downloadResult.torrentFileName = torrentFile.getName() + Constants.POSTFIX;
-        downloadResult.status = DownloadManager.Status.NOT_FINISHED;
+        downloadResult.status = DownloadFileManager.Status.NOT_FINISHED;
         Random random = new Random();
         if (leftPieces.size() == 0) {
             System.out.println("=== File " + fileName + " was downloaded successfully!");
             shutdown();
             closed = true;
-            downloadResult.status = DownloadManager.Status.FINISHED;
-            return downloadResult;
-        }
-        if (stopped) {
+            downloadResult.status = DownloadFileManager.Status.FINISHED;
             return downloadResult;
         }
         if (!submittedFirstTasks) {
@@ -106,7 +102,7 @@ public class DownloadManager {
             System.err.println("=== No seeds left. Downloading failed");
             shutdown();
             closed = true;
-            downloadResult.status = DownloadManager.Status.FINISHED;
+            downloadResult.status = DownloadFileManager.Status.FINISHED;
             return downloadResult;
         }
         try {
@@ -125,7 +121,7 @@ public class DownloadManager {
                 if (result.status == DownloadPieceHandler.Status.LOST) {
                     leftPieces.add(pieceIdx);
                 } else {
-                    System.out.println("=== Received piece            " + (pieceIdx + 1));
+//                     System.out.println("=== Received piece            " + (pieceIdx + 1));
                 }
                 if (leftPieces.size() > 0) {
                     requestRandomPiece(random, peerPort);
@@ -134,16 +130,12 @@ public class DownloadManager {
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
-        downloadResult.status = DownloadManager.Status.NOT_FINISHED;
+        downloadResult.status = DownloadFileManager.Status.NOT_FINISHED;
         return downloadResult;
     }
 
-    public void stop() {
-        stopped = true;
-    }
-
-    public void resume() {
-        stopped = false;
+    public Torrent getTorrentFile() {
+        return torrentFile;
     }
 
     public void shutdown() {

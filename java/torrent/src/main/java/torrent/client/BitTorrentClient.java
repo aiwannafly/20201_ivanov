@@ -3,7 +3,6 @@ package torrent.client;
 import be.christophedetroyer.torrent.Torrent;
 import be.christophedetroyer.torrent.TorrentParser;
 import torrent.Constants;
-import torrent.client.downloader.DownloadManager;
 import torrent.client.downloader.MultyDownloadManager;
 import torrent.client.util.TorrentFileCreator;
 import torrent.client.exceptions.BadTorrentFileException;
@@ -13,17 +12,12 @@ import torrent.client.exceptions.TorrentCreateFailureException;
 import torrent.tracker.TrackerCommandHandler;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.*;
 
 public class BitTorrentClient implements TorrentClient {
     private ConnectionsReceiver connReceiver = null;
     private final String peerId;
     private final TrackerCommunicator trackerComm;
     private final FileManager fileManager;
-    private final Map<String, ArrayList<Integer>> filesLeftPieces = new HashMap<>();
     private final MultyDownloadManager multyDownloadManager;
 
     public BitTorrentClient() {
@@ -58,10 +52,7 @@ public class BitTorrentClient implements TorrentClient {
         } catch (IOException e) {
             throw new BadTorrentFileException("Could not open torrent file " + torrentFileName);
         }
-        if (!filesLeftPieces.containsKey(torrentFileName)) {
-            filesLeftPieces.put(torrentFileName, new ArrayList<>());
-        }
-        multyDownloadManager.addTorrent(torrentFile, peerPorts, filesLeftPieces.get(torrentFileName));
+        multyDownloadManager.addTorrent(torrentFile, peerPorts);
         multyDownloadManager.run();
     }
 
@@ -104,22 +95,12 @@ public class BitTorrentClient implements TorrentClient {
 
     @Override
     public void stopDownloading(String torrentFileName) throws BadTorrentFileException {
-        try {
-            Torrent torrent = TorrentParser.parseTorrent(Constants.PATH + torrentFileName);
-            multyDownloadManager.stop(torrent);
-        } catch (IOException e) {
-            throw new BadTorrentFileException(e.getMessage());
-        }
+        multyDownloadManager.stop(torrentFileName);
     }
 
     @Override
     public void resumeDownloading(String torrentFileName) throws BadTorrentFileException {
-        try {
-            Torrent torrent = TorrentParser.parseTorrent(Constants.PATH + torrentFileName);
-            multyDownloadManager.resume(torrent);
-        } catch (IOException e) {
-            throw new BadTorrentFileException(e.getMessage());
-        }
+        multyDownloadManager.resume(torrentFileName);
     }
 
     @Override
