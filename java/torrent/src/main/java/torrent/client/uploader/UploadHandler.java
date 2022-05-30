@@ -180,6 +180,10 @@ public class UploadHandler implements Runnable {
 
     private void sendMessage(SocketChannel client, String message) throws IOException,
             BadMessageException {
+        if (message.equals(Constants.KEEP_ALIVE_MESSAGE)) {
+            client.write(ByteBuffer.wrap(message.getBytes(StandardCharsets.UTF_8)));
+            return;
+        }
         int id = Integer.parseInt(String.valueOf(message.charAt(4)));
         if (id == MessageType.REQUEST) {
             if (message.length() < 4 + 13) {

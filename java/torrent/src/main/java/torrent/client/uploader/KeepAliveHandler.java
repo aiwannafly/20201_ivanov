@@ -4,6 +4,7 @@ import torrent.Constants;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -38,10 +39,10 @@ public class KeepAliveHandler {
         @Override
         public void run() {
             for (SocketChannel client : leechesInfo.keySet()) {
-                String keepAliveMsg = Constants.KEEP_ALIVE_MESSAGE;
+                leechesInfo.get(client).myReplies.add(Constants.KEEP_ALIVE_MESSAGE);
                 try {
-                    client.write(ByteBuffer.wrap(keepAliveMsg.getBytes(StandardCharsets.UTF_8)));
-                } catch (IOException e) {
+                    client.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+                } catch (ClosedChannelException e) {
                     e.printStackTrace();
                 }
             }
