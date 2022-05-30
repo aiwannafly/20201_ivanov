@@ -4,6 +4,7 @@ import be.christophedetroyer.torrent.Torrent;
 import be.christophedetroyer.torrent.TorrentParser;
 import torrent.Constants;
 import torrent.client.downloader.DownloadManager;
+import torrent.client.downloader.MultyDownloadManager;
 import torrent.client.util.TorrentFileCreator;
 import torrent.client.exceptions.BadTorrentFileException;
 import torrent.client.exceptions.NoSeedsException;
@@ -23,17 +24,14 @@ public class BitTorrentClient implements TorrentClient {
     private final TrackerCommunicator trackerComm;
     private final FileManager fileManager;
     private final Map<String, ArrayList<Integer>> filesLeftPieces = new HashMap<>();
-    private final ExecutorService downloadPool = Executors.newFixedThreadPool(
-            Constants.DOWNLOAD_MAX_THREADS_COUNT);
-    private final CompletionService<DownloadManager.Result> downloadService =
-            new ExecutorCompletionService<>(downloadPool);
-    private final Map<String, DownloadManager> downloadManagers = new HashMap<>();
+    private final MultyDownloadManager multyDownloadManager;
 
     public BitTorrentClient() {
         fileManager = new FileManagerImpl();
         trackerComm = new TrackerCommunicatorImpl();
         trackerComm.sendToTracker("get peer_id");
         peerId = trackerComm.receiveFromTracker();
+        multyDownloadManager = new MultyDownloadManager(fileManager, peerId);
     }
 
     @Override
@@ -63,12 +61,8 @@ public class BitTorrentClient implements TorrentClient {
         if (!filesLeftPieces.containsKey(torrentFileName)) {
             filesLeftPieces.put(torrentFileName, new ArrayList<>());
         }
-        if (!downloadManagers.containsKey(torrentFileName)) {
-            downloadManagers.put(torrentFileName, new DownloadManager(torrentFile, fileManager, peerId, peerPorts,
-                    filesLeftPieces.get(torrentFileName)));
-        }
-        downloadManagers.get(torrentFileName).resume();
-        downloadService.submit(downloadManagers.get(torrentFileName));
+        multyDownloadManager.addTorrent(torrentFile, peerPorts, filesLeftPieces.get(torrentFileName));
+        multyDownloadManager.run();
     }
 
     @Override
@@ -110,29 +104,22 @@ public class BitTorrentClient implements TorrentClient {
 
     @Override
     public void stopDownloading(String torrentFileName) throws BadTorrentFileException {
-        if (!downloadManagers.containsKey(torrentFileName)) {
-            throw new BadTorrentFileException("No such file");
+        try {
+            Torrent torrent = TorrentParser.parseTorrent(Constants.PATH + torrentFileName);
+            multyDownloadManager.stop(torrent);
+        } catch (IOException e) {
+            throw new BadTorrentFileException(e.getMessage());
         }
-        downloadManagers.get(torrentFileName).stop();
     }
 
     @Override
     public void resumeDownloading(String torrentFileName) throws BadTorrentFileException {
-        if (!downloadManagers.containsKey(torrentFileName)) {
-            throw new BadTorrentFileException("No such file");
+        try {
+            Torrent torrent = TorrentParser.parseTorrent(Constants.PATH + torrentFileName);
+            multyDownloadManager.resume(torrent);
+        } catch (IOException e) {
+            throw new BadTorrentFileException(e.getMessage());
         }
-        downloadManagers.get(torrentFileName).resume();
-        while (true) {
-            try {
-                Future<DownloadManager.Result> result = downloadService.take();
-                if (result.get().torrentFileName.equals(torrentFileName)) {
-                    break;
-                }
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
-        }
-        downloadService.submit(downloadManagers.get(torrentFileName));
     }
 
     @Override
@@ -140,10 +127,7 @@ public class BitTorrentClient implements TorrentClient {
         trackerComm.sendToTracker(Constants.STOP_COMMAND);
         connReceiver.shutdown();
         trackerComm.close();
-        downloadPool.shutdown();
-        for (DownloadManager downloadManager: downloadManagers.values()) {
-            downloadManager.shutdown();
-        }
+        multyDownloadManager.shutdown();
         try {
             fileManager.close();
         } catch (Exception e) {

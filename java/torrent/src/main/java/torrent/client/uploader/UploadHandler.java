@@ -70,7 +70,6 @@ public class UploadHandler implements Runnable {
     }
 
     private void handleEvents(Selector selector) throws IOException {
-        System.out.println("=== Wait on select...");
         selector.select();
         Set<SelectionKey> selectedKeys = selector.selectedKeys();
         Iterator<SelectionKey> keysIterator = selectedKeys.iterator();

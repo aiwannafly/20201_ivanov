@@ -17,7 +17,7 @@ import java.nio.channels.SocketChannel;
 import java.util.*;
 import java.util.concurrent.*;
 
-public class DownloadManager implements Callable<DownloadManager.Result> {
+public class DownloadManager {
     private final Torrent torrentFile;
     private final ExecutorService leechPool;
     private final CompletionService<DownloadPieceHandler.Result> service;
@@ -47,7 +47,8 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
     }
 
     public DownloadManager(Torrent torrentFile, FileManager
-            fileManager, String peerId, int[] peerPorts, ArrayList<Integer> leftPieces) throws NoSeedsException {
+            fileManager, String peerId, int[] peerPorts, ArrayList<Integer> leftPieces,
+                           ExecutorService leechPool) throws NoSeedsException {
         this.peerId = peerId;
         this.fileManager = fileManager;
         this.torrentFile = torrentFile;
@@ -69,15 +70,14 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
         if (0 == workingPeersCount) {
             throw new NoSeedsException("No seeds uploading file " + torrentFile.getName());
         }
-        this.leechPool = Executors.newFixedThreadPool(Constants.DOWNLOAD_MAX_THREADS_COUNT);
+        this.leechPool = leechPool;
         this.service = new ExecutorCompletionService<>(this.leechPool);
         for (int i = 0; i < torrentFile.getPieces().size(); i++) {
             leftPieces.add(i);
         }
     }
 
-    @Override
-    public Result call() {
+    public Result downloadNextPiece() {
         if (!submittedFirstTasks) {
             keepAliveHandler = new KeepAliveHandler(seedsInfo);
             keepAliveHandler.start();
@@ -86,31 +86,39 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
         downloadResult.torrentFileName = torrentFile.getName() + Constants.POSTFIX;
         downloadResult.status = DownloadManager.Status.NOT_FINISHED;
         Random random = new Random();
-        while (leftPieces.size() > 0) {
-            if (stopped) {
-                return downloadResult;
+        if (leftPieces.size() == 0) {
+            System.out.println("=== File " + fileName + " was downloaded successfully!");
+            shutdown();
+            closed = true;
+            downloadResult.status = DownloadManager.Status.FINISHED;
+            return downloadResult;
+        }
+        if (stopped) {
+            return downloadResult;
+        }
+        if (!submittedFirstTasks) {
+            for (Integer peerPort : seedsInfo.keySet()) {
+                requestRandomPiece(random, peerPort);
             }
-            if (!submittedFirstTasks) {
-                for (Integer peerPort : seedsInfo.keySet()) {
-                    requestRandomPiece(random, peerPort);
+        }
+        submittedFirstTasks = true;
+        if (seedsInfo.size() == 0) {
+            System.err.println("=== No seeds left. Downloading failed");
+            shutdown();
+            closed = true;
+            downloadResult.status = DownloadManager.Status.FINISHED;
+            return downloadResult;
+        }
+        try {
+            Future<DownloadPieceHandler.Result> future = service.take();
+            DownloadPieceHandler.Result result = future.get();
+            int pieceIdx = result.pieceId;
+            int peerPort = result.peerPort;
+            if (!seedsInfo.containsKey(peerPort)) {
+                if (result.status == DownloadPieceHandler.Status.LOST) {
+                    leftPieces.add(pieceIdx);
                 }
-            }
-            submittedFirstTasks = true;
-            if (seedsInfo.size() == 0) {
-                System.err.println("=== No seeds left. Downloading failed");
-                break;
-            }
-            try {
-                Future<DownloadPieceHandler.Result> future = service.take();
-                DownloadPieceHandler.Result result = future.get();
-                int pieceIdx = result.pieceId;
-                int peerPort = result.peerPort;
-                if (!seedsInfo.containsKey(peerPort)) {
-                    if (result.status == DownloadPieceHandler.Status.LOST) {
-                        leftPieces.add(pieceIdx);
-                    }
-                    continue;
-                }
+            } else {
                 if (result.receivedKeepAlive) {
                     seedsInfo.get(peerPort).lastKeepAliveTimeMillis = result.keepAliveTimeMillis;
                 }
@@ -119,20 +127,14 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
                 } else {
                     System.out.println("=== Received piece            " + (pieceIdx + 1));
                 }
-                if (leftPieces.size() == 0) {
-                    break;
+                if (leftPieces.size() > 0) {
+                    requestRandomPiece(random, peerPort);
                 }
-                requestRandomPiece(random, peerPort);
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
             }
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
         }
-        shutdown();
-        if (leftPieces.size() == 0) {
-            System.out.println("=== File " + fileName + " was downloaded successfully!");
-        }
-        closed = true;
-        downloadResult.status = DownloadManager.Status.FINISHED;
+        downloadResult.status = DownloadManager.Status.NOT_FINISHED;
         return downloadResult;
     }
 
