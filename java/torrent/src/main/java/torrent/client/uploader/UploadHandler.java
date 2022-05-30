@@ -1,4 +1,4 @@
-package torrent.client.handlers;
+package torrent.client.uploader;
 
 import be.christophedetroyer.torrent.Torrent;
 import torrent.Constants;
@@ -21,11 +21,8 @@ public class UploadHandler implements Runnable {
     private final Torrent torrentFile;
     private final FileManager fileManager;
     private final String peerId;
-    private final Timer keepAliveSendTimer;
-    private final Timer keepAliveRecvTimer;
     private final Map<SocketChannel, LeechInfo> leechesInfo = new HashMap<>();
     private Selector selector;
-    private final ArrayList<SocketChannel> removalList = new ArrayList<>();
 
     public static class LeechInfo {
         Long lastKeepAliveTime;
@@ -38,8 +35,6 @@ public class UploadHandler implements Runnable {
         this.fileManager = fileManager;
         this.peerId = peerId;
         this.serverSocketChannel = serverSocket;
-        this.keepAliveSendTimer = new Timer();
-        this.keepAliveRecvTimer = new Timer();
     }
 
     @Override
@@ -52,10 +47,8 @@ public class UploadHandler implements Runnable {
             e.printStackTrace();
             return;
         }
-        TimerTask sendKeepALiveMsgs = new SendKeepAliveTask();
-        TimerTask recvKeepAliveMsgs = new RecvKeepAliveTask();
-        keepAliveSendTimer.schedule(sendKeepALiveMsgs, 0, Constants.KEEP_ALIVE_SEND_INTERVAL);
-        keepAliveRecvTimer.schedule(recvKeepAliveMsgs, 0, Constants.MAX_KEEP_ALIVE_INTERVAL);
+        KeepAliveHandler keepAliveHandler = new KeepAliveHandler(selector, leechesInfo);
+        keepAliveHandler.start();
         while (true) {
             try {
                 handleEvents(selector);
@@ -67,8 +60,12 @@ public class UploadHandler implements Runnable {
                 break;
             }
         }
-        keepAliveSendTimer.cancel();
-        keepAliveRecvTimer.cancel();
+        keepAliveHandler.stop();
+        try {
+            selector.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void handleEvents(Selector selector) throws IOException {
@@ -189,52 +186,4 @@ public class UploadHandler implements Runnable {
         throw new BadMessageException("=== Unknown message type: " + id);
     }
 
-    private long getTimeFromLastKeepAlive(SocketChannel client) {
-        if (0 == leechesInfo.get(client).lastKeepAliveTime) {
-            return 0;
-        }
-        return System.currentTimeMillis() - leechesInfo.get(client).lastKeepAliveTime;
-    }
-
-    private class SendKeepAliveTask extends TimerTask {
-        @Override
-        public void run() {
-            for (SocketChannel client : leechesInfo.keySet()) {
-                String keepAliveMsg = Constants.KEEP_ALIVE_MESSAGE;
-                try {
-                    client.write(ByteBuffer.wrap(keepAliveMsg.getBytes(StandardCharsets.UTF_8)));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    private class RecvKeepAliveTask extends TimerTask {
-        @Override
-        public void run() {
-            removalList.clear();
-            for (SocketChannel client : leechesInfo.keySet()) {
-                if (getTimeFromLastKeepAlive(client) > Constants.MAX_KEEP_ALIVE_INTERVAL) {
-                    // close connection
-                    removalList.add(client);
-                }
-            }
-            if (removalList.isEmpty()) {
-                return;
-            }
-            for (SocketChannel client : removalList) {
-                leechesInfo.remove(client);
-            }
-            Set<SelectionKey> selectedKeys = selector.selectedKeys();
-            Iterator<SelectionKey> keysIterator = selectedKeys.iterator();
-            while (keysIterator.hasNext()) {
-                SelectionKey myKey = keysIterator.next();
-                if (removalList.contains((SocketChannel) myKey.channel())) {
-                    myKey.cancel();
-                }
-                keysIterator.remove();
-            }
-        }
-    }
 }

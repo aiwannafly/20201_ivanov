@@ -2,7 +2,7 @@ package torrent.client;
 
 import be.christophedetroyer.torrent.Torrent;
 import torrent.Constants;
-import torrent.client.handlers.UploadHandler;
+import torrent.client.uploader.UploadHandler;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

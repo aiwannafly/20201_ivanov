@@ -1,4 +1,4 @@
-package torrent.client.handlers;
+package torrent.client.downloader;
 
 import be.christophedetroyer.torrent.Torrent;
 import torrent.client.FileManager;
@@ -30,14 +30,14 @@ public class DownloadPieceHandler implements Callable<DownloadPieceHandler.Resul
 
     public static class Result {
         public Status status;
-        public int portIdx;
+        public int peerPort;
         public int pieceId;
         public boolean receivedKeepAlive = false;
         public long keepAliveTimeMillis = 0;
 
-        public Result(Status status, int portIdx, int pieceId) {
+        public Result(Status status, int peerPort, int pieceId) {
             this.status = status;
-            this.portIdx = portIdx;
+            this.peerPort = peerPort;
             this.pieceId = pieceId;
         }
     }

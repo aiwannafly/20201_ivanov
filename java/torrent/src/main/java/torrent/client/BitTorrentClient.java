@@ -3,6 +3,7 @@ package torrent.client;
 import be.christophedetroyer.torrent.Torrent;
 import be.christophedetroyer.torrent.TorrentParser;
 import torrent.Constants;
+import torrent.client.downloader.DownloadManager;
 import torrent.client.util.TorrentFileCreator;
 import torrent.client.exceptions.BadTorrentFileException;
 import torrent.client.exceptions.NoSeedsException;
