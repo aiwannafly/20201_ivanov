@@ -30,14 +30,14 @@ public class DownloadPieceHandler implements Callable<DownloadPieceHandler.Resul
 
     public static class Result {
         public Status status;
-        public int seedId;
+        public int portIdx;
         public int pieceId;
         public boolean receivedKeepAlive = false;
         public long keepAliveTimeMillis = 0;
 
-        public Result(Status status, int seedId, int pieceId) {
+        public Result(Status status, int portIdx, int pieceId) {
             this.status = status;
-            this.seedId = seedId;
+            this.portIdx = portIdx;
             this.pieceId = pieceId;
         }
     }

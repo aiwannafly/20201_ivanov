@@ -26,6 +26,9 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
     private final ArrayList<Integer> leftPieces;
     private final Map<Integer, InputStream> ins = new HashMap<>();
     private final Map<Integer, PrintWriter> outs = new HashMap<>();
+    private final Map<Integer, Long> lastKeepAliveTimes = new HashMap<>();
+    private final Timer keepAliveSendTimer = new Timer();
+    private final Timer keepAliveRecvTimer = new Timer();
     private final FileManager fileManager;
     private final String fileName;
     private final String peerId;
@@ -75,6 +78,8 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
 
     @Override
     public Result call() {
+        TimerTask sendKeepALiveMsgs = new DownloadManager.SendKeepAliveTask();
+        TimerTask recvKeepAliveMsgs = new DownloadManager.RecvKeepAliveTask();
         Result downloadResult = new Result();
         downloadResult.torrentFileName = torrentFile.getName() + Constants.POSTFIX;
         downloadResult.status = DownloadManager.Status.NOT_FINISHED;
@@ -87,20 +92,25 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
                 for (int portId = 0; portId < workingPeersCount; portId++) {
                     requestRandomPiece(random, portId);
                 }
+                keepAliveSendTimer.schedule(sendKeepALiveMsgs, 0, 1000);
+                keepAliveRecvTimer.schedule(recvKeepAliveMsgs, 0, 2000);
             }
             submittedFirstTasks = true;
             try {
                 Future<DownloadPieceHandler.Result> future = service.take();
                 DownloadPieceHandler.Result result = future.get();
                 int pieceIdx = result.pieceId;
-                int portIdx = result.seedId;
+                int portIdx = result.portIdx;
+                if (result.receivedKeepAlive) {
+                    lastKeepAliveTimes.replace(result.portIdx, result.keepAliveTimeMillis);
+                }
                 // System.out.println(result);
                 if (result.status == DownloadPieceHandler.Status.LOST) {
                     // System.out.println("=== Failed to receive a piece " + (pieceIdx + 1));
                     requestPiece(pieceIdx, portIdx);
                     // System.out.println("=== Requested " + (pieceIdx + 1) + " again");
                 } else {
-//                    System.out.println("=== Received piece            " + (pieceIdx + 1));
+                    System.out.println("=== Received piece            " + (pieceIdx + 1));
                     if (leftPieces.size() == 0) {
                         break;
                     }
@@ -129,6 +139,8 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
         if (closed) {
             return;
         }
+        keepAliveSendTimer.cancel();
+        keepAliveRecvTimer.cancel();
         leechPool.shutdown();
         try {
             boolean completed = leechPool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
@@ -179,6 +191,7 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
         SocketChannel currentPeerChannel = SocketChannel.open();
         InetSocketAddress address = new InetSocketAddress("localhost", peerPort);
         currentPeerChannel.connect(address);
+        currentPeerChannel.configureBlocking(true);
         Handshake myHandshake = new BitTorrentHandshake(torrentFile.getInfo_hash(), peerId);
         PrintWriter out = new PrintWriter(currentPeerChannel.socket().getOutputStream(), true);
         out.print(myHandshake.getMessage());
@@ -189,8 +202,50 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
         if (myHandshake.getInfoHash().equals(peerHandshake.getInfoHash())) {
             ins.put(peerPort, currentPeerChannel.socket().getInputStream());
             outs.put(peerPort, out);
+            lastKeepAliveTimes.put(peerPort, System.currentTimeMillis());
         } else {
             throw new DifferentHandshakesException("Handshakes are different, reject connection");
         }
+    }
+
+    private class SendKeepAliveTask extends TimerTask {
+        @Override
+        public void run() {
+//            System.out.println("Send to ...");
+            for (PrintWriter out: outs.values()) {
+                System.out.println("=== Send keep-alive");
+                String keepAliveMsg = "\0\0\0\0";
+                out.print(keepAliveMsg);
+                out.flush();
+            }
+        }
+    }
+
+    private class RecvKeepAliveTask extends TimerTask {
+        @Override
+        public void run() {
+//            System.out.println("Check from ...");
+            for (Integer peerPort: lastKeepAliveTimes.keySet()) {
+//                System.out.println("Someone");
+                if (getTimeFromLastKeepAlive(peerPort) > Constants.MAX_KEEP_ALIVE_INTERVAL) {
+                    System.out.println("=== Close connection");
+                    // close connection
+                    try {
+                        ins.remove(peerPort).close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    outs.remove(peerPort).close();
+                    lastKeepAliveTimes.remove(peerPort);
+                }
+            }
+        }
+    }
+
+    private long getTimeFromLastKeepAlive(Integer peerPort) {
+        if (0 == lastKeepAliveTimes.get(peerPort)) {
+            return 0;
+        }
+        return System.currentTimeMillis() - lastKeepAliveTimes.get(peerPort);
     }
 }
