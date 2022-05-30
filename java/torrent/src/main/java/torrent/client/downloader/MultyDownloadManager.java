@@ -11,7 +11,7 @@ import java.util.concurrent.*;
 
 import static torrent.client.downloader.MultyDownloadManager.Status.FINISHED;
 
-public class MultyDownloadManager {
+public class MultyDownloadManager implements Downloader {
     private final ExecutorService leechPool = Executors.newFixedThreadPool(
             Constants.DOWNLOAD_MAX_THREADS_COUNT);
     private final FileManager fileManager;
@@ -34,7 +34,8 @@ public class MultyDownloadManager {
         this.peerId = peerId;
     }
 
-    public void addTorrent(Torrent torrent, int[] peerPorts) throws NoSeedsException {
+    @Override
+    public void addTorrentForDownloading(Torrent torrent, int[] peerPorts) throws NoSeedsException {
         String torrentFileName = torrent.getName() + Constants.POSTFIX;
         DownloadFileManager downloadFileManager = new DownloadFileManager(torrent,
                 fileManager, peerId, peerPorts, leechPool);
@@ -45,7 +46,8 @@ public class MultyDownloadManager {
         }
     }
 
-    public void run() {
+    @Override
+    public void launchDownloading() {
         if (downloading) {
             return;
         }
@@ -78,7 +80,8 @@ public class MultyDownloadManager {
         });
     }
 
-    public void stop(String torrentFileName) throws BadTorrentFileException {
+    @Override
+    public void stopDownloading(String torrentFileName) throws BadTorrentFileException {
         if (downloadManagers.containsKey(torrentFileName)) {
             stoppedTorrents.add(torrentFileName);
             return;
@@ -86,7 +89,8 @@ public class MultyDownloadManager {
         throw new BadTorrentFileException("File " + torrentFileName + " is not downloaded");
     }
 
-    public void resume(String torrentFileName) throws BadTorrentFileException {
+    @Override
+    public void resumeDownloading(String torrentFileName) throws BadTorrentFileException {
         if (downloadManagers.containsKey(torrentFileName)) {
             stoppedTorrents.remove(torrentFileName);
             return;
@@ -94,6 +98,7 @@ public class MultyDownloadManager {
         throw new BadTorrentFileException("File " + torrentFileName + " is not downloaded");
     }
 
+    @Override
     public void shutdown() {
         leechPool.shutdown();
         for (String torrentFileName: downloadManagers.keySet()) {

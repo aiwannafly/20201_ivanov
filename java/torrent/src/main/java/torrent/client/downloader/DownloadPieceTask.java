@@ -9,13 +9,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.math.BigInteger;
-import java.nio.channels.AsynchronousCloseException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
 import java.util.concurrent.Callable;
 
-public class DownloadPieceHandler implements Callable<DownloadPieceHandler.Result> {
+public class DownloadPieceTask implements Callable<DownloadPieceTask.Result> {
     private final Torrent torrentFile;
     private final FileManager fileManager;
     private final String fileName;
@@ -43,9 +42,9 @@ public class DownloadPieceHandler implements Callable<DownloadPieceHandler.Resul
         }
     }
 
-    public DownloadPieceHandler(Torrent torrentFile, FileManager fileManager,
-                                String fileName, int peerId, int pieceIdx, int pieceLength,
-                                PrintWriter out, InputStream in) {
+    public DownloadPieceTask(Torrent torrentFile, FileManager fileManager,
+                             String fileName, int peerId, int pieceIdx, int pieceLength,
+                             PrintWriter out, InputStream in) {
         this.fileManager = fileManager;
         this.peerId = peerId;
         this.torrentFile = torrentFile;

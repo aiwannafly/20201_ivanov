@@ -20,7 +20,7 @@ import java.util.concurrent.*;
 public class DownloadFileManager {
     private final Torrent torrentFile;
     private final ExecutorService leechPool;
-    private final CompletionService<DownloadPieceHandler.Result> service;
+    private final CompletionService<DownloadPieceTask.Result> service;
     private final ArrayList<Integer> leftPieces;
     private final Map<Integer, SeedInfo> seedsInfo = new HashMap<>();
     private final FileManager fileManager;
@@ -106,19 +106,19 @@ public class DownloadFileManager {
             return downloadResult;
         }
         try {
-            Future<DownloadPieceHandler.Result> future = service.take();
-            DownloadPieceHandler.Result result = future.get();
+            Future<DownloadPieceTask.Result> future = service.take();
+            DownloadPieceTask.Result result = future.get();
             int pieceIdx = result.pieceId;
             int peerPort = result.peerPort;
             if (!seedsInfo.containsKey(peerPort)) {
-                if (result.status == DownloadPieceHandler.Status.LOST) {
+                if (result.status == DownloadPieceTask.Status.LOST) {
                     leftPieces.add(pieceIdx);
                 }
             } else {
                 if (result.receivedKeepAlive) {
                     seedsInfo.get(peerPort).lastKeepAliveTimeMillis = result.keepAliveTimeMillis;
                 }
-                if (result.status == DownloadPieceHandler.Status.LOST) {
+                if (result.status == DownloadPieceTask.Status.LOST) {
                     leftPieces.add(pieceIdx);
                 } else {
 //                     System.out.println("=== Received piece            " + (pieceIdx + 1));
@@ -174,7 +174,7 @@ public class DownloadFileManager {
 
     private void requestPiece(int pieceIdx, int peerPort) {
         int pieceLength = getPieceLength(pieceIdx);
-        service.submit(new DownloadPieceHandler(torrentFile, fileManager,
+        service.submit(new DownloadPieceTask(torrentFile, fileManager,
                 fileName, peerPort, pieceIdx, pieceLength,
                 seedsInfo.get(peerPort).out, seedsInfo.get(peerPort).in));
     }

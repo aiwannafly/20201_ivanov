@@ -3,7 +3,10 @@ package torrent.client;
 import be.christophedetroyer.torrent.Torrent;
 import be.christophedetroyer.torrent.TorrentParser;
 import torrent.Constants;
+import torrent.client.downloader.Downloader;
 import torrent.client.downloader.MultyDownloadManager;
+import torrent.client.uploader.UploadLauncher;
+import torrent.client.uploader.Uploader;
 import torrent.client.util.TorrentFileCreator;
 import torrent.client.exceptions.BadTorrentFileException;
 import torrent.client.exceptions.NoSeedsException;
@@ -14,18 +17,18 @@ import torrent.tracker.TrackerCommandHandler;
 import java.io.*;
 
 public class BitTorrentClient implements TorrentClient {
-    private ConnectionsReceiver connReceiver = null;
     private final String peerId;
     private final TrackerCommunicator trackerComm;
     private final FileManager fileManager;
-    private final MultyDownloadManager multyDownloadManager;
+    private Uploader uploader = null;
+    private final Downloader downloader;
 
     public BitTorrentClient() {
         fileManager = new FileManagerImpl();
         trackerComm = new TrackerCommunicatorImpl();
         trackerComm.sendToTracker("get peer_id");
         peerId = trackerComm.receiveFromTracker();
-        multyDownloadManager = new MultyDownloadManager(fileManager, peerId);
+        downloader = new MultyDownloadManager(fileManager, peerId);
     }
 
     @Override
@@ -52,8 +55,8 @@ public class BitTorrentClient implements TorrentClient {
         } catch (IOException e) {
             throw new BadTorrentFileException("Could not open torrent file " + torrentFileName);
         }
-        multyDownloadManager.addTorrent(torrentFile, peerPorts);
-        multyDownloadManager.run();
+        downloader.addTorrentForDownloading(torrentFile, peerPorts);
+        downloader.launchDownloading();
     }
 
     @Override
@@ -71,9 +74,9 @@ public class BitTorrentClient implements TorrentClient {
         } catch (IOException e) {
             throw new BadTorrentFileException("Failed to load torrent: " + fileName);
         }
-        connReceiver = new ConnectionsReceiver(torrentFile, fileManager, peerId);
-        connReceiver.run();
-        String command = TrackerCommandHandler.SET_LISTENING_SOCKET + " " + connReceiver.getListeningPort() +
+        uploader = new UploadLauncher(torrentFile, fileManager, peerId);
+        uploader.launchDistribution();
+        String command = TrackerCommandHandler.SET_LISTENING_SOCKET + " " + uploader.getListeningPort() +
                 " " + fileName;
         trackerComm.sendToTracker(command);
         trackerComm.receiveFromTracker();
@@ -95,20 +98,20 @@ public class BitTorrentClient implements TorrentClient {
 
     @Override
     public void stopDownloading(String torrentFileName) throws BadTorrentFileException {
-        multyDownloadManager.stop(torrentFileName);
+        downloader.stopDownloading(torrentFileName);
     }
 
     @Override
     public void resumeDownloading(String torrentFileName) throws BadTorrentFileException {
-        multyDownloadManager.resume(torrentFileName);
+        downloader.resumeDownloading(torrentFileName);
     }
 
     @Override
     public void close() {
         trackerComm.sendToTracker(Constants.STOP_COMMAND);
-        connReceiver.shutdown();
+        uploader.shutdown();
         trackerComm.close();
-        multyDownloadManager.shutdown();
+        downloader.shutdown();
         try {
             fileManager.close();
         } catch (Exception e) {
