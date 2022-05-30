@@ -98,11 +98,10 @@ public class UploadHandler implements Runnable {
                     continue;
                 }
                 if (message.equals(Constants.KEEP_ALIVE_MESSAGE)) {
-                    if (leechesInfo.get(client).sentPieces.size() == torrentFile.getPieces().size()) {
-                        System.out.println(getTimeFromLastKeepAlive(client));
-                        selectionKey.cancel(); // connection was closed from client side
-                        leechesInfo.remove(client);
+                    if (System.currentTimeMillis() - leechesInfo.get(client).lastKeepAliveTime < 1) {
                         System.out.println("=== Close connection");
+                        leechesInfo.remove(client);
+                        selectionKey.cancel();
                         keysIterator.remove();
                         continue;
                     }
