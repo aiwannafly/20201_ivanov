@@ -26,7 +26,6 @@ public class UploadHandler implements Runnable {
     private final Map<SocketChannel, LeechInfo> leechesInfo = new HashMap<>();
     private Selector selector;
     private final ArrayList<SocketChannel> removalList = new ArrayList<>();
-    ByteBuffer lengthBuf = ByteBuffer.allocate(4);
 
     public static class LeechInfo {
         Long lastKeepAliveTime;
@@ -55,8 +54,8 @@ public class UploadHandler implements Runnable {
         }
         TimerTask sendKeepALiveMsgs = new SendKeepAliveTask();
         TimerTask recvKeepAliveMsgs = new RecvKeepAliveTask();
-        keepAliveSendTimer.schedule(sendKeepALiveMsgs, 0, 1000);
-        keepAliveRecvTimer.schedule(recvKeepAliveMsgs, 0, 2000);
+        keepAliveSendTimer.schedule(sendKeepALiveMsgs, 0, Constants.KEEP_ALIVE_SEND_INTERVAL);
+        keepAliveRecvTimer.schedule(recvKeepAliveMsgs, 0, Constants.MAX_KEEP_ALIVE_INTERVAL);
         while (true) {
             try {
                 handleEvents(selector);

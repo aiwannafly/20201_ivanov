@@ -92,8 +92,8 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
                 for (int portId = 0; portId < workingPeersCount; portId++) {
                     requestRandomPiece(random, portId);
                 }
-                keepAliveSendTimer.schedule(sendKeepALiveMsgs, 0, 1000);
-                keepAliveRecvTimer.schedule(recvKeepAliveMsgs, 0, 2000);
+                keepAliveSendTimer.schedule(sendKeepALiveMsgs, 0, Constants.KEEP_ALIVE_SEND_INTERVAL);
+                keepAliveRecvTimer.schedule(recvKeepAliveMsgs, 0, Constants.MAX_KEEP_ALIVE_INTERVAL);
             }
             submittedFirstTasks = true;
             try {

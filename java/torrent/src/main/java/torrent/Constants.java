@@ -10,4 +10,5 @@ public class Constants {
     public static final String CONNECTIONS_THREAD_NAME = "Connection handler thread";
     public static final int MAX_KEEP_ALIVE_INTERVAL = 2 * 60 * 1000;
     public static final String KEEP_ALIVE_MESSAGE = "\0\0\0\0";
+    public static final int KEEP_ALIVE_SEND_INTERVAL = 5 * 1000;
 }
