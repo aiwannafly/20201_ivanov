@@ -3,6 +3,7 @@ package torrent.client.downloader;
 import torrent.Constants;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -11,6 +12,7 @@ public class KeepAliveHandler {
     private final Map<Integer, DownloadManager.SeedInfo> seedsInfo;
     private final Timer keepAliveSendTimer = new Timer();
     private final Timer keepAliveReceiveTimer = new Timer();
+    private final ArrayList<Integer> removalList = new ArrayList<>();
 
     public KeepAliveHandler(Map<Integer, DownloadManager.SeedInfo> seedsInfo) {
         this.seedsInfo = seedsInfo;
@@ -31,10 +33,8 @@ public class KeepAliveHandler {
     private class SendKeepAliveTask extends TimerTask {
         @Override
         public void run() {
-            for (DownloadManager.SeedInfo info: seedsInfo.values()) {
-                System.out.println("=== Send keep-alive");
-                String keepAliveMsg = "\0\0\0\0";
-                info.out.print(keepAliveMsg);
+            for (DownloadManager.SeedInfo info : seedsInfo.values()) {
+                info.out.print(Constants.KEEP_ALIVE_MESSAGE);
                 info.out.flush();
             }
         }
@@ -43,7 +43,11 @@ public class KeepAliveHandler {
     private class ReceiveKeepAliveTask extends TimerTask {
         @Override
         public void run() {
-            for (Integer peerPort: seedsInfo.keySet()) {
+            if (removalList.size() > 0) {
+                removalList.clear();
+            }
+            for (Integer peerPort : seedsInfo.keySet()) {
+                System.out.println(getTimeFromLastKeepAlive(peerPort));
                 if (getTimeFromLastKeepAlive(peerPort) > Constants.MAX_KEEP_ALIVE_INTERVAL) {
                     System.out.println("=== Close connection");
                     // close connection
@@ -54,8 +58,11 @@ public class KeepAliveHandler {
                         e.printStackTrace();
                     }
                     info.out.close();
-                    seedsInfo.remove(peerPort);
+                    removalList.add(peerPort);
                 }
+            }
+            for (Integer peerPort: removalList) {
+                seedsInfo.remove(peerPort);
             }
         }
     }

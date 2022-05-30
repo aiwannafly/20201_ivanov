@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.math.BigInteger;
+import java.nio.channels.AsynchronousCloseException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
@@ -96,7 +97,6 @@ public class DownloadPieceHandler implements Callable<DownloadPieceHandler.Resul
                 messageBuilder.append((char) in.read());
             }
         } catch (IOException e) {
-            e.printStackTrace();
             return Status.LOST;
         }
         String message = messageBuilder.toString();

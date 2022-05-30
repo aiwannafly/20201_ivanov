@@ -91,37 +91,46 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
                 return downloadResult;
             }
             if (!submittedFirstTasks) {
-                for (Integer peerPort: seedsInfo.keySet()) {
+                for (Integer peerPort : seedsInfo.keySet()) {
                     requestRandomPiece(random, peerPort);
                 }
             }
             submittedFirstTasks = true;
+            if (seedsInfo.size() == 0) {
+                System.err.println("=== No seeds left. Downloading failed");
+                break;
+            }
             try {
                 Future<DownloadPieceHandler.Result> future = service.take();
                 DownloadPieceHandler.Result result = future.get();
                 int pieceIdx = result.pieceId;
                 int peerPort = result.peerPort;
+                if (!seedsInfo.containsKey(peerPort)) {
+                    if (result.status == DownloadPieceHandler.Status.LOST) {
+                        leftPieces.add(pieceIdx);
+                    }
+                    continue;
+                }
                 if (result.receivedKeepAlive) {
                     seedsInfo.get(peerPort).lastKeepAliveTimeMillis = result.keepAliveTimeMillis;
                 }
-                // System.out.println(result);
                 if (result.status == DownloadPieceHandler.Status.LOST) {
-                    // System.out.println("=== Failed to receive a piece " + (pieceIdx + 1));
-                    requestPiece(pieceIdx, peerPort);
-                    // System.out.println("=== Requested " + (pieceIdx + 1) + " again");
+                    leftPieces.add(pieceIdx);
                 } else {
                     System.out.println("=== Received piece            " + (pieceIdx + 1));
-                    if (leftPieces.size() == 0) {
-                        break;
-                    }
-                    requestRandomPiece(random, peerPort);
                 }
+                if (leftPieces.size() == 0) {
+                    break;
+                }
+                requestRandomPiece(random, peerPort);
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
         }
         shutdown();
-        System.out.println("=== File " + fileName + " was downloaded successfully!");
+        if (leftPieces.size() == 0) {
+            System.out.println("=== File " + fileName + " was downloaded successfully!");
+        }
         closed = true;
         downloadResult.status = DownloadManager.Status.FINISHED;
         return downloadResult;
@@ -149,7 +158,7 @@ public class DownloadManager implements Callable<DownloadManager.Result> {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        for (Integer peerPort: seedsInfo.keySet()) {
+        for (Integer peerPort : seedsInfo.keySet()) {
             try {
                 if (seedsInfo.get(peerPort).out != null) {
                     seedsInfo.get(peerPort).out.close();
