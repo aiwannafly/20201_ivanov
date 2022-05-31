@@ -126,6 +126,7 @@ public class DownloadManager {
                 }
             } else {
                 if (result.newAvailablePieces != null) {
+                    System.out.println("Got some new pieces!");
                     peersPieces.get(peerPort).addAll(result.newAvailablePieces);
                 }
                 if (result.receivedKeepAlive) {
@@ -136,7 +137,9 @@ public class DownloadManager {
                 } else {
                      System.out.println("=== Received piece " + (pieceIdx + 1) +
                              " from " + peerPort);
-                     myPieces.add(pieceIdx);
+                     synchronized (myPieces) {
+                         myPieces.add(pieceIdx);
+                     }
                 }
                 if (leftPieces.size() > 0) {
                     requestRandomPiece(random, peerPort);
@@ -183,6 +186,7 @@ public class DownloadManager {
 
     private void requestRandomPiece(Random random, int peerPort) {
         ArrayList<Integer> availablePieces = peersPieces.get(peerPort);
+        System.out.println(availablePieces.size());
         ArrayList<Integer> interestingPieces = new ArrayList<>();
         for (Integer piece: availablePieces) {
             if (leftPieces.contains(piece)) {

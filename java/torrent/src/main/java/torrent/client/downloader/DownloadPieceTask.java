@@ -61,7 +61,6 @@ public class DownloadPieceTask implements Callable<DownloadPieceTask.Result> {
     @Override
     public Result call() {
         Result result = new Result(Status.RECEIVED, peerId, pieceIdx);
-        result.newAvailablePieces = this.newAvailablePieces;
         requestPiece(pieceIdx, 0, pieceLength);
         while (true) {
             Status received = receivePiece();
@@ -69,6 +68,7 @@ public class DownloadPieceTask implements Callable<DownloadPieceTask.Result> {
                 result.receivedKeepAlive = true;
                 result.keepAliveTimeMillis = System.currentTimeMillis();
             } else if (received == Status.HAVE) {
+                result.newAvailablePieces = this.newAvailablePieces;
             } else if (received == Status.LOST) {
                 result.status = Status.LOST;
                 return result;
@@ -104,7 +104,7 @@ public class DownloadPieceTask implements Callable<DownloadPieceTask.Result> {
             return Status.LOST;
         }
         String message = messageBuilder.toString();
-        if (message.length() < 4 + 1 + 4 + 4) {
+        if (message.length() < 4 + 1 + 4) {
             System.err.println("=== Bad length: " + message.length());
             return Status.LOST;
         }

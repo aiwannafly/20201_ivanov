@@ -75,10 +75,12 @@ public class UploadHandler implements Runnable {
 
     private void handleEvents(Selector selector) throws IOException {
         selector.select();
-        if (announcedPieces.size() < availablePieces.size()) {
-            for (Integer piece: availablePieces) {
-                if (!announcedPieces.contains(piece)) {
-                    announcePiece(piece);
+        synchronized (announcedPieces) {
+            if (announcedPieces.size() < availablePieces.size()) {
+                for (Integer piece: availablePieces) {
+                    if (!announcedPieces.contains(piece)) {
+                        announcePiece(piece);
+                    }
                 }
             }
         }
@@ -215,7 +217,9 @@ public class UploadHandler implements Runnable {
             if (message.length() < 4 + 4) {
                 throw new BadMessageException("=== Bad length");
             }
-            // int idx = ByteOperations.convertFromBytes(message.substring(5, 9));
+            client.write(ByteBuffer.wrap(message.getBytes(StandardCharsets.UTF_8)));
+            int idx = ByteOperations.convertFromBytes(message.substring(5, 9));
+            return;
         }
         throw new BadMessageException("=== Unknown message type: " + id);
     }
