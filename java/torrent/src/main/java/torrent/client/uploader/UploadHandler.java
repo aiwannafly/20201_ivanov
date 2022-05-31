@@ -23,6 +23,8 @@ public class UploadHandler implements Runnable {
     private final String peerId;
     private final Map<SocketChannel, LeechInfo> leechesInfo = new HashMap<>();
     private Selector selector;
+    private final ArrayList<Integer> availablePieces;
+    private final ArrayList<Integer> announcedPieces = new ArrayList<>();
 
     public static class LeechInfo {
         Long lastKeepAliveTime;
@@ -31,11 +33,13 @@ public class UploadHandler implements Runnable {
     }
 
     public UploadHandler(Torrent torrentFile, FileManager fileManager, String peerId,
-                         ServerSocketChannel serverSocket) {
+                         ServerSocketChannel serverSocket,
+                         ArrayList<Integer> availablePieces) {
         this.torrentFile = torrentFile;
         this.fileManager = fileManager;
         this.peerId = peerId;
         this.serverSocketChannel = serverSocket;
+        this.availablePieces = availablePieces;
     }
 
     @Override
@@ -71,6 +75,13 @@ public class UploadHandler implements Runnable {
 
     private void handleEvents(Selector selector) throws IOException {
         selector.select();
+        if (announcedPieces.size() < availablePieces.size()) {
+            for (Integer piece: availablePieces) {
+                if (!announcedPieces.contains(piece)) {
+                    announcePiece(piece);
+                }
+            }
+        }
         Set<SelectionKey> selectedKeys = selector.selectedKeys();
         Iterator<SelectionKey> keysIterator = selectedKeys.iterator();
         while (keysIterator.hasNext()) {
@@ -83,6 +94,7 @@ public class UploadHandler implements Runnable {
                     System.err.println(e.getMessage());
                 }
                 System.out.println("=== Connection accepted: " + client.getLocalAddress());
+                sendBitfield(client);
             }
             if (selectionKey.isReadable()) {
                 SocketChannel client = (SocketChannel) selectionKey.channel();
@@ -191,7 +203,7 @@ public class UploadHandler implements Runnable {
             int idx = ByteOperations.convertFromBytes(message.substring(5, 9));
             int begin = ByteOperations.convertFromBytes(message.substring(9, 13));
             int length = ByteOperations.convertFromBytes(message.substring(13, 17));
-            String reply = ByteOperations.convertIntoBytes(9 + length) + "7" +
+            String reply = ByteOperations.convertIntoBytes(9 + length) + MessageType.PIECE +
                     ByteOperations.convertIntoBytes(idx) + ByteOperations.convertIntoBytes(begin);
             client.write(ByteBuffer.wrap(reply.getBytes(StandardCharsets.UTF_8)));
             int offset = idx * torrentFile.getPieceLength().intValue() + begin;
@@ -199,7 +211,43 @@ public class UploadHandler implements Runnable {
             client.write(ByteBuffer.wrap(piece));
             leechesInfo.get(client).sentPieces.add(idx);
             return;
+        } else if (id == MessageType.HAVE) {
+            if (message.length() < 4 + 4) {
+                throw new BadMessageException("=== Bad length");
+            }
+            // int idx = ByteOperations.convertFromBytes(message.substring(5, 9));
         }
         throw new BadMessageException("=== Unknown message type: " + id);
+    }
+
+    private void sendBitfield(SocketChannel client) throws IOException {
+        int totalPiecesCount = torrentFile.getPieces().size();
+        int bitsInByte = 8;
+        int count = totalPiecesCount / bitsInByte;
+        if (totalPiecesCount % bitsInByte != 0) {
+            count++;
+        }
+        byte[] data = new byte[count];
+        for (int i = 0; i < totalPiecesCount; i++) {
+            if (!availablePieces.contains(i)) {
+                continue;
+            }
+            int bitIdx = i % bitsInByte;
+            int byteIdx = i / bitsInByte;
+            data[byteIdx] |= 1 << bitIdx;
+            announcedPieces.add(i);
+        }
+        String bitfieldMsg = ByteOperations.convertIntoBytes(1 + data.length) +
+                MessageType.BITFIELD;
+        client.write(ByteBuffer.wrap(bitfieldMsg.getBytes(StandardCharsets.UTF_8)));
+        client.write(ByteBuffer.wrap(data));
+    }
+
+    private void announcePiece(Integer pieceIdx) {
+        String haveMsg = ByteOperations.convertIntoBytes(1 + 4) +
+                MessageType.HAVE + ByteOperations.convertIntoBytes(pieceIdx);
+        for (SocketChannel client: leechesInfo.keySet()) {
+            leechesInfo.get(client).myReplies.add(haveMsg);
+        }
     }
 }

@@ -11,6 +11,7 @@ import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.concurrent.Callable;
 
@@ -23,9 +24,10 @@ public class DownloadPieceTask implements Callable<DownloadPieceTask.Result> {
     private final PrintWriter out;
     private final InputStream in;
     private final int peerId;
+    private ArrayList<Integer> newAvailablePieces;
 
     public enum Status {
-        RECEIVED, LOST, GOT_KEEP_ALIVE
+        RECEIVED, HAVE, GOT_KEEP_ALIVE, LOST
     }
 
     public static class Result {
@@ -34,6 +36,7 @@ public class DownloadPieceTask implements Callable<DownloadPieceTask.Result> {
         public int pieceId;
         public boolean receivedKeepAlive = false;
         public long keepAliveTimeMillis = 0;
+        public ArrayList<Integer> newAvailablePieces;
 
         public Result(Status status, int peerPort, int pieceId) {
             this.status = status;
@@ -58,12 +61,14 @@ public class DownloadPieceTask implements Callable<DownloadPieceTask.Result> {
     @Override
     public Result call() {
         Result result = new Result(Status.RECEIVED, peerId, pieceIdx);
+        result.newAvailablePieces = this.newAvailablePieces;
         requestPiece(pieceIdx, 0, pieceLength);
         while (true) {
             Status received = receivePiece();
             if (received == Status.GOT_KEEP_ALIVE) {
                 result.receivedKeepAlive = true;
                 result.keepAliveTimeMillis = System.currentTimeMillis();
+            } else if (received == Status.HAVE) {
             } else if (received == Status.LOST) {
                 result.status = Status.LOST;
                 return result;
@@ -106,6 +111,14 @@ public class DownloadPieceTask implements Callable<DownloadPieceTask.Result> {
         // piece: <len=0009+X><id=7><index><begin><block>
         int len = ByteOperations.convertFromBytes(message.substring(0, 4));
         int id = Integer.parseInt(String.valueOf(message.charAt(4)));
+        if (id == MessageType.HAVE) {
+            int idx = ByteOperations.convertFromBytes(message.substring(5, 9));
+            if (newAvailablePieces == null) {
+                newAvailablePieces = new ArrayList<>();
+            }
+            newAvailablePieces.add(idx);
+            return Status.HAVE;
+        }
         if (id != MessageType.PIECE) {
             return Status.LOST;
         }

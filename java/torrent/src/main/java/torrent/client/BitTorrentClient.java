@@ -20,9 +20,9 @@ public class BitTorrentClient implements TorrentClient {
     private final String peerId;
     private final TrackerCommunicator trackerComm;
     private final FileManager fileManager;
-    private Uploader uploader = null;
     private final Downloader downloader;
-    private final Map<Torrent, ArrayList<Integer>> havePieces = new HashMap<>();
+    private final Map<String, Map<Integer, ArrayList<Integer>>> peersPieces = new HashMap<>();
+    private final Map<String, Uploader> uploaders = new HashMap<>();
 
     public BitTorrentClient() {
         fileManager = new FileManagerImpl();
@@ -42,11 +42,10 @@ public class BitTorrentClient implements TorrentClient {
             throw new ServerNotCorrespondsException("Server did not show peers");
         }
         String[] words = message.split(" ");
-        int peersCount = words.length - 1;
         if (words.length - 1 == 0) {
             throw new NoSeedsException("No peers are uploading the file at the moment");
         }
-        Map<Integer, ArrayList<Integer>> peersPieces = new HashMap<>();
+        Map<Integer, ArrayList<Integer>> peersPieces = this.peersPieces.get(torrentFileName);
         int idx = 1;
         while (idx < words.length) {
             int peerPort = Integer.parseInt(words[idx++]);
@@ -83,6 +82,9 @@ public class BitTorrentClient implements TorrentClient {
         if (!fileName.endsWith(postfix)) {
             throw new BadTorrentFileException("Bad name");
         }
+        if (peersPieces.containsKey(fileName)) {
+            return;
+        }
         Torrent torrentFile;
         try {
             torrentFile = TorrentParser.parseTorrent(Constants.PATH + fileName);
@@ -92,14 +94,15 @@ public class BitTorrentClient implements TorrentClient {
         for (int i = 0; i < torrentFile.getPieces().size(); i++) {
             allPieces.add(i);
         }
-        havePieces.put(torrentFile, allPieces);
         distributePart(torrentFile, fileName, allPieces);
     }
 
     private void distributePart(Torrent torrentFile, String fileName, ArrayList<Integer> pieces) {
-        uploader = new UploadLauncher(torrentFile, fileManager, peerId);
+        if (!peersPieces.containsKey(fileName)) {
+            peersPieces.put(fileName, new HashMap<>());
+        }
+        Uploader uploader = new UploadLauncher(torrentFile, fileManager, peerId, pieces);
         uploader.launchDistribution();
-        havePieces.put(torrentFile, pieces);
         // listen-port 5000 fileName 30 1 2 3 ... 30
         StringBuilder command = new StringBuilder(TrackerCommandHandler.SET_LISTENING_SOCKET + " " +
                 uploader.getListeningPort() + " " + fileName + " " + pieces.size());
@@ -108,6 +111,7 @@ public class BitTorrentClient implements TorrentClient {
         }
         trackerComm.sendToTracker(command.toString());
         trackerComm.receiveFromTracker();
+        uploaders.put(fileName, uploader);
     }
 
     @Override
@@ -137,7 +141,9 @@ public class BitTorrentClient implements TorrentClient {
     @Override
     public void close() {
         trackerComm.sendToTracker(Constants.STOP_COMMAND);
-        uploader.shutdown();
+        for (Uploader uploader : uploaders.values()) {
+            uploader.shutdown();
+        }
         trackerComm.close();
         downloader.shutdown();
         try {

@@ -17,12 +17,12 @@ public class MultyDownloadManager implements Downloader {
     private final FileManager fileManager;
     private final String peerId;
     private final ArrayList<String> removalList = new ArrayList<>();
-    private final Map<String, DownloadFileManager> downloadManagers = new HashMap<>();
+    private final Map<String, DownloadManager> downloadManagers = new HashMap<>();
     private final ExecutorService downloader = Executors.newSingleThreadExecutor();
     private final CompletionService<Status> downloadService =
             new ExecutorCompletionService<>(downloader);
     private final Queue<String> stoppedTorrents = new ArrayDeque<>();
-    private final Queue<DownloadFileManager> newTorrents = new ArrayBlockingQueue<>(100);
+    private final Queue<DownloadManager> newTorrents = new ArrayBlockingQueue<>(100);
     private boolean downloading = false;
 
     enum Status {
@@ -38,12 +38,12 @@ public class MultyDownloadManager implements Downloader {
     public void addTorrentForDownloading(Torrent torrent, Map<Integer, ArrayList<Integer>> peersPieces)
             throws NoSeedsException {
         String torrentFileName = torrent.getName() + Constants.POSTFIX;
-        DownloadFileManager downloadFileManager = new DownloadFileManager(torrent,
+        DownloadManager downloadManager = new DownloadManager(torrent,
                 fileManager, peerId, peersPieces, leechPool);
         if (!downloading) {
-            downloadManagers.put(torrentFileName, downloadFileManager);
+            downloadManagers.put(torrentFileName, downloadManager);
         } else {
-            newTorrents.add(downloadFileManager);
+            newTorrents.add(downloadManager);
         }
     }
 
@@ -56,18 +56,18 @@ public class MultyDownloadManager implements Downloader {
         downloadService.submit(() -> {
             while (!downloadManagers.isEmpty()) {
                 while (!newTorrents.isEmpty()) {
-                    DownloadFileManager downloadFileManager = newTorrents.remove();
-                    String torrentFileName = downloadFileManager.getTorrentFile().getName() +
+                    DownloadManager downloadManager = newTorrents.remove();
+                    String torrentFileName = downloadManager.getTorrentFile().getName() +
                             Constants.POSTFIX;
-                    downloadManagers.put(torrentFileName, downloadFileManager);
+                    downloadManagers.put(torrentFileName, downloadManager);
                 }
                 for (String torrentFileName: downloadManagers.keySet()) {
                     if (stoppedTorrents.contains(torrentFileName)) {
                         continue;
                     }
-                    DownloadFileManager downloadFileManager = downloadManagers.get(torrentFileName);
-                    DownloadFileManager.Result result = downloadFileManager.downloadNextPiece();
-                    if (result.status == DownloadFileManager.Status.FINISHED) {
+                    DownloadManager downloadManager = downloadManagers.get(torrentFileName);
+                    DownloadManager.Result result = downloadManager.downloadNextPiece();
+                    if (result.status == DownloadManager.Status.FINISHED) {
                         removalList.add(torrentFileName);
                     }
                 }

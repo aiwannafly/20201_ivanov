@@ -7,6 +7,8 @@ import torrent.client.FileManager;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
+import java.util.ArrayList;
+import java.util.Map;
 
 public class UploadLauncher implements Uploader {
     private ServerSocketChannel serverSocketChannel;
@@ -14,10 +16,13 @@ public class UploadLauncher implements Uploader {
     private final Torrent torrentFile;
     private final FileManager fileManager;
     private final String peerId;
+    private final ArrayList<Integer> availablePieces;
 
-    public UploadLauncher(Torrent torrentFile, FileManager fileManager, String peerId) {
+    public UploadLauncher(Torrent torrentFile, FileManager fileManager, String peerId,
+                          ArrayList<Integer> availablePieces) {
         this.torrentFile = torrentFile;
         this.fileManager = fileManager;
+        this.availablePieces = availablePieces;
         this.peerId = peerId;
         try {
             this.serverSocketChannel = ServerSocketChannel.open();
@@ -32,7 +37,7 @@ public class UploadLauncher implements Uploader {
     @Override
     public void launchDistribution() {
         connectionsHandlerThread = new Thread(new UploadHandler(this.torrentFile,
-                this.fileManager, this.peerId, this.serverSocketChannel));
+                this.fileManager, this.peerId, this.serverSocketChannel, this.availablePieces));
         connectionsHandlerThread.setName(Constants.CONNECTIONS_THREAD_NAME);
         connectionsHandlerThread.setDaemon(true);
         connectionsHandlerThread.start();

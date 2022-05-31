@@ -3,21 +3,28 @@ package torrent.client.downloader;
 import be.christophedetroyer.torrent.Torrent;
 import torrent.Constants;
 import torrent.client.FileManager;
+import torrent.client.exceptions.BadMessageException;
 import torrent.client.exceptions.DifferentHandshakesException;
 import torrent.client.exceptions.NoSeedsException;
 import torrent.client.util.BitTorrentHandshake;
+import torrent.client.util.ByteOperations;
 import torrent.client.util.Handshake;
+import torrent.client.util.MessageType;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 
-public class DownloadFileManager {
+public class DownloadManager {
     private final Torrent torrentFile;
     private final ExecutorService leechPool;
     private final CompletionService<DownloadPieceTask.Result> service;
@@ -46,9 +53,9 @@ public class DownloadFileManager {
         Long lastKeepAliveTimeMillis;
     }
 
-    public DownloadFileManager(Torrent torrentFile, FileManager
+    public DownloadManager(Torrent torrentFile, FileManager
             fileManager, String peerId, Map<Integer, ArrayList<Integer>> peersPieces,
-                               ExecutorService leechPool) throws NoSeedsException {
+                           ExecutorService leechPool) throws NoSeedsException {
         this.peerId = peerId;
         this.fileManager = fileManager;
         this.torrentFile = torrentFile;
@@ -59,10 +66,6 @@ public class DownloadFileManager {
             if (seedsInfo.size() >= Constants.DOWNLOAD_MAX_THREADS_COUNT) {
                 break;
             }
-            for (Integer piece: peersPieces.get(peerPort)) {
-                System.out.print(piece + " ");
-            }
-            System.out.println();
             try {
                 establishConnection(peerPort);
             } catch (DifferentHandshakesException e) {
@@ -88,13 +91,13 @@ public class DownloadFileManager {
         }
         Result downloadResult = new Result();
         downloadResult.torrentFileName = torrentFile.getName() + Constants.POSTFIX;
-        downloadResult.status = DownloadFileManager.Status.NOT_FINISHED;
+        downloadResult.status = DownloadManager.Status.NOT_FINISHED;
         Random random = new Random();
         if (leftPieces.size() == 0) {
             System.out.println("=== File " + fileName + " was downloaded successfully!");
             shutdown();
             closed = true;
-            downloadResult.status = DownloadFileManager.Status.FINISHED;
+            downloadResult.status = DownloadManager.Status.FINISHED;
             return downloadResult;
         }
         if (!submittedFirstTasks) {
@@ -107,7 +110,7 @@ public class DownloadFileManager {
             System.err.println("=== No seeds left. Downloading failed");
             shutdown();
             closed = true;
-            downloadResult.status = DownloadFileManager.Status.FINISHED;
+            downloadResult.status = DownloadManager.Status.FINISHED;
             return downloadResult;
         }
         try {
@@ -120,6 +123,9 @@ public class DownloadFileManager {
                     leftPieces.add(pieceIdx);
                 }
             } else {
+                if (result.newAvailablePieces != null) {
+                    peersPieces.get(peerPort).addAll(result.newAvailablePieces);
+                }
                 if (result.receivedKeepAlive) {
                     seedsInfo.get(peerPort).lastKeepAliveTimeMillis = result.keepAliveTimeMillis;
                 }
@@ -135,7 +141,7 @@ public class DownloadFileManager {
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
-        downloadResult.status = DownloadFileManager.Status.NOT_FINISHED;
+        downloadResult.status = DownloadManager.Status.NOT_FINISHED;
         return downloadResult;
     }
 
@@ -229,8 +235,85 @@ public class DownloadFileManager {
             seedInfo.out = out;
             seedInfo.lastKeepAliveTimeMillis = System.currentTimeMillis();
             seedsInfo.put(peerPort, seedInfo);
+            Selector selector = Selector.open();
+            currentPeerChannel.configureBlocking(false);
+            currentPeerChannel.register(selector, SelectionKey.OP_READ);
+            int waitTime = 500;
+            int returnValue = selector.select(waitTime);
+            if (returnValue == 0) {
+                return;
+            }
+            Set<SelectionKey> selectedKeys = selector.selectedKeys();
+            Iterator<SelectionKey> keysIterator = selectedKeys.iterator();
+            keysIterator.next().cancel();
+            System.out.println("=== Check bitfield...");
+            handleBitField(peerPort, currentPeerChannel);
+            System.out.println("=== Got bitfield...");
+            currentPeerChannel.configureBlocking(true);
         } else {
             throw new DifferentHandshakesException("Handshakes are different, reject connection");
         }
+    }
+
+    private void handleBitField(int peerPort, SocketChannel peerChannel) throws IOException {
+        Message message;
+        do {
+            try {
+                message = getMessage(peerChannel);
+            } catch (BadMessageException e) {
+                e.printStackTrace();
+                return;
+            }
+        } while (message.type == MessageType.KEEP_ALIVE);
+        if (message.type != MessageType.BITFIELD) {
+            System.err.println("Not bitfield");
+            return;
+        }
+        int bitsInByte = 8;
+        byte[] bytes = message.data.getBytes(StandardCharsets.UTF_8);
+        for (int i = 0; i < torrentFile.getPieces().size(); i++) {
+            int bitIdx = i % bitsInByte;
+            int byteIdx = i / bitsInByte;
+            byte bit = (byte) (1 << bitIdx);
+            if ((bytes[byteIdx] & bit) != 0) {
+                if (!peersPieces.get(peerPort).contains(i)) {
+                    peersPieces.get(peerPort).add(i);
+                }
+            }
+        }
+    }
+
+    private static class Message {
+        int length;
+        int type;
+        String data;
+    }
+
+    private Message getMessage(SocketChannel client) throws IOException, BadMessageException {
+        ByteBuffer lengthBuf = ByteBuffer.allocate(4);
+        try {
+            client.read(lengthBuf);
+        } catch (SocketException e) {
+            throw new BadMessageException(e.getMessage());
+        }
+        Message message = new Message();
+        String lengthStr = new String(lengthBuf.array());
+        message.length = ByteOperations.convertFromBytes(lengthStr);
+        if (message.length == 0) {
+            message.type = MessageType.KEEP_ALIVE;
+            return message; // keep-alive
+        }
+        if (message.length < 0) {
+            throw new BadMessageException("=== Bad length");
+        }
+        ByteBuffer messageBuf = ByteBuffer.allocate(message.length);
+        int count = client.read(messageBuf);
+        String data = new String(messageBuf.array());
+        if (count != message.length) {
+            System.err.println("Read just " + count + " / " + message.length + " bytes.");
+        }
+        message.type = Integer.parseInt(String.valueOf(data.charAt(0)));
+        message.data = data.substring(1);
+        return message;
     }
 }
