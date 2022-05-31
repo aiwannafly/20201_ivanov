@@ -35,7 +35,14 @@ public class BitTorrentClient implements TorrentClient {
     @Override
     public void download(String torrentFileName) throws BadTorrentFileException,
             NoSeedsException, ServerNotCorrespondsException, BadServerReplyException {
-        distribute(torrentFileName);
+        Torrent torrentFile;
+        try {
+            torrentFile = TorrentParser.parseTorrent(Constants.PATH + torrentFileName);
+        } catch (IOException e) {
+            throw new BadTorrentFileException("Could not open torrent file " + torrentFileName);
+        }
+        ArrayList<Integer> myPieces = new ArrayList<>();
+        distributePart(torrentFile, torrentFileName, myPieces);
         trackerComm.sendToTracker("show peers " + torrentFileName);
         String message = trackerComm.receiveFromTracker();
         if (null == message) {
@@ -62,13 +69,7 @@ public class BitTorrentClient implements TorrentClient {
             }
             peersPieces.put(peerPort, availablePieces);
         }
-        Torrent torrentFile;
-        try {
-            torrentFile = TorrentParser.parseTorrent(Constants.PATH + torrentFileName);
-        } catch (IOException e) {
-            throw new BadTorrentFileException("Could not open torrent file " + torrentFileName);
-        }
-        downloader.addTorrentForDownloading(torrentFile, peersPieces);
+        downloader.addTorrentForDownloading(torrentFile, peersPieces, myPieces);
         downloader.launchDownloading();
     }
 

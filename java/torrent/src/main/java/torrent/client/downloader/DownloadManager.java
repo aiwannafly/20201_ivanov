@@ -37,6 +37,7 @@ public class DownloadManager {
     private boolean closed = false;
     private KeepAliveHandler keepAliveHandler;
     private final Map<Integer, ArrayList<Integer>> peersPieces;
+    private final ArrayList<Integer> myPieces;
 
     public enum Status {
         FINISHED, NOT_FINISHED
@@ -55,10 +56,11 @@ public class DownloadManager {
 
     public DownloadManager(Torrent torrentFile, FileManager
             fileManager, String peerId, Map<Integer, ArrayList<Integer>> peersPieces,
-                           ExecutorService leechPool) throws NoSeedsException {
+                           ExecutorService leechPool, ArrayList<Integer> myPieces) throws NoSeedsException {
         this.peerId = peerId;
         this.fileManager = fileManager;
         this.torrentFile = torrentFile;
+        this.myPieces = myPieces;
         this.fileName = Constants.PREFIX + torrentFile.getName();
         this.leftPieces = new ArrayList<>();
         this.peersPieces = peersPieces;
@@ -132,7 +134,9 @@ public class DownloadManager {
                 if (result.status == DownloadPieceTask.Status.LOST) {
                     leftPieces.add(pieceIdx);
                 } else {
-                     System.out.println("=== Received piece            " + (pieceIdx + 1));
+                     System.out.println("=== Received piece " + (pieceIdx + 1) +
+                             " from " + peerPort);
+                     myPieces.add(pieceIdx);
                 }
                 if (leftPieces.size() > 0) {
                     requestRandomPiece(random, peerPort);
@@ -246,9 +250,7 @@ public class DownloadManager {
             Set<SelectionKey> selectedKeys = selector.selectedKeys();
             Iterator<SelectionKey> keysIterator = selectedKeys.iterator();
             keysIterator.next().cancel();
-            System.out.println("=== Check bitfield...");
             handleBitField(peerPort, currentPeerChannel);
-            System.out.println("=== Got bitfield...");
             currentPeerChannel.configureBlocking(true);
         } else {
             throw new DifferentHandshakesException("Handshakes are different, reject connection");
@@ -271,6 +273,7 @@ public class DownloadManager {
         }
         int bitsInByte = 8;
         byte[] bytes = message.data.getBytes(StandardCharsets.UTF_8);
+        System.out.println("Pieces from bitfield: ");
         for (int i = 0; i < torrentFile.getPieces().size(); i++) {
             int bitIdx = i % bitsInByte;
             int byteIdx = i / bitsInByte;
@@ -278,9 +281,11 @@ public class DownloadManager {
             if ((bytes[byteIdx] & bit) != 0) {
                 if (!peersPieces.get(peerPort).contains(i)) {
                     peersPieces.get(peerPort).add(i);
+                    System.out.print(i + " ");
                 }
             }
         }
+        System.out.println();
     }
 
     private static class Message {
