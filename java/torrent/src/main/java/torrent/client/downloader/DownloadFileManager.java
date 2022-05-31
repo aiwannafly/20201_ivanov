@@ -29,6 +29,7 @@ public class DownloadFileManager {
     private boolean submittedFirstTasks = false;
     private boolean closed = false;
     private KeepAliveHandler keepAliveHandler;
+    private final Map<Integer, ArrayList<Integer>> peersPieces;
 
     public enum Status {
         FINISHED, NOT_FINISHED
@@ -46,27 +47,31 @@ public class DownloadFileManager {
     }
 
     public DownloadFileManager(Torrent torrentFile, FileManager
-            fileManager, String peerId, int[] peerPorts,
+            fileManager, String peerId, Map<Integer, ArrayList<Integer>> peersPieces,
                                ExecutorService leechPool) throws NoSeedsException {
         this.peerId = peerId;
         this.fileManager = fileManager;
         this.torrentFile = torrentFile;
         this.fileName = Constants.PREFIX + torrentFile.getName();
-        int workingPeersCount = 0;
         this.leftPieces = new ArrayList<>();
-        for (int i = 0; i < peerPorts.length && i < Constants.DOWNLOAD_MAX_THREADS_COUNT; i++) {
+        this.peersPieces = peersPieces;
+        for (Integer peerPort: peersPieces.keySet()) {
+            if (seedsInfo.size() >= Constants.DOWNLOAD_MAX_THREADS_COUNT) {
+                break;
+            }
+            for (Integer piece: peersPieces.get(peerPort)) {
+                System.out.print(piece + " ");
+            }
+            System.out.println();
             try {
-                establishConnection(peerPorts[i]);
+                establishConnection(peerPort);
             } catch (DifferentHandshakesException e) {
                 System.err.println("=== " + e.getMessage());
-                continue;
             } catch (IOException e) {
                 e.printStackTrace();
-                continue;
             }
-            workingPeersCount++;
         }
-        if (0 == workingPeersCount) {
+        if (seedsInfo.isEmpty()) {
             throw new NoSeedsException("No seeds uploading file " + torrentFile.getName());
         }
         this.leechPool = leechPool;
@@ -121,7 +126,7 @@ public class DownloadFileManager {
                 if (result.status == DownloadPieceTask.Status.LOST) {
                     leftPieces.add(pieceIdx);
                 } else {
-//                     System.out.println("=== Received piece            " + (pieceIdx + 1));
+                     System.out.println("=== Received piece            " + (pieceIdx + 1));
                 }
                 if (leftPieces.size() > 0) {
                     requestRandomPiece(random, peerPort);
@@ -167,8 +172,25 @@ public class DownloadFileManager {
     }
 
     private void requestRandomPiece(Random random, int peerPort) {
-        int randomIdx = random.nextInt(leftPieces.size());
-        int nextPieceIdx = leftPieces.remove(randomIdx);
+        ArrayList<Integer> availablePieces = peersPieces.get(peerPort);
+        ArrayList<Integer> interestingPieces = new ArrayList<>();
+        for (Integer piece: availablePieces) {
+            if (leftPieces.contains(piece)) {
+                interestingPieces.add(piece);
+            }
+        }
+        if (interestingPieces.size() == 0) {
+            System.err.println("=== Nothing to ask");
+            return;
+        }
+        int randomIdx = random.nextInt(interestingPieces.size());
+        int nextPieceIdx = interestingPieces.get(randomIdx);
+        for (int i = 0; i < leftPieces.size(); i++) {
+            if (leftPieces.get(i) == nextPieceIdx) {
+                leftPieces.remove(i);
+                break;
+            }
+        }
         requestPiece(nextPieceIdx, peerPort);
     }
 

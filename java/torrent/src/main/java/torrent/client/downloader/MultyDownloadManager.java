@@ -35,10 +35,11 @@ public class MultyDownloadManager implements Downloader {
     }
 
     @Override
-    public void addTorrentForDownloading(Torrent torrent, int[] peerPorts) throws NoSeedsException {
+    public void addTorrentForDownloading(Torrent torrent, Map<Integer, ArrayList<Integer>> peersPieces)
+            throws NoSeedsException {
         String torrentFileName = torrent.getName() + Constants.POSTFIX;
         DownloadFileManager downloadFileManager = new DownloadFileManager(torrent,
-                fileManager, peerId, peerPorts, leechPool);
+                fileManager, peerId, peersPieces, leechPool);
         if (!downloading) {
             downloadManagers.put(torrentFileName, downloadFileManager);
         } else {

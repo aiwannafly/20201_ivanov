@@ -9,8 +9,13 @@ import java.util.Map;
 public class TrackerServer {
     public static final int PORT = 1000;
     private final ArrayList<Socket> clients = new ArrayList<>();
-    private final static Map<Socket, Integer> clientPorts = new HashMap<>();
-    private final static Map<String, ArrayList<Socket>> seedPorts = new HashMap<>();
+    private final static Map<Socket, SeedInfo> seedersInfo = new HashMap<>();
+    private final static Map<String, ArrayList<Socket>> fileSeeders = new HashMap<>();
+
+    static class SeedInfo {
+        Integer port;
+        ArrayList<Integer> availablePieces;
+    }
 
     public void run() {
         ServerSocket server = null;
@@ -45,12 +50,12 @@ public class TrackerServer {
         return clients;
     }
 
-    public Map<Socket, Integer> getClientPorts() {
-        return clientPorts;
+    public Map<Socket, SeedInfo> getSeedsInfo() {
+        return seedersInfo;
     }
 
     public Map<String, ArrayList<Socket>> getSeedPorts() {
-        return seedPorts;
+        return fileSeeders;
     }
 
     public static void main(String[] args) {

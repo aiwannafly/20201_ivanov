@@ -1,14 +1,11 @@
 package torrent.client;
 
-import torrent.client.exceptions.BadTorrentFileException;
-import torrent.client.exceptions.NoSeedsException;
-import torrent.client.exceptions.ServerNotCorrespondsException;
-import torrent.client.exceptions.TorrentCreateFailureException;
+import torrent.client.exceptions.*;
 
 public interface TorrentClient extends AutoCloseable {
 
     void download(String torrentFileName) throws BadTorrentFileException,
-            NoSeedsException, ServerNotCorrespondsException;
+            NoSeedsException, ServerNotCorrespondsException, BadServerReplyException;
 
     void distribute(String torrentFileName) throws BadTorrentFileException;
 

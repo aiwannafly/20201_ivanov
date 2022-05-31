@@ -40,7 +40,7 @@ public class TrackerCommandHandler implements Runnable {
                 if (command.equals(EXIT_COMMAND)) {
                     synchronized (server) {
                         server.getClients().remove(clientSocket);
-                        server.getClientPorts().remove(clientSocket);
+                        server.getSeedsInfo().remove(clientSocket);
                     }
                     break;
                 }
@@ -93,8 +93,14 @@ public class TrackerCommandHandler implements Runnable {
                             if (client == clientSocket) {
                                 continue;
                             }
-                            if (server.getClientPorts().containsKey(client)) {
-                                message.append(server.getClientPorts().get(client)).append(" ");
+                            if (server.getSeedsInfo().containsKey(client)) {
+                                int port = server.getSeedsInfo().get(client).port;
+                                ArrayList<Integer> availablePieces = server.getSeedsInfo().get(client).availablePieces;
+                                message.append(server.getSeedsInfo().get(client).port).append(" ");
+                                message.append(availablePieces.size()).append(" ");
+                                for (Integer piece: availablePieces) {
+                                    message.append(piece).append(" ");
+                                }
                             }
                         }
                     }
@@ -108,12 +114,28 @@ public class TrackerCommandHandler implements Runnable {
                 }
                 Integer port = Integer.parseInt(words[1]);
                 String torrentFileName = words[2];
+                ArrayList<Integer> availablePieces = new ArrayList<>();
+                try {
+                    int piecesCount = Integer.parseInt(words[3]);
+                    if (words.length != 1 + 1 + 1 + 1 + piecesCount) {
+                        return WRONG_COMMAND_MSG;
+                    }
+                    for (int i = 0; i < piecesCount; i++) {
+                        availablePieces.add(Integer.parseInt(words[4 + i]));
+                    }
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                    return WRONG_COMMAND_MSG;
+                }
                 synchronized (server) {
                     server.getSeedPorts().computeIfAbsent(torrentFileName, k -> new ArrayList<>());
                     if (!server.getSeedPorts().get(torrentFileName).contains(clientSocket)) {
                         server.getSeedPorts().get(torrentFileName).add(clientSocket);
                     }
-                    server.getClientPorts().put(clientSocket, port);
+                    TrackerServer.SeedInfo seedInfo = new TrackerServer.SeedInfo();
+                    seedInfo.port = port;
+                    seedInfo.availablePieces = availablePieces;
+                    server.getSeedsInfo().put(clientSocket, seedInfo);
                 }
             }
         }
@@ -124,10 +146,10 @@ public class TrackerCommandHandler implements Runnable {
         StringBuilder peerId = new StringBuilder();
         peerId.append("PEER_AIW_");
         synchronized (server) {
-            if (!server.getClientPorts().containsKey(clientSocket)) {
+            if (!server.getSeedsInfo().containsKey(clientSocket)) {
                 return null;
             }
-            peerId.append(server.getClientPorts().get(clientSocket));
+            peerId.append(server.getSeedsInfo().get(clientSocket));
         }
         peerId.append(peerId.toString().hashCode());
         return peerId.substring(0, PEER_ID_LENGTH);

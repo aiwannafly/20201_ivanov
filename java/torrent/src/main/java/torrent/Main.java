@@ -2,10 +2,7 @@ package torrent;
 
 import torrent.client.BitTorrentClient;
 import torrent.client.TorrentClient;
-import torrent.client.exceptions.BadTorrentFileException;
-import torrent.client.exceptions.NoSeedsException;
-import torrent.client.exceptions.ServerNotCorrespondsException;
-import torrent.client.exceptions.TorrentCreateFailureException;
+import torrent.client.exceptions.*;
 
 import java.util.Scanner;
 
@@ -77,8 +74,8 @@ public class Main {
                     if (fileName.length() <= postfix.length()) {
                         System.err.println("Bad file name, it should end with " + postfix);
                     }
-                } catch (BadTorrentFileException |
-                        NoSeedsException | ServerNotCorrespondsException e) {
+                } catch (BadTorrentFileException | BadServerReplyException |
+                        NoSeedsException | ServerNotCorrespondsException  e) {
                     System.err.println("Could not download " + originalFileName
                             + ": " + e.getMessage());
                 }
