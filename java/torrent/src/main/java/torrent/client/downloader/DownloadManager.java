@@ -27,16 +27,15 @@ import java.util.concurrent.*;
 public class DownloadManager {
     private final Torrent torrentFile;
     private final ExecutorService leechPool;
-    private final CompletionService<DownloadPieceTask.Result> service;
+    private final CompletionService<ExchangeResult> service;
     private final ArrayList<Integer> leftPieces;
-    private final Map<Integer, SeedInfo> seedsInfo = new HashMap<>();
     private final FileManager fileManager;
     private final String fileName;
     private final String peerId;
     private boolean submittedFirstTasks = false;
     private boolean closed = false;
     private KeepAliveHandler keepAliveHandler;
-    private final Map<Integer, ArrayList<Integer>> peersPieces;
+    private final Map<Integer, SeedInfo> peersInfo = new HashMap<>();
     private final ArrayList<Integer> myPieces;
 
     public enum Status {
@@ -52,6 +51,8 @@ public class DownloadManager {
         InputStream in;
         PrintWriter out;
         Long lastKeepAliveTimeMillis;
+        ArrayList<Integer> availablePieces;
+        SocketChannel channel;
     }
 
     public DownloadManager(Torrent torrentFile, FileManager
@@ -63,20 +64,19 @@ public class DownloadManager {
         this.myPieces = myPieces;
         this.fileName = Constants.PREFIX + torrentFile.getName();
         this.leftPieces = new ArrayList<>();
-        this.peersPieces = peersPieces;
         for (Integer peerPort: peersPieces.keySet()) {
-            if (seedsInfo.size() >= Constants.DOWNLOAD_MAX_THREADS_COUNT) {
+            if (peersInfo.size() >= Constants.DOWNLOAD_MAX_THREADS_COUNT) {
                 break;
             }
             try {
-                establishConnection(peerPort);
+                establishConnection(peerPort, peersPieces.get(peerPort));
             } catch (DifferentHandshakesException e) {
                 System.err.println("=== " + e.getMessage());
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        if (seedsInfo.isEmpty()) {
+        if (peersInfo.isEmpty()) {
             throw new NoSeedsException("No seeds uploading file " + torrentFile.getName());
         }
         this.leechPool = leechPool;
@@ -88,7 +88,7 @@ public class DownloadManager {
 
     public Result downloadNextPiece() {
         if (!submittedFirstTasks) {
-            keepAliveHandler = new KeepAliveHandler(seedsInfo);
+            keepAliveHandler = new KeepAliveHandler(peersInfo);
             keepAliveHandler.start();
         }
         Result downloadResult = new Result();
@@ -103,12 +103,12 @@ public class DownloadManager {
             return downloadResult;
         }
         if (!submittedFirstTasks) {
-            for (Integer peerPort : seedsInfo.keySet()) {
+            for (Integer peerPort : peersInfo.keySet()) {
                 requestRandomPiece(random, peerPort);
             }
         }
         submittedFirstTasks = true;
-        if (seedsInfo.size() == 0) {
+        if (peersInfo.size() == 0) {
             System.err.println("=== No seeds left. Downloading failed");
             shutdown();
             closed = true;
@@ -116,30 +116,32 @@ public class DownloadManager {
             return downloadResult;
         }
         try {
-            Future<DownloadPieceTask.Result> future = service.take();
-            DownloadPieceTask.Result result = future.get();
-            int pieceIdx = result.pieceId;
+            Future<ExchangeResult> future = service.take();
+            ExchangeResult result = future.get();
+            int pieceIdx = result.pieceIdx;
             int peerPort = result.peerPort;
-            if (!seedsInfo.containsKey(peerPort)) {
-                if (result.status == DownloadPieceTask.Status.LOST) {
+            if (!peersInfo.containsKey(peerPort)) {
+                if (result.status == ExchangeResult.Status.LOST) {
                     leftPieces.add(pieceIdx);
                 }
             } else {
                 if (result.newAvailablePieces != null) {
                     // System.out.println("Got some new pieces!");
-                    peersPieces.get(peerPort).addAll(result.newAvailablePieces);
+                    peersInfo.get(peerPort).availablePieces.addAll(result.newAvailablePieces);
                 }
                 if (result.receivedKeepAlive) {
-                    seedsInfo.get(peerPort).lastKeepAliveTimeMillis = result.keepAliveTimeMillis;
+                    peersInfo.get(peerPort).lastKeepAliveTimeMillis = result.keepAliveTimeMillis;
                 }
-                if (result.status == DownloadPieceTask.Status.LOST) {
+                if (result.status == ExchangeResult.Status.LOST) {
                     leftPieces.add(pieceIdx);
                 } else {
-                     System.out.println("=== Received piece " + (pieceIdx + 1) +
-                             " from " + peerPort);
-                     synchronized (myPieces) {
-                         myPieces.add(pieceIdx);
-                     }
+                    if (result.status == ExchangeResult.Status.RECEIVED) {
+                        System.out.println("=== Received piece " + (pieceIdx + 1) +
+                                " from " + peerPort);
+                        synchronized (myPieces) {
+                            myPieces.add(pieceIdx);
+                        }
+                    }
                 }
                 if (leftPieces.size() > 0) {
                     requestRandomPiece(random, peerPort);
@@ -170,13 +172,13 @@ public class DownloadManager {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        for (Integer peerPort : seedsInfo.keySet()) {
+        for (Integer peerPort : peersInfo.keySet()) {
             try {
-                if (seedsInfo.get(peerPort).out != null) {
-                    seedsInfo.get(peerPort).out.close();
+                if (peersInfo.get(peerPort).out != null) {
+                    peersInfo.get(peerPort).out.close();
                 }
-                if (seedsInfo.get(peerPort).in != null) {
-                    seedsInfo.get(peerPort).in.close();
+                if (peersInfo.get(peerPort).in != null) {
+                    peersInfo.get(peerPort).in.close();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -188,7 +190,7 @@ public class DownloadManager {
         if (leftPieces.size() == 0) {
             return;
         }
-        ArrayList<Integer> availablePieces = peersPieces.get(peerPort);
+        ArrayList<Integer> availablePieces = peersInfo.get(peerPort).availablePieces;
         //System.out.println(availablePieces.size());
         ArrayList<Integer> interestingPieces = new ArrayList<>();
         for (Integer piece: availablePieces) {
@@ -197,7 +199,9 @@ public class DownloadManager {
             }
         }
         if (interestingPieces.size() == 0) {
-            System.err.println("=== Nothing to ask");
+//            System.err.println("=== No pieces available");
+            service.submit(new CollectPiecesInfoTask(peersInfo.get(peerPort), peerPort));
+            System.out.println("=== Wait for info about new pieces from " + peerPort);
             return;
         }
         int randomIdx = random.nextInt(interestingPieces.size());
@@ -215,7 +219,7 @@ public class DownloadManager {
         int pieceLength = getPieceLength(pieceIdx);
         service.submit(new DownloadPieceTask(torrentFile, fileManager,
                 fileName, peerPort, pieceIdx, pieceLength,
-                seedsInfo.get(peerPort).out, seedsInfo.get(peerPort).in));
+                peersInfo.get(peerPort).out, peersInfo.get(peerPort).in));
     }
 
     private int getPieceLength(int pieceIdx) {
@@ -228,7 +232,8 @@ public class DownloadManager {
         return pieceLength;
     }
 
-    private void establishConnection(int peerPort) throws IOException, DifferentHandshakesException {
+    private void establishConnection(int peerPort, ArrayList<Integer> availablePieces)
+            throws IOException, DifferentHandshakesException {
         SocketChannel currentPeerChannel = SocketChannel.open();
         InetSocketAddress address = new InetSocketAddress("localhost", peerPort);
         currentPeerChannel.connect(address);
@@ -242,10 +247,12 @@ public class DownloadManager {
         Handshake peerHandshake = new BitTorrentHandshake(new String(buf.array()));
         if (myHandshake.getInfoHash().equals(peerHandshake.getInfoHash())) {
             SeedInfo seedInfo = new SeedInfo();
+            seedInfo.channel = currentPeerChannel;
             seedInfo.in = currentPeerChannel.socket().getInputStream();
             seedInfo.out = out;
             seedInfo.lastKeepAliveTimeMillis = System.currentTimeMillis();
-            seedsInfo.put(peerPort, seedInfo);
+            seedInfo.availablePieces = availablePieces;
+            peersInfo.put(peerPort, seedInfo);
             Selector selector = Selector.open();
             currentPeerChannel.configureBlocking(false);
             currentPeerChannel.register(selector, SelectionKey.OP_READ);
@@ -286,12 +293,13 @@ public class DownloadManager {
             int byteIdx = i / bitsInByte;
             byte bit = (byte) (1 << bitIdx);
             if ((bytes[byteIdx] & bit) != 0) {
-                if (!peersPieces.get(peerPort).contains(i)) {
-                    peersPieces.get(peerPort).add(i);
+                if (!peersInfo.get(peerPort).availablePieces.contains(i)) {
+                    peersInfo.get(peerPort).availablePieces.add(i);
                     System.out.print(i + " ");
                 }
             }
         }
+        System.out.println(peersInfo.get(peerPort).availablePieces.size());
         System.out.println();
     }
 

@@ -34,6 +34,9 @@ public class KeepAliveHandler {
         @Override
         public void run() {
             for (DownloadManager.SeedInfo info : seedsInfo.values()) {
+                if (!info.channel.isBlocking()) {
+                    continue;
+                }
                 info.out.print(Constants.KEEP_ALIVE_MESSAGE);
                 info.out.flush();
             }

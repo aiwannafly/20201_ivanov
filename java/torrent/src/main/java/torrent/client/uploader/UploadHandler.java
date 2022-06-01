@@ -175,7 +175,7 @@ public class UploadHandler implements Runnable {
         leechesInfo.put(client, leechInfo);
     }
 
-    private String getMessage(SocketChannel client) throws IOException, BadMessageException {
+    public static String getMessage(SocketChannel client) throws IOException, BadMessageException {
         ByteBuffer lengthBuf = ByteBuffer.allocate(4);
         try {
             client.read(lengthBuf);

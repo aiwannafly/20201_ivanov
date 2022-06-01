@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.concurrent.Callable;
 
-public class DownloadPieceTask implements Callable<DownloadPieceTask.Result> {
+public class DownloadPieceTask implements Callable<ExchangeResult> {
     private final Torrent torrentFile;
     private final FileManager fileManager;
     private final String fileName;
@@ -25,25 +25,6 @@ public class DownloadPieceTask implements Callable<DownloadPieceTask.Result> {
     private final InputStream in;
     private final int peerId;
     private ArrayList<Integer> newAvailablePieces;
-
-    public enum Status {
-        RECEIVED, HAVE, GOT_KEEP_ALIVE, LOST
-    }
-
-    public static class Result {
-        public Status status;
-        public int peerPort;
-        public int pieceId;
-        public boolean receivedKeepAlive = false;
-        public long keepAliveTimeMillis = 0;
-        public ArrayList<Integer> newAvailablePieces;
-
-        public Result(Status status, int peerPort, int pieceId) {
-            this.status = status;
-            this.peerPort = peerPort;
-            this.pieceId = pieceId;
-        }
-    }
 
     public DownloadPieceTask(Torrent torrentFile, FileManager fileManager,
                              String fileName, int peerId, int pieceIdx, int pieceLength,
@@ -59,20 +40,21 @@ public class DownloadPieceTask implements Callable<DownloadPieceTask.Result> {
     }
 
     @Override
-    public Result call() {
-        Result result = new Result(Status.RECEIVED, peerId, pieceIdx);
+    public ExchangeResult call() {
+        System.out.println("Will request from " + peerId);
+        ExchangeResult result = new ExchangeResult(ExchangeResult.Status.RECEIVED, peerId, pieceIdx);
         requestPiece(pieceIdx, 0, pieceLength);
         while (true) {
-            Status received = receivePiece();
-            if (received == Status.GOT_KEEP_ALIVE) {
+            ExchangeResult.Status received = receivePiece();
+            if (received == ExchangeResult.Status.GOT_KEEP_ALIVE) {
                 result.receivedKeepAlive = true;
                 result.keepAliveTimeMillis = System.currentTimeMillis();
-            } else if (received == Status.HAVE) {
+            } else if (received == ExchangeResult.Status.HAVE) {
                 result.newAvailablePieces = this.newAvailablePieces;
-            } else if (received == Status.LOST) {
-                result.status = Status.LOST;
+            } else if (received == ExchangeResult.Status.LOST) {
+                result.status = ExchangeResult.Status.LOST;
                 return result;
-            } else if (received == Status.RECEIVED) {
+            } else if (received == ExchangeResult.Status.RECEIVED) {
                 break;
             }
         }
@@ -87,7 +69,7 @@ public class DownloadPieceTask implements Callable<DownloadPieceTask.Result> {
         out.flush();
     }
 
-    private Status receivePiece() {
+    private ExchangeResult.Status receivePiece() {
         StringBuilder messageBuilder = new StringBuilder();
         try {
             for (int i = 0; i < 4; i++) {
@@ -95,18 +77,18 @@ public class DownloadPieceTask implements Callable<DownloadPieceTask.Result> {
             }
             int messageLength = ByteOperations.convertFromBytes(messageBuilder.toString());
             if (messageLength == 0) {
-                return Status.GOT_KEEP_ALIVE;
+                return ExchangeResult.Status.GOT_KEEP_ALIVE;
             }
             for (int i = 0; i < messageLength; i++) {
                 messageBuilder.append((char) in.read());
             }
         } catch (IOException e) {
-            return Status.LOST;
+            return ExchangeResult.Status.LOST;
         }
         String message = messageBuilder.toString();
         if (message.length() < 4 + 1 + 4) {
             System.err.println("=== Bad length: " + message.length());
-            return Status.LOST;
+            return ExchangeResult.Status.LOST;
         }
         // piece: <len=0009+X><id=7><index><begin><block>
         int len = ByteOperations.convertFromBytes(message.substring(0, 4));
@@ -118,10 +100,10 @@ public class DownloadPieceTask implements Callable<DownloadPieceTask.Result> {
             }
             newAvailablePieces.add(idx);
             // System.out.println("=== Received 'HAVE " + idx + "'");
-            return Status.HAVE;
+            return ExchangeResult.Status.HAVE;
         }
         if (id != MessageType.PIECE) {
-            return Status.LOST;
+            return ExchangeResult.Status.LOST;
         }
         int idx = ByteOperations.convertFromBytes(message.substring(5, 9));
         int begin = ByteOperations.convertFromBytes(message.substring(9, 13));
@@ -133,13 +115,13 @@ public class DownloadPieceTask implements Callable<DownloadPieceTask.Result> {
             receivedHash = getSha1(bytes);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
-            return Status.LOST;
+            return ExchangeResult.Status.LOST;
         }
         if (!receivedHash.equals(origHash)) {
             System.err.println("=== Bad hash, r and o:");
             System.err.println(receivedHash);
             System.err.println(origHash);
-            return Status.LOST;
+            return ExchangeResult.Status.LOST;
         }
         try {
             int offset;
@@ -148,7 +130,7 @@ public class DownloadPieceTask implements Callable<DownloadPieceTask.Result> {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return Status.RECEIVED;
+        return ExchangeResult.Status.RECEIVED;
     }
 
     private String getSha1(byte[] bytes) throws NoSuchAlgorithmException {
