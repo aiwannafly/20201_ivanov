@@ -25,7 +25,7 @@ import java.util.concurrent.*;
 public class DownloadManager {
     private final Torrent torrentFile;
     private final ExecutorService leechPool;
-    private final CompletionService<ExchangeResult> service;
+    private final CompletionService<ResponseInfo> service;
     private final ArrayList<Integer> leftPieces;
     private final FileManager fileManager;
     private final String fileName;
@@ -114,13 +114,13 @@ public class DownloadManager {
             return downloadResult;
         }
         try {
-            Future<ExchangeResult> future = service.take();
-            ExchangeResult result = future.get();
+            Future<ResponseInfo> future = service.take();
+            ResponseInfo result = future.get();
             int pieceIdx = result.pieceIdx;
             int peerPort = result.peerPort;
             if (!peersInfo.containsKey(peerPort)) {
                 /* The connection was closed */
-                if (result.status == ExchangeResult.Status.LOST) {
+                if (result.status == ResponseInfo.Status.LOST) {
                     leftPieces.add(pieceIdx);
                 }
             } else {
@@ -131,10 +131,10 @@ public class DownloadManager {
                 if (result.receivedKeepAlive) {
                     peersInfo.get(peerPort).lastKeepAliveTimeMillis = result.keepAliveTimeMillis;
                 }
-                if (result.status == ExchangeResult.Status.LOST) {
+                if (result.status == ResponseInfo.Status.LOST) {
                     leftPieces.add(pieceIdx);
                 }
-                if (result.status == ExchangeResult.Status.RECEIVED) {
+                if (result.status == ResponseInfo.Status.RECEIVED) {
                     System.out.println("=== Received piece " + (pieceIdx + 1) +
                             " from " + peerPort);
                     synchronized (myPieces) {

@@ -1,7 +1,5 @@
 package torrent.client.downloader;
 
-import torrent.Constants;
-import torrent.client.uploader.UploadHandler;
 import torrent.client.util.ByteOperations;
 import torrent.client.messages.Message;
 
@@ -12,7 +10,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-public class CollectPiecesInfoTask implements Callable<ExchangeResult> {
+public class CollectPiecesInfoTask implements Callable<ResponseInfo> {
     private final DownloadManager.PeerInfo peerInfo;
     private final int peerPort;
 
@@ -23,9 +21,9 @@ public class CollectPiecesInfoTask implements Callable<ExchangeResult> {
     }
 
     @Override
-    public ExchangeResult call() throws Exception {
-        ExchangeResult result = new ExchangeResult();
-        result.status = ExchangeResult.Status.NOT_RESPONDS;
+    public ResponseInfo call() throws Exception {
+        ResponseInfo result = new ResponseInfo();
+        result.status = ResponseInfo.Status.NOT_RESPONDS;
         result.peerPort = peerPort;
         Selector selector = Selector.open();
         peerInfo.channel.configureBlocking(false);
@@ -42,17 +40,18 @@ public class CollectPiecesInfoTask implements Callable<ExchangeResult> {
                 peerInfo.channel.configureBlocking(true);
                 return result;
             }
-            Message.MessageInfo message = Message.getMessage(peerInfo.channel);
-            if (message.type == Message.KEEP_ALIVE) {
+            result.messageInfo = Message.getMessage(peerInfo.channel);
+            if (result.messageInfo.type == Message.KEEP_ALIVE) {
                 type = Message.KEEP_ALIVE;
                 continue;
             }
-            type = Integer.parseInt(String.valueOf(result.message.charAt(4)));
+            type = result.messageInfo.type;
             timeout = 5000 - (System.currentTimeMillis() - startTime);
         } while (type == Message.KEEP_ALIVE && timeout > 0);
         if (type == Message.HAVE) {
-            result.status = ExchangeResult.Status.HAVE;
-            result.pieceIdx = ByteOperations.convertFromBytes(result.message.substring(5, 9));
+            result.status = ResponseInfo.Status.HAVE;
+            result.pieceIdx = ByteOperations.convertFromBytes(
+                    result.messageInfo.data.substring(0, 4));
             result.newAvailablePieces = new ArrayList<>();
             result.newAvailablePieces.add(result.pieceIdx);
         }
