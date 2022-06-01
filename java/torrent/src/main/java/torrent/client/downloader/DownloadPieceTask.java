@@ -117,6 +117,7 @@ public class DownloadPieceTask implements Callable<DownloadPieceTask.Result> {
                 newAvailablePieces = new ArrayList<>();
             }
             newAvailablePieces.add(idx);
+            // System.out.println("=== Received 'HAVE " + idx + "'");
             return Status.HAVE;
         }
         if (id != MessageType.PIECE) {

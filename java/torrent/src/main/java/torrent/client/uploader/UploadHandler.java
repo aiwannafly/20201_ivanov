@@ -23,8 +23,8 @@ public class UploadHandler implements Runnable {
     private final String peerId;
     private final Map<SocketChannel, LeechInfo> leechesInfo = new HashMap<>();
     private Selector selector;
-    private final ArrayList<Integer> availablePieces;
-    private final ArrayList<Integer> announcedPieces = new ArrayList<>();
+    private final ArrayList<Integer> myPieces;
+    private final Set<Integer> announcedPieces = new HashSet<>();
 
     public static class LeechInfo {
         Long lastKeepAliveTime;
@@ -34,12 +34,12 @@ public class UploadHandler implements Runnable {
 
     public UploadHandler(Torrent torrentFile, FileManager fileManager, String peerId,
                          ServerSocketChannel serverSocket,
-                         ArrayList<Integer> availablePieces) {
+                         ArrayList<Integer> myPieces) {
         this.torrentFile = torrentFile;
         this.fileManager = fileManager;
         this.peerId = peerId;
         this.serverSocketChannel = serverSocket;
-        this.availablePieces = availablePieces;
+        this.myPieces = myPieces;
     }
 
     @Override
@@ -75,10 +75,21 @@ public class UploadHandler implements Runnable {
 
     private void handleEvents(Selector selector) throws IOException {
         selector.select();
-        synchronized (announcedPieces) {
-            if (announcedPieces.size() < availablePieces.size()) {
-                for (Integer piece: availablePieces) {
+        synchronized (myPieces) {
+//            System.out.println("MY PIECES: ");
+//            for (Integer piece : myPieces) {
+//                System.out.print(piece + " ");
+//            }
+//            System.out.println();
+//            System.out.println("ANNOUNCED PIECES:");
+//            for (Integer piece : announcedPieces) {
+//                System.out.print(piece + " ");
+//            }
+//            System.out.println();
+            if (announcedPieces.size() < myPieces.size()) {
+                for (Integer piece : myPieces) {
                     if (!announcedPieces.contains(piece)) {
+//                        System.out.println("=== ANNOUNCE " + piece);
                         announcePiece(piece);
                     }
                 }
@@ -233,7 +244,7 @@ public class UploadHandler implements Runnable {
         }
         byte[] data = new byte[count];
         for (int i = 0; i < totalPiecesCount; i++) {
-            if (!availablePieces.contains(i)) {
+            if (!myPieces.contains(i)) {
                 continue;
             }
             int bitIdx = i % bitsInByte;
@@ -247,11 +258,13 @@ public class UploadHandler implements Runnable {
         client.write(ByteBuffer.wrap(data));
     }
 
-    private void announcePiece(Integer pieceIdx) {
+    private void announcePiece(Integer pieceIdx) throws IOException {
         String haveMsg = ByteOperations.convertIntoBytes(1 + 4) +
                 MessageType.HAVE + ByteOperations.convertIntoBytes(pieceIdx);
-        for (SocketChannel client: leechesInfo.keySet()) {
+        for (SocketChannel client : leechesInfo.keySet()) {
             leechesInfo.get(client).myReplies.add(haveMsg);
+            client.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
         }
+        announcedPieces.add(pieceIdx);
     }
 }
