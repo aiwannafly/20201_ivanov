@@ -6,16 +6,14 @@ import torrent.client.FileManager;
 import torrent.client.exceptions.BadMessageException;
 import torrent.client.exceptions.DifferentHandshakesException;
 import torrent.client.exceptions.NoSeedsException;
+import torrent.client.messages.Message;
 import torrent.client.util.BitTorrentHandshake;
-import torrent.client.util.ByteOperations;
 import torrent.client.util.Handshake;
-import torrent.client.util.MessageType;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -35,7 +33,7 @@ public class DownloadManager {
     private boolean submittedFirstTasks = false;
     private boolean closed = false;
     private KeepAliveHandler keepAliveHandler;
-    private final Map<Integer, SeedInfo> peersInfo = new HashMap<>();
+    private final Map<Integer, PeerInfo> peersInfo = new HashMap<>();
     private final ArrayList<Integer> myPieces;
 
     public enum Status {
@@ -47,7 +45,7 @@ public class DownloadManager {
         public String torrentFileName;
     }
 
-    static class SeedInfo {
+    static class PeerInfo {
         InputStream in;
         PrintWriter out;
         Long lastKeepAliveTimeMillis;
@@ -64,7 +62,7 @@ public class DownloadManager {
         this.myPieces = myPieces;
         this.fileName = Constants.PREFIX + torrentFile.getName();
         this.leftPieces = new ArrayList<>();
-        for (Integer peerPort: peersPieces.keySet()) {
+        for (Integer peerPort : peersPieces.keySet()) {
             if (peersInfo.size() >= Constants.DOWNLOAD_MAX_THREADS_COUNT) {
                 break;
             }
@@ -121,6 +119,7 @@ public class DownloadManager {
             int pieceIdx = result.pieceIdx;
             int peerPort = result.peerPort;
             if (!peersInfo.containsKey(peerPort)) {
+                /* The connection was closed */
                 if (result.status == ExchangeResult.Status.LOST) {
                     leftPieces.add(pieceIdx);
                 }
@@ -134,13 +133,12 @@ public class DownloadManager {
                 }
                 if (result.status == ExchangeResult.Status.LOST) {
                     leftPieces.add(pieceIdx);
-                } else {
-                    if (result.status == ExchangeResult.Status.RECEIVED) {
-                        System.out.println("=== Received piece " + (pieceIdx + 1) +
-                                " from " + peerPort);
-                        synchronized (myPieces) {
-                            myPieces.add(pieceIdx);
-                        }
+                }
+                if (result.status == ExchangeResult.Status.RECEIVED) {
+                    System.out.println("=== Received piece " + (pieceIdx + 1) +
+                            " from " + peerPort);
+                    synchronized (myPieces) {
+                        myPieces.add(pieceIdx);
                     }
                 }
                 if (leftPieces.size() > 0) {
@@ -191,15 +189,13 @@ public class DownloadManager {
             return;
         }
         ArrayList<Integer> availablePieces = peersInfo.get(peerPort).availablePieces;
-        //System.out.println(availablePieces.size());
         ArrayList<Integer> interestingPieces = new ArrayList<>();
-        for (Integer piece: availablePieces) {
+        for (Integer piece : availablePieces) {
             if (leftPieces.contains(piece)) {
                 interestingPieces.add(piece);
             }
         }
         if (interestingPieces.size() == 0) {
-//            System.err.println("=== No pieces available");
             service.submit(new CollectPiecesInfoTask(peersInfo.get(peerPort), peerPort));
             System.out.println("=== Wait for info about new pieces from " + peerPort);
             return;
@@ -246,13 +242,13 @@ public class DownloadManager {
         currentPeerChannel.read(buf);
         Handshake peerHandshake = new BitTorrentHandshake(new String(buf.array()));
         if (myHandshake.getInfoHash().equals(peerHandshake.getInfoHash())) {
-            SeedInfo seedInfo = new SeedInfo();
-            seedInfo.channel = currentPeerChannel;
-            seedInfo.in = currentPeerChannel.socket().getInputStream();
-            seedInfo.out = out;
-            seedInfo.lastKeepAliveTimeMillis = System.currentTimeMillis();
-            seedInfo.availablePieces = availablePieces;
-            peersInfo.put(peerPort, seedInfo);
+            PeerInfo peerInfo = new PeerInfo();
+            peerInfo.channel = currentPeerChannel;
+            peerInfo.in = currentPeerChannel.socket().getInputStream();
+            peerInfo.out = out;
+            peerInfo.lastKeepAliveTimeMillis = System.currentTimeMillis();
+            peerInfo.availablePieces = availablePieces;
+            peersInfo.put(peerPort, peerInfo);
             Selector selector = Selector.open();
             currentPeerChannel.configureBlocking(false);
             currentPeerChannel.register(selector, SelectionKey.OP_READ);
@@ -272,21 +268,21 @@ public class DownloadManager {
     }
 
     private void handleBitField(int peerPort, SocketChannel peerChannel) throws IOException {
-        Message message;
+        Message.MessageInfo messageInfo;
         do {
             try {
-                message = getMessage(peerChannel);
+                messageInfo = Message.getMessage(peerChannel);
             } catch (BadMessageException e) {
                 e.printStackTrace();
                 return;
             }
-        } while (message.type == MessageType.KEEP_ALIVE);
-        if (message.type != MessageType.BITFIELD) {
+        } while (messageInfo.type == torrent.client.messages.Message.KEEP_ALIVE);
+        if (messageInfo.type != torrent.client.messages.Message.BITFIELD) {
             System.err.println("Not bitfield");
             return;
         }
         int bitsInByte = 8;
-        byte[] bytes = message.data.getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = messageInfo.data.getBytes(StandardCharsets.UTF_8);
         System.out.println("Pieces from bitfield: ");
         for (int i = 0; i < torrentFile.getPieces().size(); i++) {
             int bitIdx = i % bitsInByte;
@@ -301,39 +297,5 @@ public class DownloadManager {
         }
         System.out.println(peersInfo.get(peerPort).availablePieces.size());
         System.out.println();
-    }
-
-    private static class Message {
-        int length;
-        int type;
-        String data;
-    }
-
-    private Message getMessage(SocketChannel client) throws IOException, BadMessageException {
-        ByteBuffer lengthBuf = ByteBuffer.allocate(4);
-        try {
-            client.read(lengthBuf);
-        } catch (SocketException e) {
-            throw new BadMessageException(e.getMessage());
-        }
-        Message message = new Message();
-        String lengthStr = new String(lengthBuf.array());
-        message.length = ByteOperations.convertFromBytes(lengthStr);
-        if (message.length == 0) {
-            message.type = MessageType.KEEP_ALIVE;
-            return message; // keep-alive
-        }
-        if (message.length < 0) {
-            throw new BadMessageException("=== Bad length");
-        }
-        ByteBuffer messageBuf = ByteBuffer.allocate(message.length);
-        int count = client.read(messageBuf);
-        String data = new String(messageBuf.array());
-        if (count != message.length) {
-            System.err.println("Read just " + count + " / " + message.length + " bytes.");
-        }
-        message.type = Integer.parseInt(String.valueOf(data.charAt(0)));
-        message.data = data.substring(1);
-        return message;
     }
 }

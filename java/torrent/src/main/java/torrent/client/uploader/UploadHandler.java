@@ -1,16 +1,14 @@
 package torrent.client.uploader;
 
 import be.christophedetroyer.torrent.Torrent;
-import torrent.Constants;
 import torrent.client.FileManager;
 import torrent.client.exceptions.BadMessageException;
 import torrent.client.exceptions.DifferentHandshakesException;
 import torrent.client.util.BitTorrentHandshake;
 import torrent.client.util.ByteOperations;
-import torrent.client.util.MessageType;
+import torrent.client.messages.Message;
 
 import java.io.*;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
@@ -30,6 +28,7 @@ public class UploadHandler implements Runnable {
         Long lastKeepAliveTime;
         ArrayList<Integer> sentPieces = new ArrayList<>();
         Queue<String> myReplies = new ArrayDeque<>();
+        Queue<Reply> pieces = new ArrayDeque<>();
     }
 
     public UploadHandler(Torrent torrentFile, FileManager fileManager, String peerId,
@@ -76,20 +75,9 @@ public class UploadHandler implements Runnable {
     private void handleEvents(Selector selector) throws IOException {
         selector.select();
         synchronized (myPieces) {
-//            System.out.println("MY PIECES: ");
-//            for (Integer piece : myPieces) {
-//                System.out.print(piece + " ");
-//            }
-//            System.out.println();
-//            System.out.println("ANNOUNCED PIECES:");
-//            for (Integer piece : announcedPieces) {
-//                System.out.print(piece + " ");
-//            }
-//            System.out.println();
             if (announcedPieces.size() < myPieces.size()) {
                 for (Integer piece : myPieces) {
                     if (!announcedPieces.contains(piece)) {
-//                        System.out.println("=== ANNOUNCE " + piece);
                         announcePiece(piece);
                     }
                 }
@@ -111,9 +99,9 @@ public class UploadHandler implements Runnable {
             }
             if (selectionKey.isReadable()) {
                 SocketChannel client = (SocketChannel) selectionKey.channel();
-                String message;
+                Message.MessageInfo message;
                 try {
-                    message = getMessage(client);
+                    message = Message.getMessage(client);
                 } catch (BadMessageException e) {
                     System.out.println("=== Closed connection");
                     leechesInfo.remove(client);
@@ -121,7 +109,7 @@ public class UploadHandler implements Runnable {
                     keysIterator.remove();
                     continue;
                 }
-                if (message.equals(Constants.KEEP_ALIVE_MESSAGE)) {
+                if (message.type == Message.KEEP_ALIVE) {
                     if (System.currentTimeMillis() - leechesInfo.get(client).lastKeepAliveTime < 1) {
                         System.out.println("=== Close connection");
                         leechesInfo.remove(client);
@@ -134,22 +122,26 @@ public class UploadHandler implements Runnable {
                     keysIterator.remove();
                     continue;
                 }
-                leechesInfo.get(client).myReplies.add(message);
+                Reply reply = null;
+                try {
+                    reply = makeReply(message);
+                } catch (BadMessageException e) {
+                    e.printStackTrace();
+                }
+                leechesInfo.get(client).pieces.add(reply);
                 client.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
             }
             if (selectionKey.isWritable()) {
                 SocketChannel client = (SocketChannel) selectionKey.channel();
                 client.register(selector, SelectionKey.OP_READ);
-                if (leechesInfo.get(client).myReplies.isEmpty()) {
-                    continue;
-                }
                 while (!leechesInfo.get(client).myReplies.isEmpty()) {
                     String message = leechesInfo.get(client).myReplies.remove();
-                    try {
-                        sendMessage(client, message);
-                    } catch (BadMessageException e) {
-                        System.err.println(e.getMessage());
-                    }
+                    client.write(ByteBuffer.wrap(message.getBytes(StandardCharsets.UTF_8)));
+                }
+                while (!leechesInfo.get(client).pieces.isEmpty()) {
+                    Reply reply = leechesInfo.get(client).pieces.remove();
+                    client.write(reply.header);
+                    client.write(reply.data);
                 }
             }
             keysIterator.remove();
@@ -175,64 +167,35 @@ public class UploadHandler implements Runnable {
         leechesInfo.put(client, leechInfo);
     }
 
-    public static String getMessage(SocketChannel client) throws IOException, BadMessageException {
-        ByteBuffer lengthBuf = ByteBuffer.allocate(4);
-        try {
-            client.read(lengthBuf);
-        } catch (SocketException e) {
-            throw new BadMessageException(e.getMessage());
+    private Reply makeReply(Message.MessageInfo message) throws BadMessageException,
+            IOException{
+        if (message.type == Message.KEEP_ALIVE) {
+            return null;
         }
-        String result = new String(lengthBuf.array());
-        StringBuilder messageBuilder = new StringBuilder();
-        messageBuilder.append(result);
-        int messageLength = ByteOperations.convertFromBytes(messageBuilder.toString());
-        if (messageLength == 0) {
-            return messageBuilder.toString(); // keep-alive
-        }
-        if (messageLength < 0) {
-            throw new BadMessageException("=== Bad length");
-        }
-        ByteBuffer messageBuf = ByteBuffer.allocate(messageLength);
-        int count = client.read(messageBuf);
-        result = new String(messageBuf.array());
-        if (count != messageLength) {
-            System.err.println("Read just " + count + " / " + messageLength + " bytes.");
-        }
-        messageBuilder.append(result);
-        return messageBuilder.toString();
-    }
-
-    private void sendMessage(SocketChannel client, String message) throws IOException,
-            BadMessageException {
-        if (message.equals(Constants.KEEP_ALIVE_MESSAGE)) {
-            client.write(ByteBuffer.wrap(message.getBytes(StandardCharsets.UTF_8)));
-            return;
-        }
-        int id = Integer.parseInt(String.valueOf(message.charAt(4)));
-        if (id == MessageType.REQUEST) {
-            if (message.length() < 4 + 13) {
-                throw new BadMessageException("=== Bad length");
+        int type = message.type;
+        if (type == Message.REQUEST) {
+            if (message.data.length() < 12) {
+                throw new BadMessageException("=== Bad length: " + message.data.length());
             }
-            int idx = ByteOperations.convertFromBytes(message.substring(5, 9));
-            int begin = ByteOperations.convertFromBytes(message.substring(9, 13));
-            int length = ByteOperations.convertFromBytes(message.substring(13, 17));
-            String reply = ByteOperations.convertIntoBytes(9 + length) + MessageType.PIECE +
+            String data = message.data;
+            int idx = ByteOperations.convertFromBytes(data.substring(0, 4));
+            int begin = ByteOperations.convertFromBytes(data.substring(4, 8));
+            int length = ByteOperations.convertFromBytes(data.substring(8, 12));
+            String reply = ByteOperations.convertIntoBytes(9 + length) + Message.PIECE +
                     ByteOperations.convertIntoBytes(idx) + ByteOperations.convertIntoBytes(begin);
-            client.write(ByteBuffer.wrap(reply.getBytes(StandardCharsets.UTF_8)));
             int offset = idx * torrentFile.getPieceLength().intValue() + begin;
             byte[] piece = fileManager.readPiece(torrentFile.getName(), offset, length);
-            client.write(ByteBuffer.wrap(piece));
-            leechesInfo.get(client).sentPieces.add(idx);
-            return;
-        } else if (id == MessageType.HAVE) {
-            if (message.length() < 4 + 4) {
+            Reply r = new Reply();
+            r.header = ByteBuffer.wrap(reply.getBytes(StandardCharsets.UTF_8));
+            r.data = ByteBuffer.wrap(piece);
+            return r;
+        } else if (type == Message.HAVE) {
+            if (message.data.length() < 4) {
                 throw new BadMessageException("=== Bad length");
             }
-            client.write(ByteBuffer.wrap(message.getBytes(StandardCharsets.UTF_8)));
-            int idx = ByteOperations.convertFromBytes(message.substring(5, 9));
-            return;
+            return null;
         }
-        throw new BadMessageException("=== Unknown message type: " + id);
+        throw new BadMessageException("=== Unknown message type: " + type);
     }
 
     private void sendBitfield(SocketChannel client) throws IOException {
@@ -253,18 +216,23 @@ public class UploadHandler implements Runnable {
             announcedPieces.add(i);
         }
         String bitfieldMsg = ByteOperations.convertIntoBytes(1 + data.length) +
-                MessageType.BITFIELD;
+                Message.BITFIELD;
         client.write(ByteBuffer.wrap(bitfieldMsg.getBytes(StandardCharsets.UTF_8)));
         client.write(ByteBuffer.wrap(data));
     }
 
     private void announcePiece(Integer pieceIdx) throws IOException {
         String haveMsg = ByteOperations.convertIntoBytes(1 + 4) +
-                MessageType.HAVE + ByteOperations.convertIntoBytes(pieceIdx);
+                Message.HAVE + ByteOperations.convertIntoBytes(pieceIdx);
         for (SocketChannel client : leechesInfo.keySet()) {
             leechesInfo.get(client).myReplies.add(haveMsg);
             client.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
         }
         announcedPieces.add(pieceIdx);
+    }
+
+    private static class Reply {
+        ByteBuffer header;
+        ByteBuffer data;
     }
 }

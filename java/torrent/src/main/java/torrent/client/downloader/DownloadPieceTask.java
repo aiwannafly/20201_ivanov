@@ -3,7 +3,7 @@ package torrent.client.downloader;
 import be.christophedetroyer.torrent.Torrent;
 import torrent.client.FileManager;
 import torrent.client.util.ByteOperations;
-import torrent.client.util.MessageType;
+import torrent.client.messages.Message;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,7 +41,6 @@ public class DownloadPieceTask implements Callable<ExchangeResult> {
 
     @Override
     public ExchangeResult call() {
-        System.out.println("Will request from " + peerId);
         ExchangeResult result = new ExchangeResult(ExchangeResult.Status.RECEIVED, peerId, pieceIdx);
         requestPiece(pieceIdx, 0, pieceLength);
         while (true) {
@@ -93,7 +92,7 @@ public class DownloadPieceTask implements Callable<ExchangeResult> {
         // piece: <len=0009+X><id=7><index><begin><block>
         int len = ByteOperations.convertFromBytes(message.substring(0, 4));
         int id = Integer.parseInt(String.valueOf(message.charAt(4)));
-        if (id == MessageType.HAVE) {
+        if (id == Message.HAVE) {
             int idx = ByteOperations.convertFromBytes(message.substring(5, 9));
             if (newAvailablePieces == null) {
                 newAvailablePieces = new ArrayList<>();
@@ -102,7 +101,7 @@ public class DownloadPieceTask implements Callable<ExchangeResult> {
             // System.out.println("=== Received 'HAVE " + idx + "'");
             return ExchangeResult.Status.HAVE;
         }
-        if (id != MessageType.PIECE) {
+        if (id != Message.PIECE) {
             return ExchangeResult.Status.LOST;
         }
         int idx = ByteOperations.convertFromBytes(message.substring(5, 9));

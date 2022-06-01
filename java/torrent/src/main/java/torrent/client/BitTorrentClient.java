@@ -83,9 +83,6 @@ public class BitTorrentClient implements TorrentClient {
         if (!fileName.endsWith(postfix)) {
             throw new BadTorrentFileException("Bad name");
         }
-        if (peersPieces.containsKey(fileName)) {
-            return;
-        }
         Torrent torrentFile;
         try {
             torrentFile = TorrentParser.parseTorrent(Constants.PATH + fileName);
@@ -99,9 +96,10 @@ public class BitTorrentClient implements TorrentClient {
     }
 
     private void distributePart(Torrent torrentFile, String fileName, ArrayList<Integer> pieces) {
-        if (!peersPieces.containsKey(fileName)) {
-            peersPieces.put(fileName, new HashMap<>());
+        if (peersPieces.containsKey(fileName)) {
+            return;
         }
+        peersPieces.put(fileName, new HashMap<>());
         Uploader uploader = new UploadLauncher(torrentFile, fileManager, peerId, pieces);
         uploader.launchDistribution();
         // listen-port 5000 fileName 30 1 2 3 ... 30
