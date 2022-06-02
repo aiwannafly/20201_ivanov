@@ -8,8 +8,6 @@ import javafx.collections.ObservableList;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
-import java.util.ArrayList;
-import java.util.Map;
 
 public class UploadLauncher implements Uploader {
     private ServerSocketChannel serverSocketChannel;

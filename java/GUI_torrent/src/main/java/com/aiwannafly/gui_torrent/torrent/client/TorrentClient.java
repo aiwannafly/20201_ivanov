@@ -3,16 +3,15 @@ package com.aiwannafly.gui_torrent.torrent.client;
 import com.aiwannafly.gui_torrent.torrent.client.exceptions.*;
 import javafx.collections.ObservableList;
 
-import java.util.ArrayList;
 
 public interface TorrentClient extends AutoCloseable {
 
-    void download(String torrentFileName) throws BadTorrentFileException,
+    void download(String torrentFilePath) throws BadTorrentFileException,
             NoSeedsException, ServerNotCorrespondsException, BadServerReplyException;
 
-    void distribute(String torrentFileName) throws BadTorrentFileException;
+    void distribute(String torrentFilePath) throws BadTorrentFileException;
 
-    void createTorrent(String fileName) throws TorrentCreateFailureException,
+    void createTorrent(String filePath) throws TorrentCreateFailureException,
             BadTorrentFileException;
 
     void stopDownloading(String torrentFileName) throws BadTorrentFileException;

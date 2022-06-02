@@ -9,6 +9,8 @@ import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
@@ -19,8 +21,11 @@ import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.aiwannafly.gui_torrent.ApplicationStarter.*;
 
 public class FXMLMainMenu {
     @FXML
@@ -34,7 +39,6 @@ public class FXMLMainMenu {
 
     private int filesCount = 0;
     private final Map<String, FileSection> fileSections = new HashMap<>();
-    private static final double STATUS_BAR_LENGTH = 300;
 
     @FXML
     protected void onDownloadButtonClick() {
@@ -44,27 +48,29 @@ public class FXMLMainMenu {
         if (file == null) {
             return;
         }
-        String fileName = file.getName();
+        String filePath = file.getAbsolutePath();
         String postfix = Constants.POSTFIX;
+        String fileName = filePath.substring(filePath.lastIndexOf(Constants.PATH_DIVIDER) + 1);
         int originalFileLength = fileName.length() - postfix.length();
         String originalFileName;
         if (originalFileLength <= 0) {
-            originalFileName = "[torrent]";
+            originalFileName = Constants.PREFIX;
         } else {
-            originalFileName = Constants.PREFIX + fileName.substring(0, originalFileLength);
+            originalFileName = Constants.PREFIX + filePath.substring(0, originalFileLength);
+        }
+        if (fileName.length() <= postfix.length()) {
+            showErrorAlert("Bad file name, it should end with " + postfix);
+            return;
         }
         try {
-            torrentClient.download(fileName);
-            if (fileName.length() <= postfix.length()) {
-                System.err.println("Bad file name, it should end with " + postfix);
-            }
+            torrentClient.download(filePath);
         } catch (BadTorrentFileException | BadServerReplyException |
                 NoSeedsException | ServerNotCorrespondsException e) {
-            System.err.println("Could not download " + originalFileName
+            showErrorAlert("Could not download " + originalFileName
                     + ": " + e.getMessage());
             return;
         }
-        FileSection fileSection = makeNewFileSection(fileName, Status.DISTRIBUTED);
+        FileSection fileSection = makeNewFileSection(filePath, Status.DOWNLOADING);
         showFileSection(fileSection);
         fileSections.put(fileName, fileSection);
         ObservableList<Integer> collectedPieces;
@@ -76,7 +82,9 @@ public class FXMLMainMenu {
         }
         collectedPieces.addListener((ListChangeListener<? super Integer>) change -> {
             Platform.runLater(() -> {
-                addNewSegmentToBar(fileSection);
+                while (fileSection.sectionsCount < collectedPieces.size()) {
+                    addNewSegmentToBar(fileSection);
+                }
             });
         });
     }
@@ -89,14 +97,15 @@ public class FXMLMainMenu {
         if (file == null) {
             return;
         }
-        String torrentFileName = file.getName();
+        String torrentFilePath = file.getAbsolutePath();
+        String torrentFileName = torrentFilePath.substring(torrentFilePath.lastIndexOf(Constants.PATH_DIVIDER) + 1);
         try {
-            torrentClient.distribute(torrentFileName);
-            System.out.println("Torrent file " + torrentFileName + " is distributed");
+            torrentClient.distribute(torrentFilePath);
         } catch (BadTorrentFileException e) {
-            System.err.println("Could not upload " + torrentFileName + ": " + e.getMessage());
+            showErrorAlert("Could not upload " + torrentFileName + ": " + e.getMessage());
+            return;
         }
-        FileSection fileSection = makeNewFileSection(torrentFileName, Status.DISTRIBUTED);
+        FileSection fileSection = makeNewFileSection(torrentFilePath, Status.DISTRIBUTED);
         showFileSection(fileSection);
         fileSections.put(torrentFileName, fileSection);
     }
@@ -109,18 +118,18 @@ public class FXMLMainMenu {
         if (file == null) {
             return;
         }
-        String fileName = file.getName();
-        System.out.println("Filename: " + fileName);
+        String filePath = file.getAbsolutePath();
+        String fileName = filePath.substring(filePath.lastIndexOf(Constants.PATH_DIVIDER) + 1);
         try {
-            torrentClient.createTorrent(fileName);
-            System.out.println("Torrent file " + fileName + ".torrent was created successfully. " +
-                    "It is distributed for others clients.");
+            torrentClient.createTorrent(filePath);
         } catch (BadTorrentFileException | TorrentCreateFailureException e) {
-            System.err.println("Could not create a torrent for " + fileName +
+            showErrorAlert("Could not create a torrent for " + fileName +
                     ": " + e.getMessage());
+            return;
         }
         String torrentFileName = fileName + Constants.POSTFIX;
-        FileSection fileSection = makeNewFileSection(torrentFileName, Status.DISTRIBUTED);
+        String torrentFilePath = Constants.TORRENT_PATH + torrentFileName;
+        FileSection fileSection = makeNewFileSection(torrentFilePath, Status.DISTRIBUTED);
         showFileSection(fileSection);
         fileSections.put(torrentFileName, fileSection);
     }
@@ -144,55 +153,74 @@ public class FXMLMainMenu {
         return fileChooser.showOpenDialog(stage);
     }
 
-    private FileSection makeNewFileSection(String fileName, Status status) {
+    private FileSection makeNewFileSection(String torrentFilePath, Status status) {
         FileSection fileSection = new FileSection();
-        double width = 400;
-        double height = 50;
-        fileSection.status = status;
-        fileSection.x = 200;
-        fileSection.y = height * (++filesCount);
-        fileSection.square = new Rectangle(fileSection.x, fileSection.y, width, height);
-        fileSection.square.setFill(Color.BLACK);
-        fileSection.nameLabel = new Label(fileName);
-        fileSection.nameLabel.setLayoutX(fileSection.x + 10);
-        fileSection.nameLabel.setLayoutY(fileSection.y + 5);
-        fileSection.nameLabel.setMaxWidth(100);
-        String statusName = null;
-        switch (fileSection.status) {
-            case DISTRIBUTED -> statusName = "DISTRIBUTED";
-            case DOWNLOADING -> statusName = "DOWNLOADING";
-        }
-        fileSection.statusLabel = new Label(statusName);
-        fileSection.statusLabel.setLayoutX(fileSection.x + 10 + 100);
-        fileSection.statusLabel.setLayoutY(fileSection.y + 5);
-        fileSection.statusLabel.setMaxWidth(100);
+        String torrentFileName = torrentFilePath.substring(torrentFilePath.lastIndexOf(Constants.PATH_DIVIDER) + 1);
         Torrent torrentFile;
         try {
-            torrentFile = TorrentParser.parseTorrent(Constants.PATH + fileName);
+            torrentFile = TorrentParser.parseTorrent(torrentFilePath);
         } catch (IOException e) {
             e.printStackTrace();
             return fileSection;
         }
+        fileSection.status = status;
+        fileSection.x = 160 + 20;
+        fileSection.y = 10 + ApplicationStarter.LABEL_HEIGHT * (++filesCount);
+        fileSection.labels = new ArrayList<>();
+        Label numLabel = new Label(String.valueOf(filesCount));
+        numLabel.setPrefWidth(NUM_FIELD_LENGTH);
+        Label nameLabel = new Label(torrentFileName);
+        nameLabel.setPrefWidth(NAME_FIELD_LENGTH);
+        Label sizeLabel = new Label(String.valueOf(torrentFile.getTotalSize() / 1024));
+        sizeLabel.setPrefWidth(SIZE_FIELD_LENGTH);
+        String statusStr = null;
+        switch (status) {
+            case DOWNLOADING -> statusStr = "downloading";
+            case DISTRIBUTED -> statusStr = "distributed";
+        }
+        Label barLabel = new Label(statusStr);
+        barLabel.setPrefWidth(BAR_FIELD_LENGTH);
+        fileSection.labels.add(numLabel);
+        fileSection.labels.add(nameLabel);
+        fileSection.labels.add(sizeLabel);
+        fileSection.labels.add(barLabel);
         fileSection.torrent = torrentFile;
+        for (Label label: fileSection.labels) {
+            label.setPrefHeight(LABEL_HEIGHT);
+            label.setLayoutY(fileSection.y);
+            label.setLayoutX(fileSection.x);
+            label.setAlignment(Pos.CENTER);
+            fileSection.x += label.getPrefWidth();
+        }
         return fileSection;
     }
 
     private void showFileSection(FileSection fileSection) {
-        Pane pane = ApplicationStarter.getButtonsPane();
-        pane.getChildren().add(fileSection.square);
-        pane.getChildren().add(fileSection.statusLabel);
-        pane.getChildren().add(fileSection.nameLabel);
+        Pane pane = ApplicationStarter.getRootPane();
+        for (Label label: fileSection.labels) {
+            pane.getChildren().add(label);
+        }
     }
 
     private void addNewSegmentToBar(FileSection fileSection) {
-        double width = STATUS_BAR_LENGTH / fileSection.torrent.getPieces().size();
-        double height = 20;
-        double y = fileSection.y + 30;
-        double x = fileSection.x + ++fileSection.sectionsCount * width;
+        double width = BAR_FIELD_LENGTH / fileSection.torrent.getPieces().size();
+        double height = 10;
+        double y = fileSection.y + 10;
+        double offset = 160 + 20 + NUM_FIELD_LENGTH + NAME_FIELD_LENGTH + SIZE_FIELD_LENGTH;
+        double x = offset + ++fileSection.sectionsCount * width;
         Rectangle segment = new Rectangle(x, y, width, height);
-        segment.setFill(Color.LIMEGREEN);
-        Pane pane = ApplicationStarter.getButtonsPane();
+        Color limeGreen = new Color(36.0 / 255, 1, 0, 1);
+        segment.setFill(limeGreen);
+        Pane pane = ApplicationStarter.getRootPane();
         pane.getChildren().add(segment);
+    }
+
+    private void showErrorAlert(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     enum Status {
@@ -202,9 +230,11 @@ public class FXMLMainMenu {
     private static class FileSection {
         public String fileName;
         public Status status;
+        public Label numberLabel;
         public Label nameLabel;
+        public Label sizeLabel;
         public Label statusLabel;
-        public Rectangle square;
+        public ArrayList<Label> labels;
         public double x;
         public double y;
         private Torrent torrent;

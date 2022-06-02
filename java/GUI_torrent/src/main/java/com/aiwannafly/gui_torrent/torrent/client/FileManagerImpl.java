@@ -15,7 +15,7 @@ public class FileManagerImpl implements FileManager {
     @Override
     public synchronized byte[] readPiece(String fileName, int offset, int length) throws IOException {
         if (!files.containsKey(fileName)) {
-            RandomAccessFile randomAccessFile = new RandomAccessFile(Constants.PATH + fileName, "r");
+            RandomAccessFile randomAccessFile = new RandomAccessFile(Constants.UPLOAD_PATH + fileName, "r");
             files.put(fileName, randomAccessFile);
         }
         RandomAccessFile file = files.get(fileName);
@@ -35,7 +35,7 @@ public class FileManagerImpl implements FileManager {
     @Override
     public synchronized void writePiece(String fileName, int offset, byte[] piece) throws IOException {
         if (!files.containsKey(fileName)) {
-            RandomAccessFile randomAccessFile = new RandomAccessFile(Constants.PATH + fileName, "rw");
+            RandomAccessFile randomAccessFile = new RandomAccessFile(Constants.DOWNLOAD_PATH + fileName, "rw");
             files.put(fileName, randomAccessFile);
         }
         RandomAccessFile file = files.get(fileName);

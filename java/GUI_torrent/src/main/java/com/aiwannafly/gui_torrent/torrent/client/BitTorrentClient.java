@@ -36,13 +36,14 @@ public class BitTorrentClient implements TorrentClient {
     }
 
     @Override
-    public void download(String torrentFileName) throws BadTorrentFileException,
+    public void download(String torrentFilePath) throws BadTorrentFileException,
             NoSeedsException, ServerNotCorrespondsException, BadServerReplyException {
+        String torrentFileName = torrentFilePath.substring(torrentFilePath.lastIndexOf(Constants.PATH_DIVIDER) + 1);
         Torrent torrentFile;
         try {
-            torrentFile = TorrentParser.parseTorrent(Constants.PATH + torrentFileName);
+            torrentFile = TorrentParser.parseTorrent(torrentFilePath);
         } catch (IOException e) {
-            throw new BadTorrentFileException("Could not open torrent file " + torrentFileName);
+            throw new BadTorrentFileException("Could not open torrent file " + e.getMessage());
         }
         ObservableList<Integer> myPieces = FXCollections.observableList(new ArrayList<>());
         this.myPieces.put(torrentFileName, myPieces);
@@ -78,26 +79,27 @@ public class BitTorrentClient implements TorrentClient {
     }
 
     @Override
-    public void distribute(String fileName) throws BadTorrentFileException {
+    public void distribute(String torrentFilePath) throws BadTorrentFileException {
         ObservableList<Integer> allPieces = FXCollections.observableList(new ArrayList<>());
-        myPieces.put(fileName, allPieces);
+        myPieces.put(torrentFilePath, allPieces);
+        String torrentFileName = torrentFilePath.substring(torrentFilePath.lastIndexOf(Constants.PATH_DIVIDER) + 1);
         String postfix = ".torrent";
-        if (fileName.length() <= postfix.length()) {
+        if (torrentFileName.length() <= postfix.length()) {
             throw new BadTorrentFileException("Bad name");
         }
-        if (!fileName.endsWith(postfix)) {
+        if (!torrentFileName.endsWith(postfix)) {
             throw new BadTorrentFileException("Bad name");
         }
         Torrent torrentFile;
         try {
-            torrentFile = TorrentParser.parseTorrent(Constants.PATH + fileName);
+            torrentFile = TorrentParser.parseTorrent(torrentFilePath);
         } catch (IOException e) {
-            throw new BadTorrentFileException("Failed to load torrent: " + fileName);
+            throw new BadTorrentFileException("Failed to load torrent: " + e.getMessage());
         }
         for (int i = 0; i < torrentFile.getPieces().size(); i++) {
             allPieces.add(i);
         }
-        distributePart(torrentFile, fileName, allPieces);
+        distributePart(torrentFile, torrentFileName, allPieces);
     }
 
     private void distributePart(Torrent torrentFile, String fileName, ObservableList<Integer> pieces) {
@@ -119,17 +121,18 @@ public class BitTorrentClient implements TorrentClient {
     }
 
     @Override
-    public void createTorrent(String fileName) throws TorrentCreateFailureException,
+    public void createTorrent(String filePath) throws TorrentCreateFailureException,
             BadTorrentFileException {
-        String torrentFileName = fileName + ".torrent";
-        File torrentFile = new File(Constants.PATH + torrentFileName);
-        File originalFile = new File(Constants.PATH + fileName);
+        String torrentFilePath = filePath + Constants.POSTFIX;
+        String torrentFileName = torrentFilePath.substring(torrentFilePath.lastIndexOf(Constants.PATH_DIVIDER) + 1);
+        File torrentFile = new File(Constants.TORRENT_PATH + torrentFileName);
+        File originalFile = new File(filePath);
         try {
             TorrentFileCreator.createTorrent(torrentFile, originalFile, Constants.TRACKER_URL);
         } catch (IOException e) {
             throw new TorrentCreateFailureException("Could not make .torrent file");
         }
-        distribute(torrentFileName);
+        distribute(Constants.TORRENT_PATH + torrentFileName);
     }
 
     @Override

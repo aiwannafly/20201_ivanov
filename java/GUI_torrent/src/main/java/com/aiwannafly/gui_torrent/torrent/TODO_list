@@ -1,10 +1,12 @@
 https://www.cs.swarthmore.edu/~aviv/classes/f12/cs43/labs/lab5/lab5.pdf
 https://translatedby.com/you/bittorrent-protocol-specification-v1-0-in-detail/into-ru/
 
-1. Реализовать все команды из задания, динамически определять,
+1. Сделать так, чтобы я мог поставить несколько файлов на раздачу.
+   Чтобы мог скачивать несколько файлов за раз.
+2. Добавить возможность загружать торренты из любой папки.
+   И все они должны складываться в какое-то специально-выделенное место.
+3. Реализовать все команды из задания, динамически определять,
    кто чем владеет
-2. Сделать так, чтобы в Uploader'e сообщение не парсилось
-два раза, а помещалось в удобную структуру с нужными полями.
 
 • (5pt) Choking Protocol: Build a client that can do the above, and also implement the choking algorithm
   described in Cohen’s specification.
@@ -13,17 +15,4 @@ not need to implement a tracker.
 • (10pt) Interact with other Group: Build a client that can do the above, but can also interact with
 another groups client. This must be demonstrated live!
 • (25pt) Real Working: Build a client that can work with real world bittorrent clients. (HARD!)
-
-Так. Система с bitfield и have сообщениями уже очень хорошо работает.
-Но сейчас надо еще кое-что решить. Да, имеется проблема.
-Например, мне дают лича, у которого пока что ничего нет.
-Ну не обрубать же мне с ним соединение, как у меня сейчас.
-Мне кажется, можно подождать 5 секунд на селекте.
-Если там что-то придет, то я посмотрю. Там могут быть have
-сообщения.
-При этом, конечно, сам менеджер скачивания там ждать не может.
-Есть вариант выдать спецаильную таску, которая попробует
-зафармить информацию о новых кусках.
-Там, наверное, может быть много повторного кода, с этим я разберусь позднее.
-
 

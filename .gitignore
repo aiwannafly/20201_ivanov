@@ -10,8 +10,6 @@ gradlew
 
 *.class
 
-resources
-
 *.jpg
 
 *.pptx
@@ -22,3 +20,8 @@ resources
 
 *iml
 
+*.png
+
+*pdf
+
+*
