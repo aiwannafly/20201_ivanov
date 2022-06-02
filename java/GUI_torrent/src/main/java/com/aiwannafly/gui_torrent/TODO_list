@@ -1,0 +1,25 @@
+https://www.cs.swarthmore.edu/~aviv/classes/f12/cs43/labs/lab5/lab5.pdf
+https://translatedby.com/you/bittorrent-protocol-specification-v1-0-in-detail/into-ru/
+
+1. Обработать ситуацию, когда торрент закрывают прямо во время скачивания
+или после того, как скачивание остановили.
+2. Обработать ситуацию, когда торрент скачали, а на кнопку нажали.
+2. Реализовать все команды из задания, динамически определять,
+   кто чем владеет
+
+• (5pt) Choking Protocol: Build a client that can do the above, and also implement the choking algorithm
+  described in Cohen’s specification.
+• (5pt) Tracker Protocol: Add in features for communicating with a tracker server. Note that you do
+not need to implement a tracker.
+• (10pt) Interact with other Group: Build a client that can do the above, but can also interact with
+another groups client. This must be demonstrated live!
+• (25pt) Real Working: Build a client that can work with real world bittorrent clients. (HARD!)
+
+Так, сейчас ситуация такая, что в целом то торрент и готов, получается.
+Едиенственное, 1 скачивающих не получает куски от 2 и 3.
+Это, на самом деле, не очень хорошо. Но для исправления этой ошибки,
+на самом деле, единственный способо --- добавить еще больше
+общения с трекером. В этом ничего сложного нет.
+И я могу это сделать. НО --- есть вариант сделать канонический
+трекер. И там делать уже все по канону сразу. И войти в элитный клуб.
+Да, наверное пойду по этому пути.

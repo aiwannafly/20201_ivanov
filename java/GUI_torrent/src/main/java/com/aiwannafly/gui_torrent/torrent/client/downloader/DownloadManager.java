@@ -272,7 +272,6 @@ public class DownloadManager {
         }
         int bitsInByte = 8;
         byte[] bytes = messageInfo.data.getBytes(StandardCharsets.UTF_8);
-        System.out.println("Pieces from bitfield: ");
         for (int i = 0; i < torrentFile.getPieces().size(); i++) {
             int bitIdx = i % bitsInByte;
             int byteIdx = i / bitsInByte;
@@ -284,7 +283,5 @@ public class DownloadManager {
                 }
             }
         }
-        System.out.println(peersInfo.get(peerPort).availablePieces.size());
-        System.out.println();
     }
 }
