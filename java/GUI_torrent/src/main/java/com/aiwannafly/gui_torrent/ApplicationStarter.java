@@ -3,6 +3,7 @@ package com.aiwannafly.gui_torrent;
 import com.aiwannafly.gui_torrent.torrent.client.BitTorrentClient;
 import com.aiwannafly.gui_torrent.torrent.client.TorrentClient;
 import javafx.application.Application;
+import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -14,6 +15,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.stage.WindowEvent;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,6 +42,7 @@ public class ApplicationStarter extends Application {
         scene.setFill(Color.BLACK);
         stage.setScene(scene);
         showHeaders();
+        stage.setOnCloseRequest(event -> FXMLMainMenu.exit());
         stage.show();
     }
 

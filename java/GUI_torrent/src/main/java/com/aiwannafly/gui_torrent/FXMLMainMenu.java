@@ -136,6 +136,10 @@ public class FXMLMainMenu {
 
     @FXML
     protected void onExitButtonClick() {
+        exit();
+    }
+
+    public static void exit() {
         TorrentClient torrentClient = ApplicationStarter.getTorrentClient();
         assert torrentClient != null;
         try {
@@ -207,7 +211,7 @@ public class FXMLMainMenu {
         double height = 10;
         double y = fileSection.y + 10;
         double offset = 160 + 20 + NUM_FIELD_LENGTH + NAME_FIELD_LENGTH + SIZE_FIELD_LENGTH;
-        double x = offset + ++fileSection.sectionsCount * width;
+        double x = offset + fileSection.sectionsCount++ * width;
         Rectangle segment = new Rectangle(x, y, width, height);
         Color limeGreen = new Color(36.0 / 255, 1, 0, 1);
         segment.setFill(limeGreen);

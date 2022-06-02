@@ -94,13 +94,6 @@ public class DownloadManager {
         downloadResult.torrentFileName = torrentFile.getName() + Constants.POSTFIX;
         downloadResult.status = DownloadManager.Status.NOT_FINISHED;
         Random random = new Random();
-        if (leftPieces.size() == 0) {
-            System.out.println("=== File " + fileName + " was downloaded successfully!");
-            shutdown();
-            closed = true;
-            downloadResult.status = DownloadManager.Status.FINISHED;
-            return downloadResult;
-        }
         if (!submittedFirstTasks) {
             for (Integer peerPort : peersInfo.keySet()) {
                 requestRandomPiece(random, peerPort);
@@ -136,14 +129,17 @@ public class DownloadManager {
                     leftPieces.add(pieceIdx);
                 }
                 if (result.status == ResponseInfo.Status.RECEIVED) {
-                    System.out.println("=== Received piece " + (pieceIdx + 1) +
-                            " from " + peerPort);
                     synchronized (myPieces) {
                         myPieces.add(pieceIdx);
                     }
                 }
                 if (leftPieces.size() > 0) {
                     requestRandomPiece(random, peerPort);
+                } else {
+                    shutdown();
+                    closed = true;
+                    downloadResult.status = DownloadManager.Status.FINISHED;
+                    return downloadResult;
                 }
             }
         } catch (InterruptedException | ExecutionException e) {
@@ -162,15 +158,6 @@ public class DownloadManager {
             return;
         }
         keepAliveHandler.stop();
-        leechPool.shutdown();
-        try {
-            boolean completed = leechPool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
-            if (!completed) {
-                System.err.println("=== Execution was not completed");
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         for (Integer peerPort : peersInfo.keySet()) {
             try {
                 if (peersInfo.get(peerPort).out != null) {
@@ -183,6 +170,7 @@ public class DownloadManager {
                 e.printStackTrace();
             }
         }
+        closed = true;
     }
 
     private void requestRandomPiece(Random random, int peerPort) {

@@ -1,4 +1,6 @@
-package torrent.tracker;
+package com.aiwannafly.gui_torrent.torrent.tracker;
+
+import com.aiwannafly.gui_torrent.TrackerServer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -6,6 +8,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class TrackerCommandHandler implements Runnable {
     private final Socket clientSocket;
@@ -40,7 +45,9 @@ public class TrackerCommandHandler implements Runnable {
                 if (command.equals(EXIT_COMMAND)) {
                     synchronized (server) {
                         server.getClients().remove(clientSocket);
-                        server.getSeedsInfo().remove(clientSocket);
+                        for (String torrentFileName: server.getFilePeersInfo().keySet()) {
+                            server.getFilePeersInfo().get(torrentFileName).remove(clientSocket);
+                        }
                     }
                     break;
                 }
@@ -88,19 +95,17 @@ public class TrackerCommandHandler implements Runnable {
                     StringBuilder message = new StringBuilder();
                     message.append("Peers: ");
                     synchronized (server) {
-                        ArrayList<Socket> fileSeeds = server.getSeedPorts().get(torrentFileName);
-                        for (Socket client : fileSeeds) {
+                        Map<Socket, TrackerServer.PeerInfo> fileSeeds = server.getFilePeersInfo().get(torrentFileName);
+                        for (Socket client : fileSeeds.keySet()) {
                             if (client == clientSocket) {
                                 continue;
                             }
-                            if (server.getSeedsInfo().containsKey(client)) {
-                                int port = server.getSeedsInfo().get(client).port;
-                                ArrayList<Integer> availablePieces = server.getSeedsInfo().get(client).availablePieces;
-                                message.append(server.getSeedsInfo().get(client).port).append(" ");
-                                message.append(availablePieces.size()).append(" ");
-                                for (Integer piece: availablePieces) {
-                                    message.append(piece).append(" ");
-                                }
+                            int port = fileSeeds.get(client).port;
+                            ArrayList<Integer> availablePieces = fileSeeds.get(client).availablePieces;
+                            message.append(port).append(" ");
+                            message.append(availablePieces.size()).append(" ");
+                            for (Integer piece : availablePieces) {
+                                message.append(piece).append(" ");
                             }
                         }
                     }
@@ -112,7 +117,7 @@ public class TrackerCommandHandler implements Runnable {
                 if (words.length < 3) {
                     return INCOMPLETE_COMMAND_MSG;
                 }
-                Integer port = Integer.parseInt(words[1]);
+                int port = Integer.parseInt(words[1]);
                 String torrentFileName = words[2];
                 ArrayList<Integer> availablePieces = new ArrayList<>();
                 try {
@@ -128,14 +133,11 @@ public class TrackerCommandHandler implements Runnable {
                     return WRONG_COMMAND_MSG;
                 }
                 synchronized (server) {
-                    server.getSeedPorts().computeIfAbsent(torrentFileName, k -> new ArrayList<>());
-                    if (!server.getSeedPorts().get(torrentFileName).contains(clientSocket)) {
-                        server.getSeedPorts().get(torrentFileName).add(clientSocket);
-                    }
-                    TrackerServer.SeedInfo seedInfo = new TrackerServer.SeedInfo();
-                    seedInfo.port = port;
-                    seedInfo.availablePieces = availablePieces;
-                    server.getSeedsInfo().put(clientSocket, seedInfo);
+                    server.getFilePeersInfo().computeIfAbsent(torrentFileName, k -> new HashMap<>());
+                    TrackerServer.PeerInfo peerInfo = new TrackerServer.PeerInfo();
+                    peerInfo.port = port;
+                    peerInfo.availablePieces = availablePieces;
+                    server.getFilePeersInfo().get(torrentFileName).put(clientSocket, peerInfo);
                 }
             }
         }
@@ -145,12 +147,7 @@ public class TrackerCommandHandler implements Runnable {
     private String generatePeerId() {
         StringBuilder peerId = new StringBuilder();
         peerId.append("PEER_AIW_");
-        synchronized (server) {
-            if (!server.getSeedsInfo().containsKey(clientSocket)) {
-                return null;
-            }
-            peerId.append(server.getSeedsInfo().get(clientSocket));
-        }
+        peerId.append(clientSocket.getRemoteSocketAddress());
         peerId.append(peerId.toString().hashCode());
         return peerId.substring(0, PEER_ID_LENGTH);
     }

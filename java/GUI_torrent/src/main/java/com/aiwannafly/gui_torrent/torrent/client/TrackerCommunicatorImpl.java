@@ -1,6 +1,6 @@
 package com.aiwannafly.gui_torrent.torrent.client;
 
-import torrent.tracker.TrackerServer;
+import com.aiwannafly.gui_torrent.TrackerServer;
 
 import java.io.BufferedReader;
 import java.io.IOException;

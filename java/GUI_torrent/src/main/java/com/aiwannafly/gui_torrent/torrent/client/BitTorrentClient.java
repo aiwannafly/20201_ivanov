@@ -11,7 +11,7 @@ import com.aiwannafly.gui_torrent.torrent.client.uploader.Uploader;
 import com.aiwannafly.gui_torrent.torrent.client.util.TorrentFileCreator;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import torrent.tracker.TrackerCommandHandler;
+import com.aiwannafly.gui_torrent.torrent.tracker.TrackerCommandHandler;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -53,6 +53,7 @@ public class BitTorrentClient implements TorrentClient {
         if (null == message) {
             throw new ServerNotCorrespondsException("Server did not show peers");
         }
+        System.out.println(message);
         String[] words = message.split(" ");
         if (words.length - 1 == 0) {
             throw new NoSeedsException("No peers are uploading the file at the moment");
@@ -81,9 +82,9 @@ public class BitTorrentClient implements TorrentClient {
     @Override
     public void distribute(String torrentFilePath) throws BadTorrentFileException {
         ObservableList<Integer> allPieces = FXCollections.observableList(new ArrayList<>());
-        myPieces.put(torrentFilePath, allPieces);
         String torrentFileName = torrentFilePath.substring(torrentFilePath.lastIndexOf(Constants.PATH_DIVIDER) + 1);
-        String postfix = ".torrent";
+        myPieces.put(torrentFileName, allPieces);
+        String postfix = Constants.POSTFIX;
         if (torrentFileName.length() <= postfix.length()) {
             throw new BadTorrentFileException("Bad name");
         }

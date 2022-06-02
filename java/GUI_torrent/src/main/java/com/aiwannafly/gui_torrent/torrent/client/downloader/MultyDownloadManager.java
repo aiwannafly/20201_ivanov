@@ -103,6 +103,14 @@ public class MultyDownloadManager implements Downloader {
     @Override
     public void shutdown() {
         leechPool.shutdown();
+        try {
+            boolean completed = leechPool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+            if (!completed) {
+                System.err.println("=== Execution was not completed");
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         for (String torrentFileName: downloadManagers.keySet()) {
             downloadManagers.get(torrentFileName).shutdown();
         }
