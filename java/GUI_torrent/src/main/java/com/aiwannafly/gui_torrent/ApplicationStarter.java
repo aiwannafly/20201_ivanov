@@ -12,12 +12,11 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 public class ApplicationStarter extends Application {
-    private static TorrentClient torrentClient;
+    private static final TorrentClient torrentClient = new BitTorrentClient();
 
     @Override
     public void start(Stage stage) throws IOException {
-        torrentClient = new BitTorrentClient();
-        Scene scene = Renderer.getScene();
+        Scene scene = Renderer.instance.getScene();
         stage.setTitle("aiTorrent");
         stage.setScene(scene);
         stage.getIcons().add(TexturePack.iconImage);

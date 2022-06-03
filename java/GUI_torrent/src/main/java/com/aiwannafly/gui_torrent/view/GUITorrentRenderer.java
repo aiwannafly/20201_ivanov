@@ -1,0 +1,40 @@
+package com.aiwannafly.gui_torrent.view;
+
+import com.aiwannafly.gui_torrent.torrent.client.util.torrent.Torrent;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+
+import java.io.IOException;
+import java.util.ArrayList;
+
+public interface GUITorrentRenderer {
+
+    enum Status {
+        DISTRIBUTED, DOWNLOADING
+    }
+
+    enum ButtonStatus {
+        STOP, RESUME
+    }
+
+    class FileSection {
+        public String fileName;
+        public Status status;
+        public Button stopResumeButton;
+        public ButtonStatus buttonStatus;
+        public ArrayList<Label> labels;
+        public double x;
+        public double y;
+        public Torrent torrent;
+        public int sectionsCount = 0;
+    }
+
+    Scene getScene() throws IOException;
+
+    FileSection createFileSection(String torrentFilePath, Status status);
+
+    void renderFileSection(FileSection fileSection);
+
+    void renderNewSegmentBar(FileSection fileSection);
+}

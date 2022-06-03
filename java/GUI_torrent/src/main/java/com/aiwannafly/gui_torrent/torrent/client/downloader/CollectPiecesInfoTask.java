@@ -35,7 +35,9 @@ public class CollectPiecesInfoTask implements Callable<ResponseInfo> {
             int returnValue = selector.select(timeout);
             Set<SelectionKey> selectedKeys = selector.selectedKeys();
             Iterator<SelectionKey> keysIterator = selectedKeys.iterator();
-            keysIterator.next().cancel();
+            if (keysIterator.hasNext()) {
+                keysIterator.next().cancel();
+            }
             if (returnValue == 0) {
                 peerInfo.channel.configureBlocking(true);
                 return result;

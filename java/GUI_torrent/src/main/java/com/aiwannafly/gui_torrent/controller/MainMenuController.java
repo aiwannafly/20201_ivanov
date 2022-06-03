@@ -4,8 +4,7 @@ import com.aiwannafly.gui_torrent.ApplicationStarter;
 import com.aiwannafly.gui_torrent.torrent.Constants;
 import com.aiwannafly.gui_torrent.torrent.client.TorrentClient;
 import com.aiwannafly.gui_torrent.torrent.client.exceptions.*;
-import com.aiwannafly.gui_torrent.torrent.client.util.torrent.Torrent;
-import com.aiwannafly.gui_torrent.torrent.client.util.torrent.TorrentParser;
+import com.aiwannafly.gui_torrent.view.Renderer;
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -17,13 +16,12 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.aiwannafly.gui_torrent.view.Renderer.*;
+import static com.aiwannafly.gui_torrent.view.GUITorrentRenderer.*;
 
 public class MainMenuController {
     @FXML
@@ -49,6 +47,10 @@ public class MainMenuController {
         String torrentFilePath = file.getAbsolutePath();
         String postfix = Constants.POSTFIX;
         String torrentFileName = torrentFilePath.substring(torrentFilePath.lastIndexOf(Constants.PATH_DIVIDER) + 1);
+        if (fileSections.containsKey(torrentFileName)) {
+            showErrorAlert("This file is used already");
+            return;
+        }
         int originalFileLength = torrentFileName.length() - postfix.length();
         String originalFileName;
         if (originalFileLength <= 0) {
@@ -68,8 +70,8 @@ public class MainMenuController {
                     + ": " + e.getMessage());
             return;
         }
-        FileSection fileSection = makeNewFileSection(torrentFilePath, Status.DOWNLOADING);
-        showFileSection(fileSection);
+        FileSection fileSection = Renderer.instance.createFileSection(torrentFilePath, Status.DOWNLOADING);
+        Renderer.instance.renderFileSection(fileSection);
         fileSections.put(torrentFileName, fileSection);
         ObservableList<Integer> collectedPieces;
         try {
@@ -81,12 +83,12 @@ public class MainMenuController {
         collectedPieces.addListener((ListChangeListener<? super Integer>) change -> {
             Platform.runLater(() -> {
                 while (fileSection.sectionsCount < collectedPieces.size()) {
-                    addNewSegmentToBar(fileSection);
-                }
-                if (collectedPieces.size() == fileSection.torrent.getPieces().size()) {
-                    downloadedTorrents.add(torrentFileName);
+                    Renderer.instance.renderNewSegmentBar(fileSection);
                 }
             });
+            if (collectedPieces.size() == fileSection.torrent.getPieces().size()) {
+                downloadedTorrents.add(torrentFileName);
+            }
         });
     }
 
@@ -100,14 +102,18 @@ public class MainMenuController {
         }
         String torrentFilePath = file.getAbsolutePath();
         String torrentFileName = torrentFilePath.substring(torrentFilePath.lastIndexOf(Constants.PATH_DIVIDER) + 1);
+        if (fileSections.containsKey(torrentFileName)) {
+            showErrorAlert("This file is distributed already");
+            return;
+        }
         try {
             torrentClient.distribute(torrentFilePath);
         } catch (BadTorrentFileException | ServerNotCorrespondsException e) {
             showErrorAlert("Could not upload " + torrentFileName + ": " + e.getMessage());
             return;
         }
-        FileSection fileSection = makeNewFileSection(torrentFilePath, Status.DISTRIBUTED);
-        showFileSection(fileSection);
+        FileSection fileSection = Renderer.instance.createFileSection(torrentFilePath, Status.DISTRIBUTED);
+        Renderer.instance.renderFileSection(fileSection);
         fileSections.put(torrentFileName, fileSection);
     }
 
@@ -129,9 +135,13 @@ public class MainMenuController {
             return;
         }
         String torrentFileName = fileName + Constants.POSTFIX;
+        if (fileSections.containsKey(torrentFileName)) {
+            showErrorAlert("This file is distributed already");
+            return;
+        }
         String torrentFilePath = Constants.TORRENT_PATH + torrentFileName;
-        FileSection fileSection = makeNewFileSection(torrentFilePath, Status.DISTRIBUTED);
-        showFileSection(fileSection);
+        FileSection fileSection = Renderer.instance.createFileSection(torrentFilePath, Status.DISTRIBUTED);
+        Renderer.instance.renderFileSection(fileSection);
         fileSections.put(torrentFileName, fileSection);
     }
 

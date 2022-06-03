@@ -1,13 +1,13 @@
 .button {
-    -fx-font-family: "Franklin Gothic Medium";
+    -fx-font-family: Calibri;
     -fx-border-width: 1px;
     -fx-border-color: #24ff00;
     -fx-background-color: #000000;
-    -fx-background-insets: 0,1,2,3;
+    /*-fx-background-insets: 0,1,2,3;*/
     -fx-background-radius: 3,2,2,2;
     /*-fx-padding: 12 30 12 30;*/
     -fx-text-fill: #24ff00;
-    -fx-font-size: 13px;
+    -fx-font-size: 15px;
     /*-fx-font-weight: bold;*/
 }
 
@@ -21,14 +21,14 @@
 }
 
 .label {
-    -fx-font-family: "Franklin Gothic Medium";
+    -fx-font-family: Calibri;
     -fx-text-alignment: center;
     -fx-border-width: 1px;
     -fx-background-color: #000000;
     -fx-border-color: #24ff00;
     -fx-text-fill: #24ff00;
-    /*-fx-font-weight: ;*/
-    -fx-font-size: 13px;
+    /*-fx-font-weight: bold;*/
+    -fx-font-size: 15px;
 }
 
 #menu {
