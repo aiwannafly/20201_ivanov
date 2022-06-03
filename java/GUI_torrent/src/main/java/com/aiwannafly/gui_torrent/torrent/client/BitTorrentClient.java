@@ -14,10 +14,8 @@ import com.aiwannafly.gui_torrent.torrent.client.exceptions.*;
 import com.aiwannafly.gui_torrent.torrent.client.uploader.UploadLauncher;
 import com.aiwannafly.gui_torrent.torrent.client.uploader.Uploader;
 import com.aiwannafly.gui_torrent.torrent.client.util.TorrentFileCreator;
-import com.aiwannafly.gui_torrent.torrent.tracker.TrackerCommandHandler;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,7 +24,6 @@ public class BitTorrentClient implements TorrentClient {
     private TrackerCommunicator trackerComm;
     private final FileManager fileManager;
     private Downloader downloader;
-    private final Map<String, Map<Integer, ArrayList<Integer>>> peersPieces = new HashMap<>();
     private final Map<String, Uploader> uploaders = new HashMap<>();
     private final Map<String, ObservableList<Integer>> myPieces = new HashMap<>();
 
@@ -49,15 +46,11 @@ public class BitTorrentClient implements TorrentClient {
         }
         ObservableList<Integer> myPieces = new ObservableList<>();
         this.myPieces.put(torrentFileName, myPieces);
-        if (!peersPieces.containsKey(torrentFileName)) {
-            peersPieces.put(torrentFileName, new HashMap<>());
-        }
-        Map<Integer, ArrayList<Integer>> peersPieces = this.peersPieces.get(torrentFileName);
         distributePart(torrentFile, torrentFileName, myPieces);
         if (downloader == null) {
             downloader = new MultyDownloadManager(fileManager, peerId, trackerComm);
         }
-        downloader.addTorrentForDownloading(torrentFile, peersPieces, myPieces);
+        downloader.addTorrentForDownloading(torrentFile, myPieces);
         downloader.launchDownloading();
     }
 
@@ -87,13 +80,12 @@ public class BitTorrentClient implements TorrentClient {
 
     private void distributePart(Torrent torrentFile, String fileName, ObservableList<Integer> pieces)
     throws ServerNotCorrespondsException {
-        if (peersPieces.containsKey(fileName)) {
+        if (uploaders.containsKey(fileName)) {
             return;
         }
         if (trackerComm == null) {
             initTrackerCommunicator();
         }
-        peersPieces.put(fileName, new HashMap<>());
         Uploader uploader = new UploadLauncher(torrentFile, fileManager, peerId, pieces, trackerComm);
         uploader.launchDistribution();
         uploaders.put(fileName, uploader);

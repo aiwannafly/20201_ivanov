@@ -55,7 +55,7 @@ public class DownloadManager {
     }
 
     public DownloadManager(Torrent torrentFile, FileManager fileManager, String peerId,
-                           Map<Integer, ArrayList<Integer>> peersPieces, ExecutorService leechPool,
+                           ExecutorService leechPool,
                            ObservableList<Integer> myPieces, TrackerCommunicator trackerComm) throws NoSeedsException,
             ServerNotCorrespondsException, BadServerReplyException {
         this.peerId = peerId;
@@ -65,44 +65,7 @@ public class DownloadManager {
         this.myPieces = myPieces;
         this.fileName = Constants.PREFIX + torrentFile.getName();
         this.leftPieces = new ArrayList<>();
-        String torrentFileName = torrentFile.getName() + Constants.POSTFIX;
-        trackerComm.sendToTracker("show peers " + torrentFileName);
-        String message = trackerComm.receiveFromTracker();
-        if (null == message) {
-            throw new ServerNotCorrespondsException("Server did not show peers");
-        }
-        String[] words = message.split(" ");
-        if (words.length - 1 == 0) {
-            throw new NoSeedsException("No peers are uploading the file at the moment");
-        }
-        int idx = 1;
-        while (idx < words.length) {
-            int peerPort = Integer.parseInt(words[idx++]);
-            int piecesCount = Integer.parseInt(words[idx++]);
-            if (peerPort < 0 || piecesCount < 0) {
-                throw new BadServerReplyException("Negative peerPort or piecesCount");
-            }
-            ArrayList<Integer> availablePieces = new ArrayList<>();
-            for (int i = 0; i < piecesCount; i++) {
-                if (idx >= words.length) {
-                    throw new BadServerReplyException("Wrong count of pieces");
-                }
-                availablePieces.add(Integer.parseInt(words[idx++]));
-            }
-            peersPieces.put(peerPort, availablePieces);
-        }
-        for (Integer peerPort : peersPieces.keySet()) {
-            if (peersInfo.size() >= Constants.DOWNLOAD_MAX_THREADS_COUNT) {
-                break;
-            }
-            try {
-                establishConnection(peerPort, peersPieces.get(peerPort));
-            } catch (DifferentHandshakesException e) {
-                System.err.println("=== " + e.getMessage());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        setConnections();
         if (peersInfo.isEmpty()) {
             throw new NoSeedsException("No seeds uploading file " + torrentFile.getName());
         }
@@ -245,7 +208,55 @@ public class DownloadManager {
         return pieceLength;
     }
 
-    private void establishConnection(int peerPort, ArrayList<Integer> availablePieces)
+    private void setConnections() throws ServerNotCorrespondsException, NoSeedsException,
+            BadServerReplyException {
+        String torrentFileName = torrentFile.getName() + Constants.POSTFIX;
+        trackerComm.sendToTracker("show peers " + torrentFileName);
+        String message = trackerComm.receiveFromTracker();
+        if (null == message) {
+            throw new ServerNotCorrespondsException("Server did not show peers");
+        }
+        String[] words = message.split(" ");
+        if (words.length - 1 == 0) {
+            throw new NoSeedsException("No peers are uploading the file at the moment");
+        }
+        int idx = 1;
+        while (idx < words.length) {
+            int peerPort = Integer.parseInt(words[idx++]);
+            int piecesCount = Integer.parseInt(words[idx++]);
+            if (peerPort < 0 || piecesCount < 0) {
+                throw new BadServerReplyException("Negative peerPort or piecesCount");
+            }
+            ArrayList<Integer> availablePieces = new ArrayList<>();
+            for (int i = 0; i < piecesCount; i++) {
+                if (idx >= words.length) {
+                    throw new BadServerReplyException("Wrong count of pieces");
+                }
+                availablePieces.add(Integer.parseInt(words[idx++]));
+            }
+            if (!peersInfo.containsKey(peerPort)) {
+                peersInfo.put(peerPort, new PeerInfo());
+            }
+            peersInfo.get(peerPort).availablePieces = availablePieces;
+        }
+        for (Integer peerPort : peersInfo.keySet()) {
+            if (peersInfo.size() >= Constants.DOWNLOAD_MAX_THREADS_COUNT) {
+                break;
+            }
+            if (peersInfo.get(peerPort).channel != null) {
+                break;
+            }
+            try {
+                establishConnection(peerPort);
+            } catch (DifferentHandshakesException e) {
+                System.err.println("=== " + e.getMessage());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void establishConnection(int peerPort)
             throws IOException, DifferentHandshakesException {
         SocketChannel currentPeerChannel = SocketChannel.open();
         InetSocketAddress address = new InetSocketAddress("localhost", peerPort);
@@ -259,13 +270,11 @@ public class DownloadManager {
         currentPeerChannel.read(buf);
         Handshake peerHandshake = new BitTorrentHandshake(new String(buf.array()));
         if (myHandshake.getInfoHash().equals(peerHandshake.getInfoHash())) {
-            PeerInfo peerInfo = new PeerInfo();
+            PeerInfo peerInfo = peersInfo.get(peerPort);
             peerInfo.channel = currentPeerChannel;
             peerInfo.in = currentPeerChannel.socket().getInputStream();
             peerInfo.out = out;
             peerInfo.lastKeepAliveTimeMillis = System.currentTimeMillis();
-            peerInfo.availablePieces = availablePieces;
-            peersInfo.put(peerPort, peerInfo);
             Selector selector = Selector.open();
             currentPeerChannel.configureBlocking(false);
             currentPeerChannel.register(selector, SelectionKey.OP_READ);

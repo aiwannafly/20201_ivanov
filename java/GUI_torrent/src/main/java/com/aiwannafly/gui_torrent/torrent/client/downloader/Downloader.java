@@ -14,8 +14,7 @@ public interface Downloader {
 
     void launchDownloading();
 
-    void addTorrentForDownloading(Torrent torrent, Map<Integer, ArrayList<Integer>> peersPieces,
-                                  ObservableList<Integer> myPieces)
+    void addTorrentForDownloading(Torrent torrent, ObservableList<Integer> myPieces)
             throws NoSeedsException, ServerNotCorrespondsException, BadServerReplyException;
 
     void stopDownloading(String torrentFileName) throws BadTorrentFileException;
