@@ -1,10 +1,7 @@
 https://www.cs.swarthmore.edu/~aviv/classes/f12/cs43/labs/lab5/lab5.pdf
 https://translatedby.com/you/bittorrent-protocol-specification-v1-0-in-detail/into-ru/
 
-1. Убрать JavaFX из модели, сделать клиент наследником от
-Observable
-2. Реализовать все команды из задания, динамически определять,
-   кто чем владеет
+1. Реализовать все команды из задания
 
 • (5pt) Choking Protocol: Build a client that can do the above, and also implement the choking algorithm
   described in Cohen’s specification.

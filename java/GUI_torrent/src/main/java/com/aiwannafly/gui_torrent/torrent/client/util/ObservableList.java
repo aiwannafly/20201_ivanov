@@ -1,4 +1,4 @@
-package com.aiwannafly.gui_torrent.torrent;
+package com.aiwannafly.gui_torrent.torrent.client.util;
 
 import java.util.ArrayList;
 import java.util.HashSet;

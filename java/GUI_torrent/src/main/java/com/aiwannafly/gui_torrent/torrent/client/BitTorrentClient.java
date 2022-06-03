@@ -1,6 +1,6 @@
 package com.aiwannafly.gui_torrent.torrent.client;
 
-import com.aiwannafly.gui_torrent.torrent.ObservableList;
+import com.aiwannafly.gui_torrent.torrent.client.util.ObservableList;
 import com.aiwannafly.gui_torrent.torrent.client.file_manager.FileManager;
 import com.aiwannafly.gui_torrent.torrent.client.file_manager.FileManagerImpl;
 import com.aiwannafly.gui_torrent.torrent.client.tracker_communicator.TrackerCommunicator;
@@ -49,35 +49,13 @@ public class BitTorrentClient implements TorrentClient {
         }
         ObservableList<Integer> myPieces = new ObservableList<>();
         this.myPieces.put(torrentFileName, myPieces);
-        distributePart(torrentFile, torrentFileName, myPieces);
-        trackerComm.sendToTracker("show peers " + torrentFileName);
-        String message = trackerComm.receiveFromTracker();
-        if (null == message) {
-            throw new ServerNotCorrespondsException("Server did not show peers");
-        }
-        String[] words = message.split(" ");
-        if (words.length - 1 == 0) {
-            throw new NoSeedsException("No peers are uploading the file at the moment");
+        if (!peersPieces.containsKey(torrentFileName)) {
+            peersPieces.put(torrentFileName, new HashMap<>());
         }
         Map<Integer, ArrayList<Integer>> peersPieces = this.peersPieces.get(torrentFileName);
-        int idx = 1;
-        while (idx < words.length) {
-            int peerPort = Integer.parseInt(words[idx++]);
-            int piecesCount = Integer.parseInt(words[idx++]);
-            if (peerPort < 0 || piecesCount < 0) {
-                throw new BadServerReplyException("Negative peerPort or piecesCount");
-            }
-            ArrayList<Integer> availablePieces = new ArrayList<>();
-            for (int i = 0; i < piecesCount; i++) {
-                if (idx >= words.length) {
-                    throw new BadServerReplyException("Wrong count of pieces");
-                }
-                availablePieces.add(Integer.parseInt(words[idx++]));
-            }
-            peersPieces.put(peerPort, availablePieces);
-        }
+        distributePart(torrentFile, torrentFileName, myPieces);
         if (downloader == null) {
-            downloader = new MultyDownloadManager(fileManager, peerId);
+            downloader = new MultyDownloadManager(fileManager, peerId, trackerComm);
         }
         downloader.addTorrentForDownloading(torrentFile, peersPieces, myPieces);
         downloader.launchDownloading();
@@ -116,16 +94,8 @@ public class BitTorrentClient implements TorrentClient {
             initTrackerCommunicator();
         }
         peersPieces.put(fileName, new HashMap<>());
-        Uploader uploader = new UploadLauncher(torrentFile, fileManager, peerId, pieces);
+        Uploader uploader = new UploadLauncher(torrentFile, fileManager, peerId, pieces, trackerComm);
         uploader.launchDistribution();
-        // listen-port 5000 fileName 30 1 2 3 ... 30
-        StringBuilder command = new StringBuilder(TrackerCommandHandler.SET_LISTENING_SOCKET + " " +
-                uploader.getListeningPort() + " " + fileName + " " + pieces.size());
-        for (Integer piece : pieces) {
-            command.append(" ").append(piece);
-        }
-        trackerComm.sendToTracker(command.toString());
-        trackerComm.receiveFromTracker();
         uploaders.put(fileName, uploader);
     }
 

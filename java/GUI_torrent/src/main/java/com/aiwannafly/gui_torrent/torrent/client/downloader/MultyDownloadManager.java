@@ -1,6 +1,9 @@
 package com.aiwannafly.gui_torrent.torrent.client.downloader;
 
-import com.aiwannafly.gui_torrent.torrent.ObservableList;
+import com.aiwannafly.gui_torrent.torrent.client.exceptions.BadServerReplyException;
+import com.aiwannafly.gui_torrent.torrent.client.exceptions.ServerNotCorrespondsException;
+import com.aiwannafly.gui_torrent.torrent.client.tracker_communicator.TrackerCommunicator;
+import com.aiwannafly.gui_torrent.torrent.client.util.ObservableList;
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.Torrent;
 import com.aiwannafly.gui_torrent.torrent.Constants;
 import com.aiwannafly.gui_torrent.torrent.client.file_manager.FileManager;
@@ -23,24 +26,26 @@ public class MultyDownloadManager implements Downloader {
             new ExecutorCompletionService<>(downloader);
     private final Queue<String> stoppedTorrents = new ArrayDeque<>();
     private final Queue<DownloadManager> newTorrents = new ArrayBlockingQueue<>(100);
+    private final TrackerCommunicator trackerComm;
     private boolean downloading = false;
 
     enum Status {
         FINISHED, NOT_FINISHED
     }
 
-    public MultyDownloadManager(FileManager fileManager, String peerId) {
+    public MultyDownloadManager(FileManager fileManager, String peerId, TrackerCommunicator trackerComm) {
         this.fileManager = fileManager;
         this.peerId = peerId;
+        this.trackerComm = trackerComm;
     }
 
     @Override
     public void addTorrentForDownloading(Torrent torrent, Map<Integer, ArrayList<Integer>> peersPieces,
                                          ObservableList<Integer> myPieces)
-            throws NoSeedsException {
+            throws NoSeedsException, ServerNotCorrespondsException, BadServerReplyException {
         String torrentFileName = torrent.getName() + Constants.POSTFIX;
         DownloadManager downloadManager = new DownloadManager(torrent,
-                fileManager, peerId, peersPieces, leechPool, myPieces);
+                fileManager, peerId, peersPieces, leechPool, myPieces, trackerComm);
         if (!downloading) {
             downloadManagers.put(torrentFileName, downloadManager);
         } else {

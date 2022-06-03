@@ -1,12 +1,11 @@
 package com.aiwannafly.gui_torrent.torrent.client.downloader;
 
-import com.aiwannafly.gui_torrent.torrent.ObservableList;
+import com.aiwannafly.gui_torrent.torrent.client.exceptions.*;
+import com.aiwannafly.gui_torrent.torrent.client.tracker_communicator.TrackerCommunicator;
+import com.aiwannafly.gui_torrent.torrent.client.util.ObservableList;
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.Torrent;
 import com.aiwannafly.gui_torrent.torrent.Constants;
 import com.aiwannafly.gui_torrent.torrent.client.file_manager.FileManager;
-import com.aiwannafly.gui_torrent.torrent.client.exceptions.BadMessageException;
-import com.aiwannafly.gui_torrent.torrent.client.exceptions.DifferentHandshakesException;
-import com.aiwannafly.gui_torrent.torrent.client.exceptions.NoSeedsException;
 import com.aiwannafly.gui_torrent.torrent.client.messages.Message;
 import com.aiwannafly.gui_torrent.torrent.client.util.BitTorrentHandshake;
 import com.aiwannafly.gui_torrent.torrent.client.util.Handshake;
@@ -36,6 +35,7 @@ public class DownloadManager {
     private KeepAliveHandler keepAliveHandler;
     private final Map<Integer, PeerInfo> peersInfo = new HashMap<>();
     private final ObservableList<Integer> myPieces;
+    private final TrackerCommunicator trackerComm;
 
     public enum Status {
         FINISHED, NOT_FINISHED
@@ -54,15 +54,43 @@ public class DownloadManager {
         SocketChannel channel;
     }
 
-    public DownloadManager(Torrent torrentFile, FileManager
-            fileManager, String peerId, Map<Integer, ArrayList<Integer>> peersPieces,
-                           ExecutorService leechPool, ObservableList<Integer> myPieces) throws NoSeedsException {
+    public DownloadManager(Torrent torrentFile, FileManager fileManager, String peerId,
+                           Map<Integer, ArrayList<Integer>> peersPieces, ExecutorService leechPool,
+                           ObservableList<Integer> myPieces, TrackerCommunicator trackerComm) throws NoSeedsException,
+            ServerNotCorrespondsException, BadServerReplyException {
         this.peerId = peerId;
         this.fileManager = fileManager;
+        this.trackerComm = trackerComm;
         this.torrentFile = torrentFile;
         this.myPieces = myPieces;
         this.fileName = Constants.PREFIX + torrentFile.getName();
         this.leftPieces = new ArrayList<>();
+        String torrentFileName = torrentFile.getName() + Constants.POSTFIX;
+        trackerComm.sendToTracker("show peers " + torrentFileName);
+        String message = trackerComm.receiveFromTracker();
+        if (null == message) {
+            throw new ServerNotCorrespondsException("Server did not show peers");
+        }
+        String[] words = message.split(" ");
+        if (words.length - 1 == 0) {
+            throw new NoSeedsException("No peers are uploading the file at the moment");
+        }
+        int idx = 1;
+        while (idx < words.length) {
+            int peerPort = Integer.parseInt(words[idx++]);
+            int piecesCount = Integer.parseInt(words[idx++]);
+            if (peerPort < 0 || piecesCount < 0) {
+                throw new BadServerReplyException("Negative peerPort or piecesCount");
+            }
+            ArrayList<Integer> availablePieces = new ArrayList<>();
+            for (int i = 0; i < piecesCount; i++) {
+                if (idx >= words.length) {
+                    throw new BadServerReplyException("Wrong count of pieces");
+                }
+                availablePieces.add(Integer.parseInt(words[idx++]));
+            }
+            peersPieces.put(peerPort, availablePieces);
+        }
         for (Integer peerPort : peersPieces.keySet()) {
             if (peersInfo.size() >= Constants.DOWNLOAD_MAX_THREADS_COUNT) {
                 break;

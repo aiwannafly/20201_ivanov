@@ -2,7 +2,7 @@ package com.aiwannafly.gui_torrent.controller;
 
 import com.aiwannafly.gui_torrent.ApplicationStarter;
 import com.aiwannafly.gui_torrent.torrent.Constants;
-import com.aiwannafly.gui_torrent.torrent.ObservableList;
+import com.aiwannafly.gui_torrent.torrent.client.util.ObservableList;
 import com.aiwannafly.gui_torrent.torrent.client.TorrentClient;
 import com.aiwannafly.gui_torrent.torrent.client.exceptions.*;
 import com.aiwannafly.gui_torrent.view.Renderer;

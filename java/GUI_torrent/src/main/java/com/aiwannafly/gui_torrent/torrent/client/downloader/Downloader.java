@@ -1,6 +1,8 @@
 package com.aiwannafly.gui_torrent.torrent.client.downloader;
 
-import com.aiwannafly.gui_torrent.torrent.ObservableList;
+import com.aiwannafly.gui_torrent.torrent.client.exceptions.BadServerReplyException;
+import com.aiwannafly.gui_torrent.torrent.client.exceptions.ServerNotCorrespondsException;
+import com.aiwannafly.gui_torrent.torrent.client.util.ObservableList;
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.Torrent;
 import com.aiwannafly.gui_torrent.torrent.client.exceptions.BadTorrentFileException;
 import com.aiwannafly.gui_torrent.torrent.client.exceptions.NoSeedsException;
@@ -14,7 +16,7 @@ public interface Downloader {
 
     void addTorrentForDownloading(Torrent torrent, Map<Integer, ArrayList<Integer>> peersPieces,
                                   ObservableList<Integer> myPieces)
-            throws NoSeedsException;
+            throws NoSeedsException, ServerNotCorrespondsException, BadServerReplyException;
 
     void stopDownloading(String torrentFileName) throws BadTorrentFileException;
 

@@ -24,13 +24,13 @@ public class TrackerCommunicatorImpl implements TrackerCommunicator {
     }
 
     @Override
-    public void sendToTracker(String msg) {
+    public synchronized void sendToTracker(String msg) {
         out.println(msg);
         out.flush();
     }
 
     @Override
-    public String receiveFromTracker() {
+    public synchronized String receiveFromTracker() {
         try {
             return in.readLine();
         } catch (IOException e) {

@@ -1,6 +1,6 @@
 package com.aiwannafly.gui_torrent.torrent.client;
 
-import com.aiwannafly.gui_torrent.torrent.ObservableList;
+import com.aiwannafly.gui_torrent.torrent.client.util.ObservableList;
 import com.aiwannafly.gui_torrent.torrent.client.exceptions.*;
 
 public interface TorrentClient extends AutoCloseable {
