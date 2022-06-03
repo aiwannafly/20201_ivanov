@@ -2,12 +2,11 @@ package com.aiwannafly.gui_torrent.controller;
 
 import com.aiwannafly.gui_torrent.ApplicationStarter;
 import com.aiwannafly.gui_torrent.torrent.Constants;
+import com.aiwannafly.gui_torrent.torrent.ObservableList;
 import com.aiwannafly.gui_torrent.torrent.client.TorrentClient;
 import com.aiwannafly.gui_torrent.torrent.client.exceptions.*;
 import com.aiwannafly.gui_torrent.view.Renderer;
 import javafx.application.Platform;
-import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -20,6 +19,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Flow;
 
 import static com.aiwannafly.gui_torrent.view.GUITorrentRenderer.*;
 
@@ -80,14 +80,32 @@ public class MainMenuController {
             e.printStackTrace();
             return;
         }
-        collectedPieces.addListener((ListChangeListener<? super Integer>) change -> {
-            Platform.runLater(() -> {
-                while (fileSection.sectionsCount < collectedPieces.size()) {
-                    Renderer.instance.renderNewSegmentBar(fileSection);
+        collectedPieces.subscribe(new Flow.Processor<>() {
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+
+            }
+            @Override
+            public void onNext(Boolean item) {
+                Platform.runLater(() -> {
+                    while (fileSection.sectionsCount < collectedPieces.size()) {
+                        Renderer.instance.renderNewSegmentBar(fileSection);
+                    }
+                });
+                if (collectedPieces.size() == fileSection.torrent.getPieces().size()) {
+                    downloadedTorrents.add(torrentFileName);
                 }
-            });
-            if (collectedPieces.size() == fileSection.torrent.getPieces().size()) {
-                downloadedTorrents.add(torrentFileName);
+            }
+            @Override
+            public void onError(Throwable throwable) {
+
+            }
+            @Override
+            public void onComplete() {
+
+            }
+            @Override
+            public void subscribe(Flow.Subscriber<? super Object> subscriber) {
             }
         });
     }

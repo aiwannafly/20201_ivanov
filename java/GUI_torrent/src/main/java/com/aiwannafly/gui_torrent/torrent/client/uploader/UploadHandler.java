@@ -1,13 +1,13 @@
 package com.aiwannafly.gui_torrent.torrent.client.uploader;
 
+import com.aiwannafly.gui_torrent.torrent.ObservableList;
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.Torrent;
-import com.aiwannafly.gui_torrent.torrent.client.FileManager;
+import com.aiwannafly.gui_torrent.torrent.client.file_manager.FileManager;
 import com.aiwannafly.gui_torrent.torrent.client.exceptions.BadMessageException;
 import com.aiwannafly.gui_torrent.torrent.client.exceptions.DifferentHandshakesException;
 import com.aiwannafly.gui_torrent.torrent.client.util.BitTorrentHandshake;
 import com.aiwannafly.gui_torrent.torrent.client.util.ByteOperations;
 import com.aiwannafly.gui_torrent.torrent.client.messages.Message;
-import javafx.collections.ObservableList;
 
 import java.io.*;
 import java.nio.ByteBuffer;

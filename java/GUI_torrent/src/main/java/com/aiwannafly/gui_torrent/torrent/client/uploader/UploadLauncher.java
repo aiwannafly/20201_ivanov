@@ -1,9 +1,9 @@
 package com.aiwannafly.gui_torrent.torrent.client.uploader;
 
+import com.aiwannafly.gui_torrent.torrent.ObservableList;
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.Torrent;
 import com.aiwannafly.gui_torrent.torrent.Constants;
-import com.aiwannafly.gui_torrent.torrent.client.FileManager;
-import javafx.collections.ObservableList;
+import com.aiwannafly.gui_torrent.torrent.client.file_manager.FileManager;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

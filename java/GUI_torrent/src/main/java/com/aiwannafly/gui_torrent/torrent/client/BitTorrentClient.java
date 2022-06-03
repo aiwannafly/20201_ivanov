@@ -1,5 +1,10 @@
 package com.aiwannafly.gui_torrent.torrent.client;
 
+import com.aiwannafly.gui_torrent.torrent.ObservableList;
+import com.aiwannafly.gui_torrent.torrent.client.file_manager.FileManager;
+import com.aiwannafly.gui_torrent.torrent.client.file_manager.FileManagerImpl;
+import com.aiwannafly.gui_torrent.torrent.client.tracker_communicator.TrackerCommunicator;
+import com.aiwannafly.gui_torrent.torrent.client.tracker_communicator.TrackerCommunicatorImpl;
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.Torrent;
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.TorrentParser;
 import com.aiwannafly.gui_torrent.torrent.Constants;
@@ -9,8 +14,6 @@ import com.aiwannafly.gui_torrent.torrent.client.exceptions.*;
 import com.aiwannafly.gui_torrent.torrent.client.uploader.UploadLauncher;
 import com.aiwannafly.gui_torrent.torrent.client.uploader.Uploader;
 import com.aiwannafly.gui_torrent.torrent.client.util.TorrentFileCreator;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import com.aiwannafly.gui_torrent.torrent.tracker.TrackerCommandHandler;
 
 import java.io.*;
@@ -44,7 +47,7 @@ public class BitTorrentClient implements TorrentClient {
         if (trackerComm == null) {
             initTrackerCommunicator();
         }
-        ObservableList<Integer> myPieces = FXCollections.observableList(new ArrayList<>());
+        ObservableList<Integer> myPieces = new ObservableList<>();
         this.myPieces.put(torrentFileName, myPieces);
         distributePart(torrentFile, torrentFileName, myPieces);
         trackerComm.sendToTracker("show peers " + torrentFileName);
@@ -82,7 +85,7 @@ public class BitTorrentClient implements TorrentClient {
 
     @Override
     public void distribute(String torrentFilePath) throws BadTorrentFileException, ServerNotCorrespondsException {
-        ObservableList<Integer> allPieces = FXCollections.observableList(new ArrayList<>());
+        ObservableList<Integer> allPieces = new ObservableList<>();
         String torrentFileName = torrentFilePath.substring(torrentFilePath.lastIndexOf(Constants.PATH_DIVIDER) + 1);
         myPieces.put(torrentFileName, allPieces);
         String postfix = Constants.POSTFIX;

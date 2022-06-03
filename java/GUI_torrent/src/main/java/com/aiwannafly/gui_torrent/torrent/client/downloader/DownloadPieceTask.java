@@ -1,7 +1,7 @@
 package com.aiwannafly.gui_torrent.torrent.client.downloader;
 
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.Torrent;
-import com.aiwannafly.gui_torrent.torrent.client.FileManager;
+import com.aiwannafly.gui_torrent.torrent.client.file_manager.FileManager;
 import com.aiwannafly.gui_torrent.torrent.client.util.ByteOperations;
 import com.aiwannafly.gui_torrent.torrent.client.messages.Message;
 

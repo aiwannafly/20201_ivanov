@@ -1,4 +1,4 @@
-package com.aiwannafly.gui_torrent.torrent.client;
+package com.aiwannafly.gui_torrent.torrent.client.file_manager;
 
 import java.io.IOException;
 

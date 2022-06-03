@@ -1,8 +1,7 @@
 package com.aiwannafly.gui_torrent.torrent.client;
 
+import com.aiwannafly.gui_torrent.torrent.ObservableList;
 import com.aiwannafly.gui_torrent.torrent.client.exceptions.*;
-import javafx.collections.ObservableList;
-
 
 public interface TorrentClient extends AutoCloseable {
 

@@ -1,6 +1,4 @@
-package com.aiwannafly.gui_torrent;
-
-import com.aiwannafly.gui_torrent.torrent.tracker.TrackerCommandHandler;
+package com.aiwannafly.gui_torrent.torrent.tracker;
 
 import java.io.*;
 import java.net.*;

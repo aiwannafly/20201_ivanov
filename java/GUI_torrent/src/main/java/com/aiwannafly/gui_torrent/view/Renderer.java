@@ -1,7 +1,7 @@
 package com.aiwannafly.gui_torrent.view;
 
 import com.aiwannafly.gui_torrent.ApplicationStarter;
-import com.aiwannafly.gui_torrent.TrackerServer;
+import com.aiwannafly.gui_torrent.torrent.tracker.TrackerServer;
 import com.aiwannafly.gui_torrent.controller.MainMenuController;
 import com.aiwannafly.gui_torrent.torrent.Constants;
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.Torrent;
@@ -33,7 +33,7 @@ public class Renderer implements GUITorrentRenderer {
     private static final double SECTION_LENGTH = NUM_FIELD_LENGTH +
             NAME_FIELD_LENGTH + SIZE_FIELD_LENGTH + STATUS_FIELD_LENGTH +
             BAR_FIELD_LENGTH;
-    private static final String STYLESHEET = Objects.requireNonNull(TrackerServer.class.getResource(
+    private static final String STYLESHEET = Objects.requireNonNull(ApplicationStarter.class.getResource(
             "styles.css")).toExternalForm();
     private static final double WINDOW_WIDTH = 1200;
     private static final double WINDOW_HEIGHT = 480;

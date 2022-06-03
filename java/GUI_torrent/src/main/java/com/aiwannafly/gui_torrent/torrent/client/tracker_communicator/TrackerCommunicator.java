@@ -1,4 +1,4 @@
-package com.aiwannafly.gui_torrent.torrent.client;
+package com.aiwannafly.gui_torrent.torrent.client.tracker_communicator;
 
 public interface TrackerCommunicator {
 
