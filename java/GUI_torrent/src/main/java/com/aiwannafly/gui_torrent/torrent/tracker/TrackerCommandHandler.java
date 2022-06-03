@@ -23,7 +23,7 @@ public class TrackerCommandHandler implements Runnable {
     private final static String PEERS_LIST = "peers";
     private final static String PEER_ID = "peer_id";
     private final static String WRONG_COMMAND_MSG = "Wrong command";
-    private final static String INCOMPLETE_COMMAND_MSG = "Incomplete command";
+    private final static String INCOMPLETE_COMMAND_MSG = "Incomplete command";;
     private PrintWriter out = null;
     private BufferedReader in = null;
 
@@ -52,7 +52,10 @@ public class TrackerCommandHandler implements Runnable {
                     break;
                 }
                 String message = getResponse(command);
-                out.println(message);
+                if (message != null) {
+                    out.println(message);
+                    out.flush();
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -137,7 +140,11 @@ public class TrackerCommandHandler implements Runnable {
                     TrackerServer.PeerInfo peerInfo = new TrackerServer.PeerInfo();
                     peerInfo.port = port;
                     peerInfo.availablePieces = availablePieces;
-                    server.getFilePeersInfo().get(torrentFileName).put(clientSocket, peerInfo);
+                    if (server.getFilePeersInfo().get(torrentFileName).containsKey(clientSocket)) {
+                        server.getFilePeersInfo().get(torrentFileName).replace(clientSocket, peerInfo);
+                    } else {
+                        server.getFilePeersInfo().get(torrentFileName).put(clientSocket, peerInfo);
+                    }
                 }
             }
         }

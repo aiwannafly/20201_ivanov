@@ -56,6 +56,9 @@ public class MultyDownloadManager implements Downloader {
         downloading = true;
         downloadService.submit(() -> {
             while (!downloadManagers.isEmpty()) {
+                if (Thread.currentThread().isInterrupted()) {
+                    break;
+                }
                 while (!newTorrents.isEmpty()) {
                     DownloadManager downloadManager = newTorrents.remove();
                     String torrentFileName = downloadManager.getTorrentFile().getName() +
@@ -102,18 +105,23 @@ public class MultyDownloadManager implements Downloader {
 
     @Override
     public void shutdown() {
-        leechPool.shutdown();
-        try {
-            boolean completed = leechPool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
-            if (!completed) {
-                System.err.println("=== Execution was not completed");
+        if (!downloading) {
+            leechPool.shutdown();
+            long waitTimeSecs = 1;
+            try {
+                boolean completed = leechPool.awaitTermination(waitTimeSecs, TimeUnit.SECONDS);
+                if (!completed) {
+                    System.err.println("=== Execution was not completed");
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        } else {
+            leechPool.shutdownNow();
         }
         for (String torrentFileName: downloadManagers.keySet()) {
             downloadManagers.get(torrentFileName).shutdown();
         }
-        downloader.shutdown();
+        downloader.shutdownNow();
     }
 }

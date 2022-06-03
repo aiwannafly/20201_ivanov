@@ -9,10 +9,11 @@ public interface TorrentClient extends AutoCloseable {
     void download(String torrentFilePath) throws BadTorrentFileException,
             NoSeedsException, ServerNotCorrespondsException, BadServerReplyException;
 
-    void distribute(String torrentFilePath) throws BadTorrentFileException;
+    void distribute(String torrentFilePath) throws BadTorrentFileException,
+            ServerNotCorrespondsException;
 
     void createTorrent(String filePath) throws TorrentCreateFailureException,
-            BadTorrentFileException;
+            BadTorrentFileException, ServerNotCorrespondsException;
 
     void stopDownloading(String torrentFileName) throws BadTorrentFileException;
 

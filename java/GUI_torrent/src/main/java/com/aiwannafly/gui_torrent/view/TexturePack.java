@@ -14,7 +14,8 @@ public class TexturePack {
 
     public final static Image backgroundImage = new Image(Objects.requireNonNull(ApplicationStarter.class.getResource(
             "images/background.png")).toString());
-
+    public final static Image iconImage = new Image(Objects.requireNonNull(ApplicationStarter.class.getResource(
+            "images/icon.png")).toString());
     public final static ImagePattern stopButton = getImagePattern("images/stop.png");
     public final static ImagePattern resumeButton = getImagePattern("images/resume.png");
     public final static ImagePattern stopBlackButton = getImagePattern("images/stop_black.png");

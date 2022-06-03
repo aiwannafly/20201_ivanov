@@ -4,6 +4,7 @@ import com.aiwannafly.gui_torrent.controller.MainMenuController;
 import com.aiwannafly.gui_torrent.torrent.client.BitTorrentClient;
 import com.aiwannafly.gui_torrent.torrent.client.TorrentClient;
 import com.aiwannafly.gui_torrent.view.Renderer;
+import com.aiwannafly.gui_torrent.view.TexturePack;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -19,6 +20,7 @@ public class ApplicationStarter extends Application {
         Scene scene = Renderer.getScene();
         stage.setTitle("aiTorrent");
         stage.setScene(scene);
+        stage.getIcons().add(TexturePack.iconImage);
         stage.setOnCloseRequest(event -> MainMenuController.exit());
         stage.show();
     }

@@ -1,6 +1,7 @@
 package com.aiwannafly.gui_torrent.torrent.client;
 
 import com.aiwannafly.gui_torrent.TrackerServer;
+import com.aiwannafly.gui_torrent.torrent.client.exceptions.ServerNotCorrespondsException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,13 +13,13 @@ public class TrackerCommunicatorImpl implements TrackerCommunicator {
     private PrintWriter out;
     private BufferedReader in;
 
-    public TrackerCommunicatorImpl() {
+    public TrackerCommunicatorImpl() throws ServerNotCorrespondsException {
         try {
             Socket trackerSocket = new Socket("localhost", TrackerServer.PORT);
             out = new PrintWriter(trackerSocket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(trackerSocket.getInputStream()));
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new ServerNotCorrespondsException("Server not corresponds: " + e.getMessage());
         }
     }
 

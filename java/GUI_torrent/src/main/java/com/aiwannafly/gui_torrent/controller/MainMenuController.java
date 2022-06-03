@@ -102,7 +102,7 @@ public class MainMenuController {
         String torrentFileName = torrentFilePath.substring(torrentFilePath.lastIndexOf(Constants.PATH_DIVIDER) + 1);
         try {
             torrentClient.distribute(torrentFilePath);
-        } catch (BadTorrentFileException e) {
+        } catch (BadTorrentFileException | ServerNotCorrespondsException e) {
             showErrorAlert("Could not upload " + torrentFileName + ": " + e.getMessage());
             return;
         }
@@ -123,7 +123,7 @@ public class MainMenuController {
         String fileName = filePath.substring(filePath.lastIndexOf(Constants.PATH_DIVIDER) + 1);
         try {
             torrentClient.createTorrent(filePath);
-        } catch (BadTorrentFileException | TorrentCreateFailureException e) {
+        } catch (BadTorrentFileException | TorrentCreateFailureException | ServerNotCorrespondsException e) {
             showErrorAlert("Could not create a torrent for " + fileName +
                     ": " + e.getMessage());
             return;

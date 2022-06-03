@@ -19,20 +19,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BitTorrentClient implements TorrentClient {
-    private final String peerId;
-    private final TrackerCommunicator trackerComm;
+    private String peerId;
+    private TrackerCommunicator trackerComm;
     private final FileManager fileManager;
-    private final Downloader downloader;
+    private Downloader downloader;
     private final Map<String, Map<Integer, ArrayList<Integer>>> peersPieces = new HashMap<>();
     private final Map<String, Uploader> uploaders = new HashMap<>();
     private final Map<String, ObservableList<Integer>> myPieces = new HashMap<>();
 
     public BitTorrentClient() {
         fileManager = new FileManagerImpl();
-        trackerComm = new TrackerCommunicatorImpl();
-        trackerComm.sendToTracker("get peer_id");
-        peerId = trackerComm.receiveFromTracker();
-        downloader = new MultyDownloadManager(fileManager, peerId);
     }
 
     @Override
@@ -45,6 +41,9 @@ public class BitTorrentClient implements TorrentClient {
         } catch (IOException e) {
             throw new BadTorrentFileException("Could not open torrent file " + e.getMessage());
         }
+        if (trackerComm == null) {
+            initTrackerCommunicator();
+        }
         ObservableList<Integer> myPieces = FXCollections.observableList(new ArrayList<>());
         this.myPieces.put(torrentFileName, myPieces);
         distributePart(torrentFile, torrentFileName, myPieces);
@@ -53,7 +52,6 @@ public class BitTorrentClient implements TorrentClient {
         if (null == message) {
             throw new ServerNotCorrespondsException("Server did not show peers");
         }
-        System.out.println(message);
         String[] words = message.split(" ");
         if (words.length - 1 == 0) {
             throw new NoSeedsException("No peers are uploading the file at the moment");
@@ -75,12 +73,15 @@ public class BitTorrentClient implements TorrentClient {
             }
             peersPieces.put(peerPort, availablePieces);
         }
+        if (downloader == null) {
+            downloader = new MultyDownloadManager(fileManager, peerId);
+        }
         downloader.addTorrentForDownloading(torrentFile, peersPieces, myPieces);
         downloader.launchDownloading();
     }
 
     @Override
-    public void distribute(String torrentFilePath) throws BadTorrentFileException {
+    public void distribute(String torrentFilePath) throws BadTorrentFileException, ServerNotCorrespondsException {
         ObservableList<Integer> allPieces = FXCollections.observableList(new ArrayList<>());
         String torrentFileName = torrentFilePath.substring(torrentFilePath.lastIndexOf(Constants.PATH_DIVIDER) + 1);
         myPieces.put(torrentFileName, allPieces);
@@ -103,9 +104,13 @@ public class BitTorrentClient implements TorrentClient {
         distributePart(torrentFile, torrentFileName, allPieces);
     }
 
-    private void distributePart(Torrent torrentFile, String fileName, ObservableList<Integer> pieces) {
+    private void distributePart(Torrent torrentFile, String fileName, ObservableList<Integer> pieces)
+    throws ServerNotCorrespondsException {
         if (peersPieces.containsKey(fileName)) {
             return;
+        }
+        if (trackerComm == null) {
+            initTrackerCommunicator();
         }
         peersPieces.put(fileName, new HashMap<>());
         Uploader uploader = new UploadLauncher(torrentFile, fileManager, peerId, pieces);
@@ -123,7 +128,7 @@ public class BitTorrentClient implements TorrentClient {
 
     @Override
     public void createTorrent(String filePath) throws TorrentCreateFailureException,
-            BadTorrentFileException {
+            BadTorrentFileException, ServerNotCorrespondsException {
         String torrentFilePath = filePath + Constants.POSTFIX;
         String torrentFileName = torrentFilePath.substring(torrentFilePath.lastIndexOf(Constants.PATH_DIVIDER) + 1);
         File torrentFile = new File(Constants.TORRENT_PATH + torrentFileName);
@@ -156,16 +161,26 @@ public class BitTorrentClient implements TorrentClient {
 
     @Override
     public void close() {
-        trackerComm.sendToTracker(Constants.STOP_COMMAND);
+        if (trackerComm != null) {
+            trackerComm.sendToTracker(Constants.STOP_COMMAND);
+            trackerComm.close();
+        }
         for (Uploader uploader : uploaders.values()) {
             uploader.shutdown();
         }
-        trackerComm.close();
-        downloader.shutdown();
+        if (downloader != null) {
+            downloader.shutdown();
+        }
         try {
             fileManager.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void initTrackerCommunicator() throws ServerNotCorrespondsException {
+        trackerComm = new TrackerCommunicatorImpl();
+        trackerComm.sendToTracker("get peer_id");
+        peerId = trackerComm.receiveFromTracker();
     }
 }
