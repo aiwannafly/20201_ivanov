@@ -1,6 +1,5 @@
 package com.aiwannafly.gui_torrent.torrent.client.messages;
 
-import com.aiwannafly.gui_torrent.torrent.Constants;
 import com.aiwannafly.gui_torrent.torrent.client.exceptions.BadMessageException;
 import com.aiwannafly.gui_torrent.torrent.client.util.ByteOperations;
 
@@ -8,7 +7,6 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.StandardCharsets;
 
 public class Message {
     public static final int CHOKE = 0;

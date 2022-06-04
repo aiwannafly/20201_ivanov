@@ -149,6 +149,9 @@ public class UploadHandler implements Runnable {
             }
             keysIterator.remove();
         }
+        if (leechesInfo.isEmpty()) {
+            sentPieces.clear();
+        }
     }
 
     private void establishConnection(SocketChannel client) throws DifferentHandshakesException,

@@ -1,14 +1,11 @@
 package com.aiwannafly.gui_torrent.torrent.client.uploader;
 
-import com.aiwannafly.gui_torrent.torrent.Constants;
+import com.aiwannafly.gui_torrent.Constants;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class KeepAliveHandler {

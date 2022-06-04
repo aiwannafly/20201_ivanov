@@ -1,19 +1,24 @@
 package com.aiwannafly.gui_torrent.controller;
 
+import com.aiwannafly.gui_torrent.torrent.client.util.ObservableList;
 import com.aiwannafly.gui_torrent.view.GUITorrentRenderer;
+import com.aiwannafly.gui_torrent.view.Renderer;
 import javafx.application.Platform;
 
 import java.util.concurrent.Flow;
 
 public class UploadListener implements Flow.Subscriber<Boolean> {
     private final GUITorrentRenderer.FileSection fileSection;
+    private final ObservableList<Integer> sentPieces;
     private long lastUpdateTime = System.currentTimeMillis();
     private long currentTime = System.currentTimeMillis();
     private final int piecesPortion;
     private int uploadedCount = 0;
 
-    public UploadListener(GUITorrentRenderer.FileSection fileSection) {
+    public UploadListener(GUITorrentRenderer.FileSection fileSection,
+                          ObservableList<Integer> sentPieces) {
         this.fileSection = fileSection;
+        this.sentPieces = sentPieces;
         this.piecesPortion = 1 + fileSection.torrent.getPieces().size() / 10;
     }
 
@@ -38,6 +43,10 @@ public class UploadListener implements Flow.Subscriber<Boolean> {
     }
 
     private void showUploadSpeed() {
+        if (sentPieces.isEmpty()) {
+            Renderer.instance.clearFileSection(fileSection);
+            return;
+        }
         uploadedCount++;
         if (uploadedCount % piecesPortion != 0) {
             return;

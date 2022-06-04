@@ -1,4 +1,4 @@
-package com.aiwannafly.gui_torrent.torrent;
+package com.aiwannafly.gui_torrent;
 
 public class Constants {
     public static final int DOWNLOAD_MAX_THREADS_COUNT = 8;

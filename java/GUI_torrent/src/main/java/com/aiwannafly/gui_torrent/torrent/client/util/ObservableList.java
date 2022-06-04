@@ -21,6 +21,12 @@ public class ObservableList<T> extends ArrayList<T> implements Flow.Publisher<Bo
     }
 
     @Override
+    public void clear() {
+        notifyObservers();
+        super.clear();
+    }
+
+    @Override
     public void subscribe(Flow.Subscriber<? super Boolean> subscriber) {
         subscribers.add(subscriber);
     }

@@ -1,4 +1,4 @@
-package com.aiwannafly.gui_torrent.torrent.tracker;
+package com.aiwannafly.gui_torrent.tracker;
 
 import java.io.BufferedReader;
 import java.io.IOException;

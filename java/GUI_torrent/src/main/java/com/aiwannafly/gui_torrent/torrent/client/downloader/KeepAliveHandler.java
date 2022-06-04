@@ -1,6 +1,6 @@
 package com.aiwannafly.gui_torrent.torrent.client.downloader;
 
-import com.aiwannafly.gui_torrent.torrent.Constants;
+import com.aiwannafly.gui_torrent.Constants;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -55,14 +55,14 @@ public class KeepAliveHandler {
             for (Integer peerPort : seedsInfo.keySet()) {
                 if (getTimeFromLastKeepAlive(peerPort) > Constants.MAX_KEEP_ALIVE_INTERVAL) {
                     System.out.println("=== Close connection");
-                    // close connection
                     DownloadManager.PeerInfo info = seedsInfo.get(peerPort);
                     try {
                         info.in.close();
+                        info.out.close();
+                        info.channel.close();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    info.out.close();
                     removalList.add(peerPort);
                 }
             }

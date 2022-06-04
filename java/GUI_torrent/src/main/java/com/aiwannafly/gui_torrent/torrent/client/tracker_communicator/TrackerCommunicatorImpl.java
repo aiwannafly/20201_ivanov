@@ -1,6 +1,6 @@
 package com.aiwannafly.gui_torrent.torrent.client.tracker_communicator;
 
-import com.aiwannafly.gui_torrent.torrent.tracker.TrackerServer;
+import com.aiwannafly.gui_torrent.tracker.TrackerServer;
 import com.aiwannafly.gui_torrent.torrent.client.exceptions.ServerNotCorrespondsException;
 
 import java.io.BufferedReader;

@@ -1,11 +1,10 @@
 package com.aiwannafly.gui_torrent.controller;
 
 import com.aiwannafly.gui_torrent.ApplicationStarter;
-import com.aiwannafly.gui_torrent.torrent.Constants;
+import com.aiwannafly.gui_torrent.Constants;
 import com.aiwannafly.gui_torrent.torrent.client.util.ObservableList;
 import com.aiwannafly.gui_torrent.torrent.client.TorrentClient;
 import com.aiwannafly.gui_torrent.torrent.client.exceptions.*;
-import com.aiwannafly.gui_torrent.view.GUITorrentRenderer;
 import com.aiwannafly.gui_torrent.view.Renderer;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -40,7 +39,7 @@ public class MainMenuController {
     protected void onDownloadButtonClick() {
         TorrentClient torrentClient = ApplicationStarter.getTorrentClient();
         assert torrentClient != null;
-        File file = chooseFile("Choose a file to download");
+        File file = chooseFile("Choose a file to download", "torrents", "*.torrent");
         if (file == null) {
             return;
         }
@@ -73,6 +72,7 @@ public class MainMenuController {
         FileSection fileSection = Renderer.instance.createFileSection(torrentFilePath, Status.DOWNLOADING);
         Renderer.instance.renderFileSection(fileSection);
         fileSections.put(torrentFileName, fileSection);
+        fileSection.uSpeedLabel.setText("0");
         ObservableList<Integer> collectedPieces;
         try {
             collectedPieces = torrentClient.getCollectedPieces(torrentFileName);
@@ -88,14 +88,14 @@ public class MainMenuController {
             e.printStackTrace();
             return;
         }
-        sentPieces.subscribe(new UploadListener(fileSection));
+        sentPieces.subscribe(new UploadListener(fileSection, sentPieces));
     }
 
     @FXML
     private void onDistributeButtonClick() {
         TorrentClient torrentClient = ApplicationStarter.getTorrentClient();
         assert torrentClient != null;
-        File file = chooseFile("Choose a file to distribute");
+        File file = chooseFile("Choose a .torrent file to distribute", "torrents", "*.torrent");
         if (file == null) {
             return;
         }
@@ -118,7 +118,7 @@ public class MainMenuController {
     private void onCreateButtonClick() {
         TorrentClient torrentClient = ApplicationStarter.getTorrentClient();
         assert torrentClient != null;
-        File file = chooseFile("Choose a file to make its torrent");
+        File file = chooseFile("Choose a file to make its torrent", "uploads", null);
         if (file == null) {
             return;
         }
@@ -151,7 +151,7 @@ public class MainMenuController {
             e.printStackTrace();
             return;
         }
-        sentPieces.subscribe(new UploadListener(fileSection));
+        sentPieces.subscribe(new UploadListener(fileSection, sentPieces));
     }
 
     @FXML
@@ -170,9 +170,15 @@ public class MainMenuController {
         Platform.exit();
     }
 
-    private File chooseFile(String message) {
+    private File chooseFile(String message, String dirName, String fileExtension) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(message);
+        File dir = new File(dirName);
+        fileChooser.setInitialDirectory(dir);
+        if (fileExtension != null) {
+            FileChooser.ExtensionFilter fileExtensions = new FileChooser.ExtensionFilter("Files", fileExtension);
+            fileChooser.getExtensionFilters().add(fileExtensions);
+        }
         Stage stage = (Stage) downloadButton.getScene().getWindow();
         return fileChooser.showOpenDialog(stage);
     }
@@ -199,6 +205,7 @@ public class MainMenuController {
                 return;
             }
             fileSections.get(torrentFileName).buttonStatus = ButtonStatus.RESUME;
+            fileSections.get(torrentFileName).dSpeedLabel.setText("");
             return;
         }
         try {

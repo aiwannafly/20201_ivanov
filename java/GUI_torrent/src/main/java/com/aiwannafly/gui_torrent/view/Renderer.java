@@ -2,7 +2,7 @@ package com.aiwannafly.gui_torrent.view;
 
 import com.aiwannafly.gui_torrent.ApplicationStarter;
 import com.aiwannafly.gui_torrent.controller.MainMenuController;
-import com.aiwannafly.gui_torrent.torrent.Constants;
+import com.aiwannafly.gui_torrent.Constants;
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.Torrent;
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.TorrentParser;
 import javafx.fxml.FXMLLoader;
@@ -163,6 +163,22 @@ public class Renderer implements GUITorrentRenderer {
             return;
         }
         rootPane.getChildren().add(fileSection.stopResumeButton);
+    }
+
+    @Override
+    public void clearFileSection(FileSection fileSection) {
+        Button button = fileSection.stopResumeButton;
+        if (button != null) {
+            rootPane.getChildren().remove(button);
+            Label buttonLabel = new Label();
+            buttonLabel.setPrefHeight(LABEL_HEIGHT);
+            buttonLabel.setPrefWidth(LABEL_HEIGHT);
+            buttonLabel.setLayoutX(button.getLayoutX());
+            buttonLabel.setLayoutY(button.getLayoutY());
+            rootPane.getChildren().add(buttonLabel);
+        }
+        fileSection.uSpeedLabel.setText("");
+        fileSection.dSpeedLabel.setText("");
     }
 
     @Override

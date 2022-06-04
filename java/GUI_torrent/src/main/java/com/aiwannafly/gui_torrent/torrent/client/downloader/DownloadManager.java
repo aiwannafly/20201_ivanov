@@ -4,7 +4,7 @@ import com.aiwannafly.gui_torrent.torrent.client.exceptions.*;
 import com.aiwannafly.gui_torrent.torrent.client.tracker_communicator.TrackerCommunicator;
 import com.aiwannafly.gui_torrent.torrent.client.util.ObservableList;
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.Torrent;
-import com.aiwannafly.gui_torrent.torrent.Constants;
+import com.aiwannafly.gui_torrent.Constants;
 import com.aiwannafly.gui_torrent.torrent.client.file_manager.FileManager;
 import com.aiwannafly.gui_torrent.torrent.client.messages.Message;
 import com.aiwannafly.gui_torrent.torrent.client.util.BitTorrentHandshake;
@@ -35,6 +35,7 @@ public class DownloadManager {
     private final ObservableList<Integer> myPieces;
     private final TrackerCommunicator trackerComm;
     private final Timer updateConnectionsTimer;
+    private final long UPDATE_INTERV = 4 * 1000;
 
     public enum DownloadStatus {
         FINISHED, NOT_FINISHED, FAILED
@@ -80,7 +81,7 @@ public class DownloadManager {
                 }
             }
         };
-        updateConnectionsTimer.schedule(updateConnections, 4 * 1000, 1000 * 4);
+        updateConnectionsTimer.schedule(updateConnections, UPDATE_INTERV, UPDATE_INTERV);
         if (peersInfo.isEmpty()) {
             throw new NoSeedsException("No seeds uploading file " + torrentFile.getName());
         }
@@ -168,6 +169,9 @@ public class DownloadManager {
                 }
                 if (peersInfo.get(peerPort).in != null) {
                     peersInfo.get(peerPort).in.close();
+                }
+                if (peersInfo.get(peerPort).channel != null) {
+                    peersInfo.get(peerPort).channel.close();
                 }
             } catch (IOException e) {
                 e.printStackTrace();

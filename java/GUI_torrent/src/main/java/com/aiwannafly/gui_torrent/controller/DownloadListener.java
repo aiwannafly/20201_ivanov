@@ -5,7 +5,6 @@ import com.aiwannafly.gui_torrent.view.GUITorrentRenderer;
 import com.aiwannafly.gui_torrent.view.Renderer;
 import javafx.application.Platform;
 
-import java.util.ArrayList;
 import java.util.Set;
 import java.util.concurrent.Flow;
 
@@ -23,7 +22,9 @@ public class DownloadListener implements Flow.Subscriber<Boolean> {
         this.fileSection = fileSection;
         this.collectedPieces = collectedPieces;
         this.downloadedTorrents = downloadedTorrents;
-        this.piecesPortion = 1 + fileSection.torrent.getPieces().size() / 10;
+        int MAX_PORTION = 4;
+        this.piecesPortion = Math.min(1 + fileSection.torrent.getPieces().size() / 10,
+                MAX_PORTION);
     }
 
     @Override
@@ -38,8 +39,10 @@ public class DownloadListener implements Flow.Subscriber<Boolean> {
                 downloadedCount++;
                 Renderer.instance.renderNewSegmentBar(fileSection);
             }
-            if (collectedPieces.size() == fileSection.torrent.getPieces().size()) {
+            if (fileSection.torrent.getPieces().size() - collectedPieces.size() <= 1) {
                 downloadedTorrents.add(fileSection.torrentFileName);
+                Renderer.instance.clearFileSection(fileSection);
+                return;
             }
             if (downloadedCount % piecesPortion != 0) {
                 return;

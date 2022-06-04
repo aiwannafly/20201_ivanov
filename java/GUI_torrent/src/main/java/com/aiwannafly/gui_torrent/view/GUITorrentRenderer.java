@@ -38,5 +38,7 @@ public interface GUITorrentRenderer {
 
     void renderFileSection(FileSection fileSection);
 
+    void clearFileSection(FileSection fileSection);
+
     void renderNewSegmentBar(FileSection fileSection);
 }
