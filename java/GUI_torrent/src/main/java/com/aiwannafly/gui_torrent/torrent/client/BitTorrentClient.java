@@ -26,6 +26,7 @@ public class BitTorrentClient implements TorrentClient {
     private Downloader downloader;
     private final Map<String, Uploader> uploaders = new HashMap<>();
     private final Map<String, ObservableList<Integer>> myPieces = new HashMap<>();
+    private final Map<String, ObservableList<Integer>> sentPieces = new HashMap<>();
 
     public BitTorrentClient() {
         fileManager = new FileManagerImpl();
@@ -86,7 +87,9 @@ public class BitTorrentClient implements TorrentClient {
         if (trackerComm == null) {
             initTrackerCommunicator();
         }
-        Uploader uploader = new UploadLauncher(torrentFile, fileManager, peerId, pieces, trackerComm);
+        sentPieces.put(fileName, new ObservableList<>());
+        Uploader uploader = new UploadLauncher(torrentFile, fileManager, peerId, pieces, trackerComm,
+                sentPieces.get(fileName));
         uploader.launchDistribution();
         uploaders.put(fileName, uploader);
     }
@@ -122,6 +125,14 @@ public class BitTorrentClient implements TorrentClient {
             throw new BadTorrentFileException("=== File not found");
         }
         return myPieces.get(torrentFileName);
+    }
+
+    @Override
+    public ObservableList<Integer> getSentPieces(String torrentFileName) throws BadTorrentFileException {
+        if (!sentPieces.containsKey(torrentFileName)) {
+            throw new BadTorrentFileException("=== File not found");
+        }
+        return sentPieces.get(torrentFileName);
     }
 
     @Override

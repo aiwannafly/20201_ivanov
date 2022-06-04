@@ -19,10 +19,12 @@ public interface GUITorrentRenderer {
     }
 
     class FileSection {
-        public String fileName;
+        public String torrentFileName;
         public Status status;
         public Button stopResumeButton;
         public ButtonStatus buttonStatus;
+        public Label dSpeedLabel;
+        public Label uSpeedLabel;
         public ArrayList<Label> labels;
         public double x;
         public double y;

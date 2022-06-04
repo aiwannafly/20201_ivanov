@@ -19,11 +19,14 @@ public class UploadLauncher implements Uploader {
     private final String peerId;
     private final ObservableList<Integer> availablePieces;
     private final TrackerCommunicator trackerComm;
+    private final ObservableList<Integer> sentPieces;
 
     public UploadLauncher(Torrent torrentFile, FileManager fileManager, String peerId,
-                          ObservableList<Integer> availablePieces, TrackerCommunicator trackerComm) {
+                          ObservableList<Integer> availablePieces, TrackerCommunicator trackerComm,
+                          ObservableList<Integer> sentPieces) {
         this.torrentFile = torrentFile;
         this.fileManager = fileManager;
+        this.sentPieces = sentPieces;
         this.availablePieces = availablePieces;
         this.trackerComm = trackerComm;
         this.peerId = peerId;
@@ -49,7 +52,8 @@ public class UploadLauncher implements Uploader {
         trackerComm.sendToTracker(command.toString());
         trackerComm.receiveFromTracker();
         connectionsHandlerThread = new Thread(new UploadHandler(this.torrentFile,
-                this.fileManager, this.peerId, this.serverSocketChannel, this.availablePieces));
+                this.fileManager, this.peerId, this.serverSocketChannel, this.availablePieces,
+                this.sentPieces));
         connectionsHandlerThread.setName(Constants.CONNECTIONS_THREAD_NAME);
         connectionsHandlerThread.setDaemon(true);
         connectionsHandlerThread.start();

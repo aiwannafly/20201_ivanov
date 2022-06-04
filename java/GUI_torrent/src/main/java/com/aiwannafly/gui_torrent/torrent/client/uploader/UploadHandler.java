@@ -24,6 +24,7 @@ public class UploadHandler implements Runnable {
     private Selector selector;
     private final ObservableList<Integer> myPieces;
     private final Set<Integer> announcedPieces = new HashSet<>();
+    private final ObservableList<Integer> sentPieces;
 
     public static class LeechInfo {
         Long lastKeepAliveTime;
@@ -33,9 +34,10 @@ public class UploadHandler implements Runnable {
 
     public UploadHandler(Torrent torrentFile, FileManager fileManager, String peerId,
                          ServerSocketChannel serverSocket,
-                         ObservableList<Integer> myPieces) {
+                         ObservableList<Integer> myPieces, ObservableList<Integer> sentPieces) {
         this.torrentFile = torrentFile;
         this.fileManager = fileManager;
+        this.sentPieces = sentPieces;
         this.peerId = peerId;
         this.serverSocketChannel = serverSocket;
         this.myPieces = myPieces;
@@ -142,6 +144,7 @@ public class UploadHandler implements Runnable {
                     Reply reply = leechesInfo.get(client).pieces.remove();
                     client.write(reply.header);
                     client.write(reply.data);
+                    sentPieces.add(reply.pieceIdx);
                 }
             }
             keysIterator.remove();
@@ -188,6 +191,7 @@ public class UploadHandler implements Runnable {
             Reply r = new Reply();
             r.header = ByteBuffer.wrap(reply.getBytes(StandardCharsets.UTF_8));
             r.data = ByteBuffer.wrap(piece);
+            r.pieceIdx = idx;
             return r;
         } else if (type == Message.HAVE) {
             if (message.data.length() < 4) {
@@ -234,5 +238,6 @@ public class UploadHandler implements Runnable {
     private static class Reply {
         ByteBuffer header;
         ByteBuffer data;
+        int pieceIdx;
     }
 }

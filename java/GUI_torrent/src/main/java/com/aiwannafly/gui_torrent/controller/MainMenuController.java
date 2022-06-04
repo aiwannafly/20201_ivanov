@@ -5,6 +5,7 @@ import com.aiwannafly.gui_torrent.torrent.Constants;
 import com.aiwannafly.gui_torrent.torrent.client.util.ObservableList;
 import com.aiwannafly.gui_torrent.torrent.client.TorrentClient;
 import com.aiwannafly.gui_torrent.torrent.client.exceptions.*;
+import com.aiwannafly.gui_torrent.view.GUITorrentRenderer;
 import com.aiwannafly.gui_torrent.view.Renderer;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -19,7 +20,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Flow;
 
 import static com.aiwannafly.gui_torrent.view.GUITorrentRenderer.*;
 
@@ -80,34 +80,15 @@ public class MainMenuController {
             e.printStackTrace();
             return;
         }
-        collectedPieces.subscribe(new Flow.Processor<>() {
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-
-            }
-            @Override
-            public void onNext(Boolean item) {
-                Platform.runLater(() -> {
-                    while (fileSection.sectionsCount < collectedPieces.size()) {
-                        Renderer.instance.renderNewSegmentBar(fileSection);
-                    }
-                });
-                if (collectedPieces.size() == fileSection.torrent.getPieces().size()) {
-                    downloadedTorrents.add(torrentFileName);
-                }
-            }
-            @Override
-            public void onError(Throwable throwable) {
-
-            }
-            @Override
-            public void onComplete() {
-
-            }
-            @Override
-            public void subscribe(Flow.Subscriber<? super Object> subscriber) {
-            }
-        });
+        collectedPieces.subscribe(new DownloadListener(fileSection, collectedPieces, downloadedTorrents));
+        ObservableList<Integer> sentPieces;
+        try {
+            sentPieces = torrentClient.getSentPieces(torrentFileName);
+        } catch (BadTorrentFileException e) {
+            e.printStackTrace();
+            return;
+        }
+        sentPieces.subscribe(new UploadListener(fileSection));
     }
 
     @FXML
@@ -130,9 +111,7 @@ public class MainMenuController {
             showErrorAlert("Could not upload " + torrentFileName + ": " + e.getMessage());
             return;
         }
-        FileSection fileSection = Renderer.instance.createFileSection(torrentFilePath, Status.DISTRIBUTED);
-        Renderer.instance.renderFileSection(fileSection);
-        fileSections.put(torrentFileName, fileSection);
+        renderFileUploading(torrentClient, torrentFileName, torrentFilePath);
     }
 
     @FXML
@@ -158,9 +137,21 @@ public class MainMenuController {
             return;
         }
         String torrentFilePath = Constants.TORRENT_PATH + torrentFileName;
+        renderFileUploading(torrentClient, torrentFileName, torrentFilePath);
+    }
+
+    private void renderFileUploading(TorrentClient torrentClient, String torrentFileName, String torrentFilePath) {
         FileSection fileSection = Renderer.instance.createFileSection(torrentFilePath, Status.DISTRIBUTED);
         Renderer.instance.renderFileSection(fileSection);
         fileSections.put(torrentFileName, fileSection);
+        ObservableList<Integer> sentPieces;
+        try {
+            sentPieces = torrentClient.getSentPieces(torrentFileName);
+        } catch (BadTorrentFileException e) {
+            e.printStackTrace();
+            return;
+        }
+        sentPieces.subscribe(new UploadListener(fileSection));
     }
 
     @FXML

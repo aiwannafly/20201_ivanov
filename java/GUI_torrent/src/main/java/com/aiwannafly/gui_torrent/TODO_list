@@ -1,7 +1,10 @@
 https://www.cs.swarthmore.edu/~aviv/classes/f12/cs43/labs/lab5/lab5.pdf
 https://translatedby.com/you/bittorrent-protocol-specification-v1-0-in-detail/into-ru/
 
-1. Реализовать все команды из задания
+1. Отображать скорость раздачи
+2. Если начать скачивать при отсутствии пиров, а потом начать
+раздавать, то возникают спецэффекты
+?. Реализовать все команды из задания
 
 • (5pt) Choking Protocol: Build a client that can do the above, and also implement the choking algorithm
   described in Cohen’s specification.
@@ -11,11 +14,9 @@ not need to implement a tracker.
 another groups client. This must be demonstrated live!
 • (25pt) Real Working: Build a client that can work with real world bittorrent clients. (HARD!)
 
-Так, сейчас ситуация такая, что в целом то торрент и готов, получается.
-Едиенственное, 1 скачивающих не получает куски от 2 и 3.
-Это, на самом деле, не очень хорошо. Но для исправления этой ошибки,
-на самом деле, единственный способо --- добавить еще больше
-общения с трекером. В этом ничего сложного нет.
-И я могу это сделать. НО --- есть вариант сделать канонический
-трекер. И там делать уже все по канону сразу. И войти в элитный клуб.
-Да, наверное пойду по этому пути.
+Speed of downloading could be measured right in the renderer.
+This thing has an access to the count of downloaded pieces.
+It may measure time between appearance of new pieces, then
+divide size of a piece by the time --- it is speed!.
+
+

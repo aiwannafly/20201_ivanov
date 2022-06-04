@@ -7,7 +7,7 @@
     -fx-background-radius: 3,2,2,2;
     /*-fx-padding: 12 30 12 30;*/
     -fx-text-fill: #24ff00;
-    -fx-font-size: 15px;
+    -fx-font-size: 14px;
     /*-fx-font-weight: bold;*/
 }
 
@@ -28,7 +28,7 @@
     -fx-border-color: #24ff00;
     -fx-text-fill: #24ff00;
     /*-fx-font-weight: bold;*/
-    -fx-font-size: 15px;
+    -fx-font-size: 14px;
 }
 
 #menu {

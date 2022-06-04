@@ -19,4 +19,6 @@ public interface TorrentClient extends AutoCloseable {
     void resumeDownloading(String torrentFileName) throws BadTorrentFileException;
 
     ObservableList<Integer> getCollectedPieces(String torrentFileName) throws BadTorrentFileException;
+
+    ObservableList<Integer> getSentPieces(String torrentFileName) throws BadTorrentFileException;
 }
