@@ -1,7 +1,7 @@
 package com.aiwannafly.gui_torrent.controller;
 
 import com.aiwannafly.gui_torrent.ApplicationStarter;
-import com.aiwannafly.gui_torrent.Constants;
+import com.aiwannafly.gui_torrent.torrent.client.Constants;
 import com.aiwannafly.gui_torrent.torrent.client.util.ObservableList;
 import com.aiwannafly.gui_torrent.torrent.client.TorrentClient;
 import com.aiwannafly.gui_torrent.torrent.client.exceptions.*;
@@ -205,7 +205,7 @@ public class MainMenuController {
                 return;
             }
             fileSections.get(torrentFileName).buttonStatus = ButtonStatus.RESUME;
-            fileSections.get(torrentFileName).dSpeedLabel.setText("");
+            fileSections.get(torrentFileName).dSpeedLabel.setText("0");
             return;
         }
         try {

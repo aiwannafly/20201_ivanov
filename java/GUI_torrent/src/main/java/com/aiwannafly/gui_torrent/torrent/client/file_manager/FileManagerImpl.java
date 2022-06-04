@@ -1,6 +1,6 @@
 package com.aiwannafly.gui_torrent.torrent.client.file_manager;
 
-import com.aiwannafly.gui_torrent.Constants;
+import com.aiwannafly.gui_torrent.torrent.client.Constants;
 
 import java.io.*;
 import java.util.HashMap;

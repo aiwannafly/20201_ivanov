@@ -3,21 +3,14 @@
     -fx-border-width: 1px;
     -fx-border-color: #24ff00;
     -fx-background-color: #000000;
-    /*-fx-background-insets: 0,1,2,3;*/
     -fx-background-radius: 3,2,2,2;
-    /*-fx-padding: 12 30 12 30;*/
     -fx-text-fill: #24ff00;
-    -fx-font-size: 14px;
-    /*-fx-font-weight: bold;*/
+    -fx-font-size: 15px;
 }
 
 .button:hover {
     -fx-background-color: #24ff00;
     -fx-text-fill: #000000;
-}
-
-.button Text {
-    -fx-effect: dropshadow( one-pass-box , rgba(0,0,0,0.8) , 0, 0.0 , 0 , 1);
 }
 
 .label {
@@ -27,8 +20,7 @@
     -fx-background-color: #000000;
     -fx-border-color: #24ff00;
     -fx-text-fill: #24ff00;
-    /*-fx-font-weight: bold;*/
-    -fx-font-size: 14px;
+    -fx-font-size: 15px;
 }
 
 #menu {
@@ -37,5 +29,4 @@
     -fx-background-color: #000000;
     -fx-background-repeat: stretch;
     -fx-background-position: center center;
-    -fx-effect: dropshadow(three-pass-box, black, 30, 0.5, 0, 0);
 }

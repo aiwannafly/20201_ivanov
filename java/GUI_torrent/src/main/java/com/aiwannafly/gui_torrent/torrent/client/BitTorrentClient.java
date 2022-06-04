@@ -7,7 +7,6 @@ import com.aiwannafly.gui_torrent.torrent.client.tracker_communicator.TrackerCom
 import com.aiwannafly.gui_torrent.torrent.client.tracker_communicator.TrackerCommunicatorImpl;
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.Torrent;
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.TorrentParser;
-import com.aiwannafly.gui_torrent.Constants;
 import com.aiwannafly.gui_torrent.torrent.client.downloader.Downloader;
 import com.aiwannafly.gui_torrent.torrent.client.downloader.MultyDownloadManager;
 import com.aiwannafly.gui_torrent.torrent.client.exceptions.*;

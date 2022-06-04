@@ -1,6 +1,6 @@
 package com.aiwannafly.gui_torrent.torrent.client.uploader;
 
-import com.aiwannafly.gui_torrent.Constants;
+import com.aiwannafly.gui_torrent.torrent.client.Constants;
 
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;

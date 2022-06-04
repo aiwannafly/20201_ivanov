@@ -39,7 +39,7 @@ public class DownloadListener implements Flow.Subscriber<Boolean> {
                 downloadedCount++;
                 Renderer.instance.renderNewSegmentBar(fileSection);
             }
-            if (fileSection.torrent.getPieces().size() - collectedPieces.size() <= 1) {
+            if (fileSection.torrent.getPieces().size() == collectedPieces.size()) {
                 downloadedTorrents.add(fileSection.torrentFileName);
                 Renderer.instance.clearFileSection(fileSection);
                 return;
@@ -50,6 +50,9 @@ public class DownloadListener implements Flow.Subscriber<Boolean> {
             currentTime = System.currentTimeMillis();
             long speedKB = calcDownloadSpeed();
             lastUpdateTime = currentTime;
+            if (fileSection.buttonStatus == GUITorrentRenderer.ButtonStatus.RESUME) {
+                return;
+            }
             fileSection.dSpeedLabel.setText(String.valueOf(speedKB));
         });
     }

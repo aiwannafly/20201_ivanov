@@ -1,6 +1,6 @@
 package com.aiwannafly.gui_torrent.torrent.client.downloader;
 
-import com.aiwannafly.gui_torrent.Constants;
+import com.aiwannafly.gui_torrent.torrent.client.Constants;
 
 import java.io.IOException;
 import java.util.ArrayList;

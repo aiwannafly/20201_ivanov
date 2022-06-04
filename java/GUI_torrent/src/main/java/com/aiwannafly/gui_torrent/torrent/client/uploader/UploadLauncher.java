@@ -3,9 +3,9 @@ package com.aiwannafly.gui_torrent.torrent.client.uploader;
 import com.aiwannafly.gui_torrent.torrent.client.tracker_communicator.TrackerCommunicator;
 import com.aiwannafly.gui_torrent.torrent.client.util.ObservableList;
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.Torrent;
-import com.aiwannafly.gui_torrent.Constants;
+import com.aiwannafly.gui_torrent.torrent.client.Constants;
 import com.aiwannafly.gui_torrent.torrent.client.file_manager.FileManager;
-import com.aiwannafly.gui_torrent.tracker.TrackerCommandHandler;
+import com.aiwannafly.gui_torrent.torrent.client.tracker.TrackerCommandHandler;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

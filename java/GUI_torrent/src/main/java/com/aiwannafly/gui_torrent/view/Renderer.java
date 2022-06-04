@@ -2,7 +2,7 @@ package com.aiwannafly.gui_torrent.view;
 
 import com.aiwannafly.gui_torrent.ApplicationStarter;
 import com.aiwannafly.gui_torrent.controller.MainMenuController;
-import com.aiwannafly.gui_torrent.Constants;
+import com.aiwannafly.gui_torrent.torrent.client.Constants;
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.Torrent;
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.TorrentParser;
 import javafx.fxml.FXMLLoader;
@@ -23,21 +23,23 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 public class Renderer implements GUITorrentRenderer {
+    public static final Color APP_COLOR = new Color(36.0 / 255, 1, 0, 1);
+    public static final String APP_CSS = "green_styles.css";
     private static final double NUM_FIELD_LEN = 30;
     private static final double NAME_FIELD_LEN = 250;
     private static final double SIZE_FIELD_LEN = 70;
     private static final double STATUS_FIELD_LEN = 100;
-    private static final double D_SPEED_FIELD_LEN = 70;
-    private static final double U_SPEED_FIELD_LEN = 70;
+    private static final double D_SPEED_FIELD_LEN = 80;
+    private static final double U_SPEED_FIELD_LEN = 80;
     private static final double BAR_FIELD_LEN = 350;
     private static final double LABEL_HEIGHT = 30;
     private static final double SECTION_LEN = NUM_FIELD_LEN +
             NAME_FIELD_LEN + SIZE_FIELD_LEN + STATUS_FIELD_LEN +
             + D_SPEED_FIELD_LEN + U_SPEED_FIELD_LEN + BAR_FIELD_LEN;
     private static final String STYLESHEET = Objects.requireNonNull(ApplicationStarter.class.getResource(
-            "styles.css")).toExternalForm();
+            APP_CSS)).toExternalForm();
     private static final double WINDOW_WIDTH = 1200;
-    private static final double WINDOW_HEIGHT = 250;
+    private static final double WINDOW_HEIGHT = 480;
     private static final double TOP_OFFSET = 10;
     private static final double LEFT_OFFSET = 20;
     private static final double MENU_LENGTH = 160;
@@ -185,11 +187,11 @@ public class Renderer implements GUITorrentRenderer {
     public void renderNewSegmentBar(FileSection fileSection) {
         double width = BAR_FIELD_LEN / fileSection.torrent.getPieces().size();
         double y = fileSection.y + TOP_OFFSET;
-        double offset = 160 + 20 + NUM_FIELD_LEN + NAME_FIELD_LEN + SIZE_FIELD_LEN +
+        double offset = MENU_LENGTH + LEFT_OFFSET + NUM_FIELD_LEN + NAME_FIELD_LEN + SIZE_FIELD_LEN +
                 STATUS_FIELD_LEN + D_SPEED_FIELD_LEN + U_SPEED_FIELD_LEN;
         double x = offset + fileSection.sectionsCount++ * width;
         Rectangle segment = new Rectangle(x, y, width, TOP_OFFSET);
-        segment.setFill(Constants.APP_COLOR);
+        segment.setFill(APP_COLOR);
         rootPane.getChildren().add(segment);
     }
 
