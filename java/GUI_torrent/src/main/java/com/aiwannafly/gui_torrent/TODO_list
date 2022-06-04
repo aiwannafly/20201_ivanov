@@ -1,9 +1,6 @@
 https://www.cs.swarthmore.edu/~aviv/classes/f12/cs43/labs/lab5/lab5.pdf
 https://translatedby.com/you/bittorrent-protocol-specification-v1-0-in-detail/into-ru/
 
-1. Сделать так, чтобы по окончании скачивания скорости убирались
-2. Если начать скачивать при отсутствии пиров, а потом начать
-раздавать, то возникают спецэффекты
 ?. Реализовать все команды из задания
 (желательно) Показывать скорости более плавно, по таймеру, например
 
@@ -11,13 +8,4 @@ https://translatedby.com/you/bittorrent-protocol-specification-v1-0-in-detail/in
   described in Cohen’s specification.
 • (5pt) Tracker Protocol: Add in features for communicating with a tracker server. Note that you do
 not need to implement a tracker.
-• (10pt) Interact with other Group: Build a client that can do the above, but can also interact with
-another groups client. This must be demonstrated live!
 • (25pt) Real Working: Build a client that can work with real world bittorrent clients. (HARD!)
-
-Speed of downloading could be measured right in the renderer.
-This thing has an access to the count of downloaded pieces.
-It may measure time between appearance of new pieces, then
-divide size of a piece by the time --- it is speed!.
-
-

@@ -35,7 +35,6 @@ public class DownloadManager {
     private final ObservableList<Integer> myPieces;
     private final TrackerCommunicator trackerComm;
     private final Timer updateConnectionsTimer;
-    private final long UPDATE_INTERV = 4 * 1000;
 
     public enum DownloadStatus {
         FINISHED, NOT_FINISHED, FAILED
@@ -81,6 +80,7 @@ public class DownloadManager {
                 }
             }
         };
+        long UPDATE_INTERV = 4 * 1000;
         updateConnectionsTimer.schedule(updateConnections, UPDATE_INTERV, UPDATE_INTERV);
         if (peersInfo.isEmpty()) {
             throw new NoSeedsException("No seeds uploading file " + torrentFile.getName());
@@ -132,6 +132,7 @@ public class DownloadManager {
                     leftPieces.add(pieceIdx);
                 }
                 if (result.status == ResponseInfo.Status.RECEIVED) {
+                    // System.out.println("=== Received from " + peerPort);
                     synchronized (myPieces) {
                         myPieces.add(pieceIdx);
                     }
@@ -194,7 +195,7 @@ public class DownloadManager {
         peersInfo.get(peerPort).peerStatus = PeerStatus.WORKING;
         if (interestingPieces.size() == 0) {
             service.submit(new CollectPiecesInfoTask(peersInfo.get(peerPort), peerPort));
-            System.out.println("=== Wait for info about new pieces from " + peerPort);
+            // System.out.println("=== Wait for info about new pieces from " + peerPort);
             return;
         }
         int randomIdx = random.nextInt(interestingPieces.size());

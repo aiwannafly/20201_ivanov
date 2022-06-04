@@ -1,5 +1,7 @@
 package com.aiwannafly.gui_torrent;
 
+import javafx.scene.paint.Color;
+
 public class Constants {
     public static final int DOWNLOAD_MAX_THREADS_COUNT = 8;
     public static final String TRACKER_URL = "127.0.0.1";
@@ -14,4 +16,5 @@ public class Constants {
     public static final String KEEP_ALIVE_MESSAGE = "\0\0\0\0";
     public static final int KEEP_ALIVE_SEND_INTERVAL = 5 * 1000;
     public static final char PATH_DIVIDER = '\\';
+    public static final Color APP_COLOR = new Color(36.0 / 255, 1, 0, 1);
 }

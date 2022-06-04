@@ -189,8 +189,7 @@ public class Renderer implements GUITorrentRenderer {
                 STATUS_FIELD_LEN + D_SPEED_FIELD_LEN + U_SPEED_FIELD_LEN;
         double x = offset + fileSection.sectionsCount++ * width;
         Rectangle segment = new Rectangle(x, y, width, TOP_OFFSET);
-        Color limeGreen = new Color(36.0 / 255, 1, 0, 1);
-        segment.setFill(limeGreen);
+        segment.setFill(Constants.APP_COLOR);
         rootPane.getChildren().add(segment);
     }
 
