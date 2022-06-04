@@ -34,6 +34,9 @@ public class KeepAliveHandler {
         @Override
         public void run() {
             for (DownloadManager.PeerInfo info : seedsInfo.values()) {
+                if (info.peerStatus != DownloadManager.PeerStatus.WORKING) {
+                    continue;
+                }
                 if (!info.channel.isBlocking()) {
                     continue;
                 }

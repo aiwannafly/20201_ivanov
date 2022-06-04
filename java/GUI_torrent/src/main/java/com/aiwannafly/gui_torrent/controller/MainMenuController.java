@@ -186,7 +186,7 @@ public class MainMenuController {
         return fileChooser.showOpenDialog(stage);
     }
 
-    private void showErrorAlert(String message) {
+    private static void showErrorAlert(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Error");
         alert.setHeaderText(null);
@@ -204,7 +204,7 @@ public class MainMenuController {
             try {
                 torrentClient.stopDownloading(torrentFileName);
             } catch (BadTorrentFileException e) {
-                e.printStackTrace();
+                showErrorAlert(e.getMessage());
                 return;
             }
             fileSections.get(torrentFileName).buttonStatus = ButtonStatus.RESUME;
@@ -213,7 +213,7 @@ public class MainMenuController {
         try {
             torrentClient.resumeDownloading(torrentFileName);
         } catch (BadTorrentFileException e) {
-            e.printStackTrace();
+            showErrorAlert(e.getMessage());
             return;
         }
         fileSections.get(torrentFileName).buttonStatus = ButtonStatus.STOP;

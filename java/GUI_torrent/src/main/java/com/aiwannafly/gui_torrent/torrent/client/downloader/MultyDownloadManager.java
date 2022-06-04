@@ -75,7 +75,7 @@ public class MultyDownloadManager implements Downloader {
                     }
                     DownloadManager downloadManager = downloadManagers.get(torrentFileName);
                     DownloadManager.Result result = downloadManager.downloadNextPiece();
-                    if (result.status == DownloadManager.Status.FINISHED) {
+                    if (result.downloadStatus == DownloadManager.DownloadStatus.FINISHED) {
                         removalList.add(torrentFileName);
                     }
                 }
