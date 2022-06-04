@@ -4,6 +4,7 @@ import com.aiwannafly.gui_torrent.torrent.client.exceptions.BadMessageException;
 import com.aiwannafly.gui_torrent.torrent.client.util.ByteOperations;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -24,6 +25,13 @@ public class Message {
         public int length;
         public int type;
         public String data;
+        public Piece piece;
+    }
+
+    public static class Piece {
+        public byte[] data;
+        public int idx;
+        public int begin;
     }
 
     public static MessageInfo getMessage(SocketChannel client) throws IOException, BadMessageException {
@@ -38,19 +46,42 @@ public class Message {
         message.length = ByteOperations.convertFromBytes(lengthStr);
         if (message.length == 0) {
             message.type = KEEP_ALIVE;
-            return message; // keep-alive
+            return message;
         }
         if (message.length < 0) {
             throw new BadMessageException("=== Bad length");
         }
-        ByteBuffer messageBuf = ByteBuffer.allocate(message.length);
-        int count = client.read(messageBuf);
-        String data = new String(messageBuf.array());
-        if (count != message.length) {
-            System.err.println("Read just " + count + " / " + message.length + " bytes.");
+        ByteBuffer typeBuf = ByteBuffer.allocate(1);
+        client.read(typeBuf);
+        String typeStr = new String(typeBuf.array());
+        message.type = Integer.parseInt(typeStr);
+        message.length--;
+        if (message.type != PIECE) {
+            ByteBuffer messageBuf = ByteBuffer.allocate(message.length);
+            int count = client.read(messageBuf);
+            message.data = new String(messageBuf.array());
+            if (count != message.length) {
+                System.err.println("Read just " + count + " / " + message.length + " bytes.");
+            }
+            return message;
         }
-        message.type = Integer.parseInt(String.valueOf(data.charAt(0)));
-        message.data = data.substring(1);
+        Piece piece = new Piece();
+        ByteBuffer buf = ByteBuffer.allocate(4);
+        client.read(buf);
+        message.length -= 4;
+        piece.idx = ByteOperations.convertFromBytes(new String(buf.array()));
+        buf.clear();
+        client.read(buf);
+        message.length -= 4;
+        piece.begin = ByteOperations.convertFromBytes(new String(buf.array()));
+        InputStream in = client.socket().getInputStream();
+        piece.data = new byte[message.length];
+        int count = in.read(piece.data);
+        while (count != message.length) {
+            int return_value = in.read(piece.data, count, message.length - count);
+            count += return_value;
+        }
+        message.piece = piece;
         return message;
     }
 }

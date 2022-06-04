@@ -213,7 +213,7 @@ public class DownloadManager {
         int pieceLength = getPieceLength(pieceIdx);
         service.submit(new DownloadPieceTask(torrentFile, fileManager,
                 fileName, peerPort, pieceIdx, pieceLength,
-                peersInfo.get(peerPort).out, peersInfo.get(peerPort).in));
+                peersInfo.get(peerPort)));
     }
 
     private int getPieceLength(int pieceIdx) {

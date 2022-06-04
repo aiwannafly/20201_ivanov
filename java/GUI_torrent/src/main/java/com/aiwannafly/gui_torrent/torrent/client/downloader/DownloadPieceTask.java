@@ -1,5 +1,6 @@
 package com.aiwannafly.gui_torrent.torrent.client.downloader;
 
+import com.aiwannafly.gui_torrent.torrent.client.exceptions.BadMessageException;
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.Torrent;
 import com.aiwannafly.gui_torrent.torrent.client.file_manager.FileManager;
 import com.aiwannafly.gui_torrent.torrent.client.util.ByteOperations;
@@ -21,26 +22,24 @@ public class DownloadPieceTask implements Callable<ResponseInfo> {
     private final String fileName;
     private final int pieceIdx;
     private final int pieceLength;
-    private final PrintWriter out;
-    private final InputStream in;
+    private final DownloadManager.PeerInfo peerInfo;
     private final int peerId;
     private ArrayList<Integer> newAvailablePieces;
 
     public DownloadPieceTask(Torrent torrentFile, FileManager fileManager,
-                             String fileName, int peerId, int pieceIdx, int pieceLength,
-                             PrintWriter out, InputStream in) {
+                             String fileName, int peerPort, int pieceIdx, int pieceLength,
+                             DownloadManager.PeerInfo peerInfo) {
         this.fileManager = fileManager;
-        this.peerId = peerId;
+        this.peerId = peerPort;
         this.torrentFile = torrentFile;
         this.fileName = fileName;
         this.pieceIdx = pieceIdx;
         this.pieceLength = pieceLength;
-        this.out = out;
-        this.in = in;
+        this.peerInfo = peerInfo;
     }
 
     @Override
-    public ResponseInfo call() {
+    public ResponseInfo call() throws IOException, BadMessageException {
         ResponseInfo result = new ResponseInfo(ResponseInfo.Status.RECEIVED, peerId, pieceIdx);
         requestPiece(pieceIdx, 0, pieceLength);
         while (true) {
@@ -64,36 +63,19 @@ public class DownloadPieceTask implements Callable<ResponseInfo> {
         String message = ByteOperations.convertIntoBytes(13) + "6" +
                 ByteOperations.convertIntoBytes(index) + ByteOperations.convertIntoBytes(begin) +
                 ByteOperations.convertIntoBytes(length);
-        out.print(message);
-        out.flush();
+        peerInfo.out.print(message);
+        peerInfo.out.flush();
     }
 
-    private ResponseInfo.Status receivePiece() {
-        StringBuilder messageBuilder = new StringBuilder();
-        try {
-            for (int i = 0; i < 4; i++) {
-                messageBuilder.append((char) in.read());
-            }
-            int messageLength = ByteOperations.convertFromBytes(messageBuilder.toString());
-            if (messageLength == 0) {
-                return ResponseInfo.Status.GOT_KEEP_ALIVE;
-            }
-            for (int i = 0; i < messageLength; i++) {
-                messageBuilder.append((char) in.read());
-            }
-        } catch (IOException e) {
-            return ResponseInfo.Status.LOST;
-        }
-        String message = messageBuilder.toString();
-        if (message.length() < 4 + 1 + 4) {
-            System.err.println("=== Bad length: " + message.length());
-            return ResponseInfo.Status.LOST;
+    private ResponseInfo.Status receivePiece() throws IOException, BadMessageException {
+        Message.MessageInfo messageInfo = Message.getMessage(peerInfo.channel);
+        if (messageInfo.type == Message.KEEP_ALIVE) {
+            return ResponseInfo.Status.GOT_KEEP_ALIVE;
         }
         // piece: <len=0009+X><id=7><index><begin><block>
-        int len = ByteOperations.convertFromBytes(message.substring(0, 4));
-        int id = Integer.parseInt(String.valueOf(message.charAt(4)));
-        if (id == Message.HAVE) {
-            int idx = ByteOperations.convertFromBytes(message.substring(5, 9));
+        String message = messageInfo.data;
+        if (messageInfo.type == Message.HAVE) {
+            int idx = ByteOperations.convertFromBytes(message.substring(0, 4));
             if (newAvailablePieces == null) {
                 newAvailablePieces = new ArrayList<>();
             }
@@ -101,17 +83,14 @@ public class DownloadPieceTask implements Callable<ResponseInfo> {
             // System.out.println("=== Received 'HAVE " + idx + "'");
             return ResponseInfo.Status.HAVE;
         }
-        if (id != Message.PIECE) {
+        if (messageInfo.type != Message.PIECE) {
             return ResponseInfo.Status.LOST;
         }
-        int idx = ByteOperations.convertFromBytes(message.substring(5, 9));
-        int begin = ByteOperations.convertFromBytes(message.substring(9, 13));
-        String data = message.substring(13);
-        byte[] bytes = ByteOperations.getBytesFromString(data);
-        String origHash = torrentFile.getPieces().get(idx);
+        Message.Piece piece = messageInfo.piece;
+        String origHash = torrentFile.getPieces().get(piece.idx);
         String receivedHash;
         try {
-            receivedHash = getSha1(bytes);
+            receivedHash = getSha1(piece.data);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             return ResponseInfo.Status.LOST;
@@ -124,8 +103,8 @@ public class DownloadPieceTask implements Callable<ResponseInfo> {
         }
         try {
             int offset;
-            offset = idx * torrentFile.getPieceLength().intValue() + begin;
-            fileManager.writePiece(fileName, offset, bytes);
+            offset = piece.idx * torrentFile.getPieceLength().intValue() + piece.begin;
+            fileManager.writePiece(fileName, offset, piece.data);
         } catch (IOException e) {
             e.printStackTrace();
         }
