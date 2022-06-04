@@ -1,10 +1,10 @@
 https://www.cs.swarthmore.edu/~aviv/classes/f12/cs43/labs/lab5/lab5.pdf
 https://translatedby.com/you/bittorrent-protocol-specification-v1-0-in-detail/into-ru/
 
-1. Отображать скорость раздачи
-2. Если начать скачивать при отсутствии пиров, а потом начать
+1. Если начать скачивать при отсутствии пиров, а потом начать
 раздавать, то возникают спецэффекты
 ?. Реализовать все команды из задания
+(желательно) Показывать скорости более плавно, по таймеру, например
 
 • (5pt) Choking Protocol: Build a client that can do the above, and also implement the choking algorithm
   described in Cohen’s specification.

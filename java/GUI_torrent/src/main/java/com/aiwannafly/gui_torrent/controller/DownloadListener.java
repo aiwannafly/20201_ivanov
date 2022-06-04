@@ -5,6 +5,7 @@ import com.aiwannafly.gui_torrent.view.GUITorrentRenderer;
 import com.aiwannafly.gui_torrent.view.Renderer;
 import javafx.application.Platform;
 
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.concurrent.Flow;
 
@@ -13,12 +14,16 @@ public class DownloadListener implements Flow.Subscriber<Boolean> {
     private final ObservableList<Integer> collectedPieces;
     private final Set<String> downloadedTorrents;
     private long lastUpdateTime = System.currentTimeMillis();
+    private long currentTime = System.currentTimeMillis();
+    private final int piecesPortion;
+    private int downloadedCount = 0;
 
     public DownloadListener(GUITorrentRenderer.FileSection fileSection, ObservableList<Integer>
             collectedPieces, Set<String> downloadedTorrents) {
         this.fileSection = fileSection;
         this.collectedPieces = collectedPieces;
         this.downloadedTorrents = downloadedTorrents;
+        this.piecesPortion = 1 + fileSection.torrent.getPieces().size() / 10;
     }
 
     @Override
@@ -29,14 +34,20 @@ public class DownloadListener implements Flow.Subscriber<Boolean> {
     @Override
     public void onNext(Boolean item) {
         Platform.runLater(() -> {
-            int newPiecesCount = collectedPieces.size() - fileSection.sectionsCount;
             while (fileSection.sectionsCount < collectedPieces.size()) {
+                downloadedCount++;
                 Renderer.instance.renderNewSegmentBar(fileSection);
             }
-            showDownloadSpeed(newPiecesCount);
             if (collectedPieces.size() == fileSection.torrent.getPieces().size()) {
                 downloadedTorrents.add(fileSection.torrentFileName);
             }
+            if (downloadedCount % piecesPortion != 0) {
+                return;
+            }
+            currentTime = System.currentTimeMillis();
+            long speedKB = calcDownloadSpeed();
+            lastUpdateTime = currentTime;
+            fileSection.dSpeedLabel.setText(String.valueOf(speedKB));
         });
     }
 
@@ -50,14 +61,11 @@ public class DownloadListener implements Flow.Subscriber<Boolean> {
 
     }
 
-    private void showDownloadSpeed(int newPiecesCount) {
-        long currentTime = System.currentTimeMillis();
+    private long calcDownloadSpeed() {
         double estimatedTime = currentTime - lastUpdateTime;
-        long downloadedBytes = newPiecesCount * fileSection.torrent.getPieceLength();
+        long downloadedBytes = piecesPortion *  fileSection.torrent.getPieceLength();
         double estimatedTimeSecs = estimatedTime / 1000;
         double speed = downloadedBytes / estimatedTimeSecs;
-        long speedKB = (long) speed / 1024;
-        lastUpdateTime = currentTime;
-        fileSection.dSpeedLabel.setText(String.valueOf(speedKB));
+        return  (long) speed / 1024;
     }
 }

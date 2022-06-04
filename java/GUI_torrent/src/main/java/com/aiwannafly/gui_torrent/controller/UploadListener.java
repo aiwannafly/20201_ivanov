@@ -8,9 +8,13 @@ import java.util.concurrent.Flow;
 public class UploadListener implements Flow.Subscriber<Boolean> {
     private final GUITorrentRenderer.FileSection fileSection;
     private long lastUpdateTime = System.currentTimeMillis();
+    private long currentTime = System.currentTimeMillis();
+    private final int piecesPortion;
+    private int uploadedCount = 0;
 
     public UploadListener(GUITorrentRenderer.FileSection fileSection) {
         this.fileSection = fileSection;
+        this.piecesPortion = 1 + fileSection.torrent.getPieces().size() / 10;
     }
 
     @Override
@@ -20,10 +24,7 @@ public class UploadListener implements Flow.Subscriber<Boolean> {
 
     @Override
     public void onNext(Boolean item) {
-        Platform.runLater(() -> {
-            System.out.println("next");
-            showUploadSpeed(1);
-        });
+        Platform.runLater(this::showUploadSpeed);
     }
 
     @Override
@@ -36,14 +37,22 @@ public class UploadListener implements Flow.Subscriber<Boolean> {
 
     }
 
-    private void showUploadSpeed(int newPiecesCount) {
-        long currentTime = System.currentTimeMillis();
-        double estimatedTime = currentTime - lastUpdateTime;
-        long downloadedBytes = newPiecesCount * fileSection.torrent.getPieceLength();
-        double estimatedTimeSecs = estimatedTime / 1000;
-        double speed = downloadedBytes / estimatedTimeSecs;
-        long speedKB = (long) speed / 1024;
+    private void showUploadSpeed() {
+        uploadedCount++;
+        if (uploadedCount % piecesPortion != 0) {
+            return;
+        }
+        currentTime = System.currentTimeMillis();
+        long speedKB = calcUploadSpeed();
         lastUpdateTime = currentTime;
         fileSection.uSpeedLabel.setText(String.valueOf(speedKB));
+    }
+
+    private long calcUploadSpeed() {
+        double estimatedTime = currentTime - lastUpdateTime;
+        long uploadedBytes = piecesPortion * fileSection.torrent.getPieceLength();
+        double estimatedTimeSecs = estimatedTime / 1000;
+        double speed = uploadedBytes / estimatedTimeSecs;
+        return (long) speed / 1024;
     }
 }
