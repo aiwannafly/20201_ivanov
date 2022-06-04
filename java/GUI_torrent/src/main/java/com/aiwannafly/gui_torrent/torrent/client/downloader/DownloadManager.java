@@ -137,7 +137,7 @@ public class DownloadManager {
                         myPieces.add(pieceIdx);
                     }
                 }
-                if (leftPieces.size() > 0) {
+                if (myPieces.size() < torrentFile.getPieces().size()) {
                     requestRandomPiece(random, peerPort);
                 } else {
                     shutdown();
