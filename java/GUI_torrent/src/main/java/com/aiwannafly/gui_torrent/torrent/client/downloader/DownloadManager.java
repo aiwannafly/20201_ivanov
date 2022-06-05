@@ -110,55 +110,61 @@ public class DownloadManager {
             downloadResult.downloadStatus = DownloadStatus.FAILED;
             return downloadResult;
         }
+        Future<Response> future;
         try {
-            Future<Response> future;
-            try {
-                future = service.take();
-            } catch (InterruptedException e) {
+            future = service.take();
+        } catch (InterruptedException e) {
+            return downloadResult;
+        }
+        Response result;
+        try {
+            result = future.get();
+        } catch (Exception e) {
+            if (myPieces.size() == torrentFile.getPieces().size()) {
+                shutdown();
+                closed = true;
+                downloadResult.downloadStatus = DownloadStatus.FINISHED;
+            }
+            return downloadResult;
+        }
+        int pieceIdx = result.pieceIdx;
+        int peerPort = result.peerPort;
+        if (!peersInfo.containsKey(peerPort)) {
+            /* The connection was closed */
+            if (result.status == Response.Status.LOST) {
+                leftPieces.add(pieceIdx);
+            }
+        } else {
+            if (peersInfo.get(peerPort).peerStatus == PeerStatus.INVALID) {
+                downloadResult.downloadStatus = DownloadStatus.NOT_FINISHED;
+                badPeers.add(peerPort);
+                peersInfo.remove(peerPort);
                 return downloadResult;
             }
-            Response result = future.get();
-            int pieceIdx = result.pieceIdx;
-            int peerPort = result.peerPort;
-            if (!peersInfo.containsKey(peerPort)) {
-                /* The connection was closed */
-                if (result.status == Response.Status.LOST) {
-                    leftPieces.add(pieceIdx);
-                }
-            } else {
-                if (peersInfo.get(peerPort).peerStatus == PeerStatus.INVALID) {
-                    downloadResult.downloadStatus = DownloadStatus.NOT_FINISHED;
-                    badPeers.add(peerPort);
-                    peersInfo.remove(peerPort);
-                    return downloadResult;
-                }
-                if (result.newAvailablePieces != null) {
-                    peersInfo.get(peerPort).availablePieces.addAll(result.newAvailablePieces);
-                }
-                if (result.receivedKeepAlive) {
-                    peersInfo.get(peerPort).lastKeepAliveTimeMillis = result.keepAliveTimeMillis;
-                }
-                if (result.status == Response.Status.LOST) {
-                    leftPieces.add(pieceIdx);
-                } else if (result.status == Response.Status.RECEIVED) {
-                    // System.out.println("=== Received from " + peerPort);
-                    synchronized (myPieces) {
-                        myPieces.add(pieceIdx);
-                    }
-                } else if (result.status == Response.Status.GOT_CHOKE) {
-                    peersInfo.get(peerPort).peerStatus = PeerStatus.CHOKED;
-                }
-                if (myPieces.size() < torrentFile.getPieces().size()) {
-                    requestRandomPiece(random, peerPort);
-                } else {
-                    shutdown();
-                    closed = true;
-                    downloadResult.downloadStatus = DownloadStatus.FINISHED;
-                    return downloadResult;
-                }
+            if (result.newAvailablePieces != null) {
+                peersInfo.get(peerPort).availablePieces.addAll(result.newAvailablePieces);
             }
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
+            if (result.receivedKeepAlive) {
+                peersInfo.get(peerPort).lastKeepAliveTimeMillis = result.keepAliveTimeMillis;
+            }
+            if (result.status == Response.Status.LOST) {
+                leftPieces.add(pieceIdx);
+            } else if (result.status == Response.Status.RECEIVED) {
+                // System.out.println("=== Received from " + peerPort);
+                synchronized (myPieces) {
+                    myPieces.add(pieceIdx);
+                }
+            } else if (result.status == Response.Status.GOT_CHOKE) {
+                peersInfo.get(peerPort).peerStatus = PeerStatus.CHOKED;
+            }
+            if (myPieces.size() < torrentFile.getPieces().size()) {
+                requestRandomPiece(random, peerPort);
+            } else {
+                shutdown();
+                closed = true;
+                downloadResult.downloadStatus = DownloadStatus.FINISHED;
+                return downloadResult;
+            }
         }
         downloadResult.downloadStatus = DownloadStatus.NOT_FINISHED;
         return downloadResult;
@@ -267,10 +273,12 @@ public class DownloadManager {
                 peersInfo.put(peerPort, new PeerInfo());
                 peersInfo.get(peerPort).availablePieces = new ArrayList<>();
                 try {
+                    System.out.println("=== Try to connect to " + peerPort);
                     establishConnection(peerPort);
                 } catch (DifferentHandshakesException e) {
                     System.err.println("=== " + e.getMessage());
                 } catch (IOException e) {
+                    System.out.println("=== Failed to connect to " + peerPort);
                     e.printStackTrace();
                     peersInfo.remove(peerPort);
                     badPeers.add(peerPort);
@@ -313,6 +321,7 @@ public class DownloadManager {
             keysIterator.next().cancel();
             currentPeerChannel.configureBlocking(true);
             handleBitField(peerPort, currentPeerChannel);
+            System.out.println("=== Connected to " + peerPort);
         } else {
             throw new DifferentHandshakesException("Handshakes are different, reject connection");
         }
@@ -348,5 +357,6 @@ public class DownloadManager {
                 }
             }
         }
+        System.out.println("GOT BITFIELD: " + peersInfo.get(peerPort).availablePieces.size());
     }
 }

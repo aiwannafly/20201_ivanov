@@ -39,7 +39,7 @@ public class Renderer implements GUITorrentRenderer {
     private static final String STYLESHEET = Objects.requireNonNull(ApplicationStarter.class.getResource(
             APP_CSS)).toExternalForm();
     private static final double WINDOW_WIDTH = 1200;
-    private static final double WINDOW_HEIGHT = 480;
+    private static final double WINDOW_HEIGHT = 250;
     private static final double TOP_OFFSET = 10;
     private static final double LEFT_OFFSET = 20;
     private static final double MENU_LENGTH = 160;

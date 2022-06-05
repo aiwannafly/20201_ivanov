@@ -138,6 +138,7 @@ public class UploadHandler implements Runnable {
                 SocketChannel client = (SocketChannel) selectionKey.channel();
                 client.register(selector, SelectionKey.OP_READ);
                 while (!leechesInfo.get(client).myReplies.isEmpty()) {
+                    System.out.println("SEND INFO TO PEER");
                     String message = leechesInfo.get(client).myReplies.remove();
                     client.write(ByteBuffer.wrap(message.getBytes(StandardCharsets.UTF_8)));
                 }
@@ -226,6 +227,7 @@ public class UploadHandler implements Runnable {
                 Message.HAVE + ByteOperations.convertIntoBytes(pieceIdx);
         for (SocketChannel client : leechesInfo.keySet()) {
             leechesInfo.get(client).myReplies.add(haveMsg);
+            System.out.println("ANNOUNCE " + pieceIdx);
             client.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
         }
         announcedPieces.add(pieceIdx);

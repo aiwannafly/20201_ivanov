@@ -69,7 +69,8 @@ public class Message {
                 System.err.println("Read just " + count + " / " + message.length + " bytes.");
             }
             if (message.type == HAVE) {
-                message.data = new String(messageBuf.array());
+                message.piece = new Piece();
+                message.piece.idx = ByteOperations.convertFromBytes(new String(messageBuf.array()));
                 return message;
             }
             message.bitfield = messageBuf.array();
