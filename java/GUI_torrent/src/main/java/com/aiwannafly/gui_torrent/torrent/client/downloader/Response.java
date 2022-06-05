@@ -4,7 +4,7 @@ import com.aiwannafly.gui_torrent.torrent.client.messages.Message;
 
 import java.util.ArrayList;
 
-public class ResponseInfo {
+public class Response {
     public Status status;
     public int peerPort;
     public int pieceIdx;
@@ -14,13 +14,14 @@ public class ResponseInfo {
     public Message.MessageInfo messageInfo;
 
     public enum Status {
-        RECEIVED, HAVE, GOT_KEEP_ALIVE, LOST, NOT_RESPONDS
+        RECEIVED, HAVE, GOT_KEEP_ALIVE, LOST, NOT_RESPONDS,
+        GOT_CHOKE, GOT_UNCHOKE
     }
 
-    public ResponseInfo() {
+    public Response() {
     }
 
-    public ResponseInfo(Status status, int peerPort, int pieceIdx) {
+    public Response(Status status, int peerPort, int pieceIdx) {
         this.status = status;
         this.peerPort = peerPort;
         this.pieceIdx = pieceIdx;

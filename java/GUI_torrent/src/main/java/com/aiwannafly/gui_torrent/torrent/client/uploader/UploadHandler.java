@@ -112,7 +112,7 @@ public class UploadHandler implements Runnable {
                     continue;
                 }
                 if (message.type == Message.KEEP_ALIVE) {
-                    if (System.currentTimeMillis() - leechesInfo.get(client).lastKeepAliveTime < 1) {
+                    if (System.currentTimeMillis() - leechesInfo.get(client).lastKeepAliveTime == 0) {
                         System.out.println("=== Close connection");
                         leechesInfo.remove(client);
                         selectionKey.cancel();
@@ -180,21 +180,15 @@ public class UploadHandler implements Runnable {
         }
         int type = message.type;
         if (type == Message.REQUEST) {
-            if (message.data.length() < 12) {
-                throw new BadMessageException("=== Bad length: " + message.data.length());
-            }
-            String data = message.data;
-            int idx = ByteOperations.convertFromBytes(data.substring(0, 4));
-            int begin = ByteOperations.convertFromBytes(data.substring(4, 8));
-            int length = ByteOperations.convertFromBytes(data.substring(8, 12));
-            String reply = ByteOperations.convertIntoBytes(9 + length) + Message.PIECE +
-                    ByteOperations.convertIntoBytes(idx) + ByteOperations.convertIntoBytes(begin);
-            int offset = idx * torrentFile.getPieceLength().intValue() + begin;
-            byte[] piece = fileManager.readPiece(torrentFile.getName(), offset, length);
+            Message.Piece piece = message.piece;
+            String reply = ByteOperations.convertIntoBytes(9 + piece.length) + Message.PIECE +
+                    ByteOperations.convertIntoBytes(piece.idx) + ByteOperations.convertIntoBytes(piece.begin);
+            int offset = piece.idx * torrentFile.getPieceLength().intValue() + piece.begin;
+            byte[] data = fileManager.readPiece(torrentFile.getName(), offset, piece.length);
             Reply r = new Reply();
             r.header = ByteBuffer.wrap(reply.getBytes(StandardCharsets.UTF_8));
-            r.data = ByteBuffer.wrap(piece);
-            r.pieceIdx = idx;
+            r.data = ByteBuffer.wrap(data);
+            r.pieceIdx = piece.idx;
             return r;
         } else if (type == Message.HAVE) {
             if (message.data.length() < 4) {

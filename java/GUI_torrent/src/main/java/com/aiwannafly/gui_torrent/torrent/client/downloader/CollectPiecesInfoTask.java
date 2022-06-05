@@ -6,33 +6,37 @@ import com.aiwannafly.gui_torrent.torrent.client.messages.Message;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
-public class CollectPiecesInfoTask implements Callable<ResponseInfo> {
+public class CollectPiecesInfoTask implements Callable<Response> {
     private final DownloadManager.PeerInfo peerInfo;
     private final int peerPort;
+    private final long waitTime;
+    private long currentWaitTime;
+    private final int waitedMsgType;
 
 
-    CollectPiecesInfoTask(DownloadManager.PeerInfo peerInfo, int peerPort) {
+    CollectPiecesInfoTask(DownloadManager.PeerInfo peerInfo, int peerPort,
+                          long waitTime, int waitedMsgType) {
         this.peerInfo = peerInfo;
         this.peerPort = peerPort;
+        this.waitTime = waitTime;
+        this.waitedMsgType = waitedMsgType;
+        this.currentWaitTime = waitTime;
     }
 
     @Override
-    public ResponseInfo call() throws Exception {
-        ResponseInfo result = new ResponseInfo();
-        result.status = ResponseInfo.Status.NOT_RESPONDS;
+    public Response call() throws Exception {
+        Response result = new Response();
+        result.status = Response.Status.NOT_RESPONDS;
         result.peerPort = peerPort;
         Selector selector = Selector.open();
         peerInfo.channel.configureBlocking(false);
         peerInfo.channel.register(selector, SelectionKey.OP_READ);
-        long timeout = 5000;
         int type;
         long startTime = System.currentTimeMillis();
         do {
-            int returnValue = selector.select(timeout);
+            int returnValue = selector.select(currentWaitTime);
             peerInfo.channel.keyFor(selector).cancel();
             if (returnValue == 0) {
                 peerInfo.channel.configureBlocking(true);
@@ -44,14 +48,20 @@ public class CollectPiecesInfoTask implements Callable<ResponseInfo> {
                 continue;
             }
             type = result.messageInfo.type;
-            timeout = 5000 - (System.currentTimeMillis() - startTime);
-        } while (type == Message.KEEP_ALIVE && timeout > 0);
-        if (type == Message.HAVE) {
-            result.status = ResponseInfo.Status.HAVE;
-            result.pieceIdx = ByteOperations.convertFromBytes(
-                    result.messageInfo.data.substring(0, 4));
-            result.newAvailablePieces = new ArrayList<>();
-            result.newAvailablePieces.add(result.pieceIdx);
+            currentWaitTime = waitTime - (System.currentTimeMillis() - startTime);
+        } while (type == Message.KEEP_ALIVE && currentWaitTime > 0);
+        if (type == waitedMsgType) {
+            if (type == Message.HAVE) {
+                result.status = Response.Status.HAVE;
+                result.pieceIdx = ByteOperations.convertFromBytes(
+                        result.messageInfo.data.substring(0, 4));
+                result.newAvailablePieces = new ArrayList<>();
+                result.newAvailablePieces.add(result.pieceIdx);
+            } else if (type == Message.UNCHOKE) {
+                result.status = Response.Status.GOT_UNCHOKE;
+            } else {
+                result.status = Response.Status.RECEIVED;
+            }
         }
         peerInfo.channel.configureBlocking(true);
         return result;

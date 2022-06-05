@@ -32,6 +32,7 @@ public class Message {
         public byte[] data;
         public int idx;
         public int begin;
+        public int length;
     }
 
     public static MessageInfo getMessage(SocketChannel client) throws IOException, BadMessageException {
@@ -56,7 +57,11 @@ public class Message {
         String typeStr = new String(typeBuf.array());
         message.type = Integer.parseInt(typeStr);
         message.length--;
-        if (message.type != PIECE) {
+        if (message.type == CHOKE || message.type == UNCHOKE ||
+            message.type == INTERESTED || message.type == NOT_INTERESTED) {
+            return message;
+        }
+        if (message.type == HAVE || message.type == BITFIELD) {
             ByteBuffer messageBuf = ByteBuffer.allocate(message.length);
             int count = client.read(messageBuf);
             message.data = new String(messageBuf.array());
@@ -65,23 +70,34 @@ public class Message {
             }
             return message;
         }
-        Piece piece = new Piece();
-        ByteBuffer buf = ByteBuffer.allocate(4);
-        client.read(buf);
-        message.length -= 4;
-        piece.idx = ByteOperations.convertFromBytes(new String(buf.array()));
-        buf.clear();
-        client.read(buf);
-        message.length -= 4;
-        piece.begin = ByteOperations.convertFromBytes(new String(buf.array()));
-        InputStream in = client.socket().getInputStream();
-        piece.data = new byte[message.length];
-        int count = in.read(piece.data);
-        while (count != message.length) {
-            int return_value = in.read(piece.data, count, message.length - count);
-            count += return_value;
+        if (message.type == PIECE || message.type == CANCEL || message.type == REQUEST) {
+            Piece piece = new Piece();
+            message.piece = piece;
+            ByteBuffer buf = ByteBuffer.allocate(4);
+            client.read(buf);
+            message.length -= 4;
+            piece.idx = ByteOperations.convertFromBytes(new String(buf.array()));
+            buf.clear();
+            client.read(buf);
+            message.length -= 4;
+            piece.begin = ByteOperations.convertFromBytes(new String(buf.array()));
+            if (message.type == CANCEL || message.type == REQUEST) {
+                buf.clear();
+                client.read(buf);
+                message.length -= 4;
+                piece.length = ByteOperations.convertFromBytes(new String(buf.array()));
+                return message;
+            }
+            InputStream in = client.socket().getInputStream();
+            piece.data = new byte[message.length];
+            int count = in.read(piece.data);
+            while (count != message.length) {
+                int return_value = in.read(piece.data, count, message.length - count);
+                count += return_value;
+            }
+            piece.length = count;
+            return message;
         }
-        message.piece = piece;
-        return message;
+        throw new BadMessageException("=== Unknown type: " + message.type);
     }
 }

@@ -24,7 +24,7 @@ import java.util.concurrent.*;
 
 public class DownloadManager {
     private final Torrent torrentFile;
-    private final CompletionService<ResponseInfo> service;
+    private final CompletionService<Response> service;
     private final ArrayList<Integer> leftPieces;
     private final FileManager fileManager;
     private final String fileName;
@@ -46,7 +46,7 @@ public class DownloadManager {
     }
 
     enum PeerStatus {
-        FREE, WORKING, INVALID
+        FREE, WORKING, INVALID, CHOKED
     }
 
     static class PeerInfo {
@@ -111,31 +111,31 @@ public class DownloadManager {
             return downloadResult;
         }
         try {
-            Future<ResponseInfo> future = service.take();
-            ResponseInfo result = future.get();
+            Future<Response> future = service.take();
+            Response result = future.get();
             int pieceIdx = result.pieceIdx;
             int peerPort = result.peerPort;
             if (!peersInfo.containsKey(peerPort)) {
                 /* The connection was closed */
-                if (result.status == ResponseInfo.Status.LOST) {
+                if (result.status == Response.Status.LOST) {
                     leftPieces.add(pieceIdx);
                 }
             } else {
                 if (result.newAvailablePieces != null) {
-                    // ("Got some new pieces!");
                     peersInfo.get(peerPort).availablePieces.addAll(result.newAvailablePieces);
                 }
                 if (result.receivedKeepAlive) {
                     peersInfo.get(peerPort).lastKeepAliveTimeMillis = result.keepAliveTimeMillis;
                 }
-                if (result.status == ResponseInfo.Status.LOST) {
+                if (result.status == Response.Status.LOST) {
                     leftPieces.add(pieceIdx);
-                }
-                if (result.status == ResponseInfo.Status.RECEIVED) {
+                } else if (result.status == Response.Status.RECEIVED) {
                     // System.out.println("=== Received from " + peerPort);
                     synchronized (myPieces) {
                         myPieces.add(pieceIdx);
                     }
+                } else if (result.status == Response.Status.GOT_CHOKE) {
+                    peersInfo.get(peerPort).peerStatus = PeerStatus.CHOKED;
                 }
                 if (myPieces.size() < torrentFile.getPieces().size()) {
                     requestRandomPiece(random, peerPort);
@@ -185,6 +185,12 @@ public class DownloadManager {
         if (leftPieces.size() == 0) {
             return;
         }
+        if (peersInfo.get(peerPort).peerStatus == PeerStatus.CHOKED) {
+            long waitTimeMillis = 60 * 1000;
+            service.submit(new CollectPiecesInfoTask(peersInfo.get(peerPort), peerPort, waitTimeMillis,
+                    Message.UNCHOKE));
+            return;
+        }
         ArrayList<Integer> availablePieces = peersInfo.get(peerPort).availablePieces;
         ArrayList<Integer> interestingPieces = new ArrayList<>();
         for (Integer piece : availablePieces) {
@@ -194,7 +200,9 @@ public class DownloadManager {
         }
         peersInfo.get(peerPort).peerStatus = PeerStatus.WORKING;
         if (interestingPieces.size() == 0) {
-            service.submit(new CollectPiecesInfoTask(peersInfo.get(peerPort), peerPort));
+            long waitTimeMillis = 5000;
+            service.submit(new CollectPiecesInfoTask(peersInfo.get(peerPort), peerPort, waitTimeMillis,
+                    Message.HAVE));
             // System.out.println("=== Wait for info about new pieces from " + peerPort);
             return;
         }
