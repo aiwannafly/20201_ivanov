@@ -27,14 +27,6 @@ public class ApplicationStarter extends Application {
     }
 
     public static void main(String[] args) {
-//        int a = 240;
-//        byte[] bytes = ByteBuffer.allocate(4).putInt(a).array();
-//        for (int i = 0; i < 4; i++) {
-//            System.out.println(Integer.toBinaryString(bytes[i]));
-//        }
-//        Platform.exit();
-//        int b = ByteBuffer.wrap(bytes).getInt();
-//        System.out.println(b);
         launch();
     }
 

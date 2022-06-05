@@ -121,7 +121,6 @@ public class UploadHandler implements Runnable {
                         keysIterator.remove();
                         continue;
                     }
-                    System.out.println("=== Received keep-alive");
                     leechesInfo.get(client).lastKeepAliveTime = System.currentTimeMillis();
                     keysIterator.remove();
                     continue;
@@ -216,7 +215,6 @@ public class UploadHandler implements Runnable {
             data[byteIdx] |= 1 << bitIdx;
             announcedPieces.add(i);
         }
-        System.out.println("Length of bitfield: " + (1 + data.length));
         String bitfieldMsg = ByteOperations.convertIntoBytes(1 + data.length) +
                 Message.BITFIELD;
         client.write(ByteBuffer.wrap(bitfieldMsg.getBytes(StandardCharsets.UTF_8)));

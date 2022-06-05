@@ -97,9 +97,11 @@ public class Message {
             piece.data = new byte[message.length];
             int count = in.read(piece.data);
             while (count != message.length) {
+//                System.out.println("count: " + count + " / " + message.length);
                 int return_value = in.read(piece.data, count, message.length - count);
                 count += return_value;
             }
+//            System.out.println("count: " + count + " / " + message.length);
             piece.length = count;
             return message;
         }

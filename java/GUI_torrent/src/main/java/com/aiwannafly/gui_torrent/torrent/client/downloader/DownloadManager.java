@@ -13,13 +13,11 @@ import com.aiwannafly.gui_torrent.torrent.client.util.Handshake;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -36,7 +34,7 @@ public class DownloadManager {
     private final ObservableList<Integer> myPieces;
     private final TrackerCommunicator trackerComm;
     private final Timer updateConnectionsTimer;
-    private final Set<Integer> brokenPeers = new HashSet<>();
+    private final Set<Integer> badPeers = new HashSet<>();
 
     public enum DownloadStatus {
         FINISHED, NOT_FINISHED, FAILED
@@ -113,7 +111,12 @@ public class DownloadManager {
             return downloadResult;
         }
         try {
-            Future<Response> future = service.take();
+            Future<Response> future;
+            try {
+                future = service.take();
+            } catch (InterruptedException e) {
+                return downloadResult;
+            }
             Response result = future.get();
             int pieceIdx = result.pieceIdx;
             int peerPort = result.peerPort;
@@ -125,6 +128,8 @@ public class DownloadManager {
             } else {
                 if (peersInfo.get(peerPort).peerStatus == PeerStatus.INVALID) {
                     downloadResult.downloadStatus = DownloadStatus.NOT_FINISHED;
+                    badPeers.add(peerPort);
+                    peersInfo.remove(peerPort);
                     return downloadResult;
                 }
                 if (result.newAvailablePieces != null) {
@@ -258,7 +263,7 @@ public class DownloadManager {
             if (peerPort < 0) {
                 throw new BadServerReplyException("Negative peerPort");
             }
-            if (!peersInfo.containsKey(peerPort) && !brokenPeers.contains(peerPort)) {
+            if (!peersInfo.containsKey(peerPort) && !badPeers.contains(peerPort)) {
                 peersInfo.put(peerPort, new PeerInfo());
                 peersInfo.get(peerPort).availablePieces = new ArrayList<>();
                 try {
@@ -268,7 +273,7 @@ public class DownloadManager {
                 } catch (IOException e) {
                     e.printStackTrace();
                     peersInfo.remove(peerPort);
-                    brokenPeers.add(peerPort);
+                    badPeers.add(peerPort);
                 }
             }
         }

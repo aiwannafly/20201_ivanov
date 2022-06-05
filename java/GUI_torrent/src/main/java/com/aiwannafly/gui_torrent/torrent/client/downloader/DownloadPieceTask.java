@@ -42,28 +42,34 @@ public class DownloadPieceTask implements Callable<Response> {
     public Response call() throws IOException, BadMessageException {
         Response result = new Response(Response.Status.RECEIVED, peerPort, pieceIdx);
         requestPiece(pieceIdx, 0, pieceLength);
+//        System.out.println("ASK FOR " + pieceIdx);
         while (true) {
             Response.Status received = receivePiece();
             if (received == Response.Status.GOT_KEEP_ALIVE) {
+//                System.out.println("GOT KA");
                 result.receivedKeepAlive = true;
                 result.keepAliveTimeMillis = System.currentTimeMillis();
             } else if (received == Response.Status.HAVE) {
+//                System.out.println("GOT HAVE");
                 result.newAvailablePieces = this.newAvailablePieces;
             } else if (received == Response.Status.LOST) {
+//                System.out.println("GOT LOST");
                 result.status = Response.Status.LOST;
                 return result;
             } else if (received == Response.Status.GOT_CHOKE) {
+//                System.out.println("GOT CHOKE");
                 result.status = Response.Status.GOT_CHOKE;
                 return result;
             }
             if (received == Response.Status.RECEIVED) {
+//                System.out.println("GOT PIECE");
                 break;
             }
         }
         return result;
     }
 
-    private void requestPiece(int index, int begin, int length) throws IOException {
+    private void requestPiece(int index, int begin, int length) {
         String message = ByteOperations.convertIntoBytes(13) + Message.REQUEST +
                 ByteOperations.convertIntoBytes(index) + ByteOperations.convertIntoBytes(begin) +
                 ByteOperations.convertIntoBytes(length);
@@ -89,6 +95,7 @@ public class DownloadPieceTask implements Callable<Response> {
             return Response.Status.HAVE;
         }
         if (messageInfo.type != Message.PIECE) {
+            System.err.println("Bad type: " + messageInfo.type);
             return Response.Status.LOST;
         }
         Message.Piece piece = messageInfo.piece;
@@ -98,6 +105,7 @@ public class DownloadPieceTask implements Callable<Response> {
             receivedHash = getSha1(piece.data);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
+            System.err.println(e.getMessage());
             return Response.Status.LOST;
         }
         if (!receivedHash.equals(origHash)) {
