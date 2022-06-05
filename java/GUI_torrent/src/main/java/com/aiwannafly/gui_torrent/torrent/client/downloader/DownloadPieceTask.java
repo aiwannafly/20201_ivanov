@@ -1,13 +1,15 @@
 package com.aiwannafly.gui_torrent.torrent.client.downloader;
 
 import com.aiwannafly.gui_torrent.torrent.client.exceptions.BadMessageException;
+import com.aiwannafly.gui_torrent.torrent.client.util.ByteOperations;
 import com.aiwannafly.gui_torrent.torrent.client.util.torrent.Torrent;
 import com.aiwannafly.gui_torrent.torrent.client.file_manager.FileManager;
-import com.aiwannafly.gui_torrent.torrent.client.util.ByteOperations;
 import com.aiwannafly.gui_torrent.torrent.client.messages.Message;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -61,7 +63,7 @@ public class DownloadPieceTask implements Callable<Response> {
         return result;
     }
 
-    private void requestPiece(int index, int begin, int length) {
+    private void requestPiece(int index, int begin, int length) throws IOException {
         String message = ByteOperations.convertIntoBytes(13) + Message.REQUEST +
                 ByteOperations.convertIntoBytes(index) + ByteOperations.convertIntoBytes(begin) +
                 ByteOperations.convertIntoBytes(length);
@@ -77,9 +79,8 @@ public class DownloadPieceTask implements Callable<Response> {
             return Response.Status.GOT_CHOKE;
         }
         // piece: <len=0009+X><id=7><index><begin><block>
-        String message = messageInfo.data;
         if (messageInfo.type == Message.HAVE) {
-            int idx = ByteOperations.convertFromBytes(message.substring(0, 4));
+            int idx = messageInfo.piece.idx;
             if (newAvailablePieces == null) {
                 newAvailablePieces = new ArrayList<>();
             }
@@ -99,12 +100,12 @@ public class DownloadPieceTask implements Callable<Response> {
             e.printStackTrace();
             return Response.Status.LOST;
         }
-//        if (!receivedHash.equals(origHash)) {
-//            System.err.println("=== Bad hash, r and o:");
-//            System.err.println(receivedHash);
-//            System.err.println(origHash);
-//            return Response.Status.LOST;
-//        }
+        if (!receivedHash.equals(origHash)) {
+            System.err.println("=== Bad hash, r and o:");
+            System.err.println(receivedHash);
+            System.err.println(origHash);
+            return Response.Status.LOST;
+        }
         try {
             int offset;
             offset = piece.idx * torrentFile.getPieceLength().intValue() + piece.begin;

@@ -1,6 +1,5 @@
 package com.aiwannafly.gui_torrent.torrent.client.downloader;
 
-import com.aiwannafly.gui_torrent.torrent.client.util.ByteOperations;
 import com.aiwannafly.gui_torrent.torrent.client.messages.Message;
 
 import java.nio.channels.SelectionKey;
@@ -53,8 +52,7 @@ public class CollectPiecesInfoTask implements Callable<Response> {
         if (type == waitedMsgType) {
             if (type == Message.HAVE) {
                 result.status = Response.Status.HAVE;
-                result.pieceIdx = ByteOperations.convertFromBytes(
-                        result.messageInfo.data.substring(0, 4));
+                result.pieceIdx = result.messageInfo.piece.idx;
                 result.newAvailablePieces = new ArrayList<>();
                 result.newAvailablePieces.add(result.pieceIdx);
             } else if (type == Message.UNCHOKE) {

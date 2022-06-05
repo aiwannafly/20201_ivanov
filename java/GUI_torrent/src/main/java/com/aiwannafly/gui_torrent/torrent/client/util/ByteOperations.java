@@ -30,6 +30,11 @@ public class ByteOperations {
         return ByteBuffer.wrap(bytes.substring(0, 4).getBytes(StandardCharsets.UTF_8)).getInt();
     }
 
+    public static int convertFromBytes(byte[] bytes) {
+        assert bytes.length >= 4;
+        return ByteBuffer.wrap(bytes).getInt();
+    }
+
     public static byte[] getBytesFromString(String str) {
         byte[] arr = new byte[str.length()];
         for (int i = 0; i < str.length(); i++) {

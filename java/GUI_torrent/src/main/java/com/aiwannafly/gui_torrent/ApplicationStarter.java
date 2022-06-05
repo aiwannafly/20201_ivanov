@@ -6,10 +6,12 @@ import com.aiwannafly.gui_torrent.torrent.client.TorrentClient;
 import com.aiwannafly.gui_torrent.view.Renderer;
 import com.aiwannafly.gui_torrent.view.TexturePack;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class ApplicationStarter extends Application {
     private static final TorrentClient torrentClient = new BitTorrentClient();
@@ -25,6 +27,14 @@ public class ApplicationStarter extends Application {
     }
 
     public static void main(String[] args) {
+//        int a = 240;
+//        byte[] bytes = ByteBuffer.allocate(4).putInt(a).array();
+//        for (int i = 0; i < 4; i++) {
+//            System.out.println(Integer.toBinaryString(bytes[i]));
+//        }
+//        Platform.exit();
+//        int b = ByteBuffer.wrap(bytes).getInt();
+//        System.out.println(b);
         launch();
     }
 

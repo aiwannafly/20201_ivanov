@@ -13,6 +13,7 @@ import com.aiwannafly.gui_torrent.torrent.client.util.Handshake;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -35,6 +36,7 @@ public class DownloadManager {
     private final ObservableList<Integer> myPieces;
     private final TrackerCommunicator trackerComm;
     private final Timer updateConnectionsTimer;
+    private final Set<Integer> brokenPeers = new HashSet<>();
 
     public enum DownloadStatus {
         FINISHED, NOT_FINISHED, FAILED
@@ -121,6 +123,10 @@ public class DownloadManager {
                     leftPieces.add(pieceIdx);
                 }
             } else {
+                if (peersInfo.get(peerPort).peerStatus == PeerStatus.INVALID) {
+                    downloadResult.downloadStatus = DownloadStatus.NOT_FINISHED;
+                    return downloadResult;
+                }
                 if (result.newAvailablePieces != null) {
                     peersInfo.get(peerPort).availablePieces.addAll(result.newAvailablePieces);
                 }
@@ -242,7 +248,6 @@ public class DownloadManager {
         if (null == message) {
             throw new ServerNotCorrespondsException("Server did not show peers");
         }
-        System.out.println(message);
         String[] words = message.split(" ");
         if (words.length - 1 == 0) {
             throw new NoSeedsException("No peers are uploading the file at the moment");
@@ -253,21 +258,18 @@ public class DownloadManager {
             if (peerPort < 0) {
                 throw new BadServerReplyException("Negative peerPort");
             }
-            if (!peersInfo.containsKey(peerPort)) {
+            if (!peersInfo.containsKey(peerPort) && !brokenPeers.contains(peerPort)) {
                 peersInfo.put(peerPort, new PeerInfo());
                 peersInfo.get(peerPort).availablePieces = new ArrayList<>();
-            }
-        }
-        for (Integer peerPort : peersInfo.keySet()) {
-            if (peersInfo.get(peerPort).channel != null) {
-                continue;
-            }
-            try {
-                establishConnection(peerPort);
-            } catch (DifferentHandshakesException e) {
-                System.err.println("=== " + e.getMessage());
-            } catch (IOException e) {
-                e.printStackTrace();
+                try {
+                    establishConnection(peerPort);
+                } catch (DifferentHandshakesException e) {
+                    System.err.println("=== " + e.getMessage());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    peersInfo.remove(peerPort);
+                    brokenPeers.add(peerPort);
+                }
             }
         }
     }
@@ -295,16 +297,17 @@ public class DownloadManager {
             Selector selector = Selector.open();
             currentPeerChannel.configureBlocking(false);
             currentPeerChannel.register(selector, SelectionKey.OP_READ);
-            int waitTime = 500;
+            int waitTime = 5000;
             int returnValue = selector.select(waitTime);
             if (returnValue == 0) {
+                currentPeerChannel.configureBlocking(true);
                 return;
             }
             Set<SelectionKey> selectedKeys = selector.selectedKeys();
             Iterator<SelectionKey> keysIterator = selectedKeys.iterator();
             keysIterator.next().cancel();
-            handleBitField(peerPort, currentPeerChannel);
             currentPeerChannel.configureBlocking(true);
+            handleBitField(peerPort, currentPeerChannel);
         } else {
             throw new DifferentHandshakesException("Handshakes are different, reject connection");
         }
@@ -312,6 +315,7 @@ public class DownloadManager {
 
     private void handleBitField(int peerPort, SocketChannel peerChannel) throws IOException {
         Message.MessageInfo messageInfo;
+        int count = 0;
         do {
             try {
                 messageInfo = Message.getMessage(peerChannel);
@@ -319,16 +323,16 @@ public class DownloadManager {
                 e.printStackTrace();
                 return;
             }
+            count++;
+            if (count >= 2) {
+                break;
+            }
         } while (messageInfo.type == Message.KEEP_ALIVE);
         if (messageInfo.type != Message.BITFIELD) {
+            System.err.println("Not bitfield!");
             return;
         }
         byte[] bitfield = messageInfo.bitfield;
-        System.out.println(bitfield.length);
-        for (byte aByte : bitfield) {
-            System.out.println(aByte + " ");
-        }
-        System.out.println();
         for (int i = 0; i < torrentFile.getPieces().size(); i++) {
             int bitIdx = i % 8;
             int byteIdx = i / 8;
@@ -337,11 +341,7 @@ public class DownloadManager {
                 if (!peersInfo.get(peerPort).availablePieces.contains(i)) {
                     peersInfo.get(peerPort).availablePieces.add(i);
                 }
-                System.out.print(i + " ");
             }
         }
-        System.out.println();
-        System.out.println("Count of available pieces: " + peersInfo.get(peerPort).availablePieces.size());
-        System.out.println("Count of all pieces: " + torrentFile.getPieces().size());
     }
 }
