@@ -26,6 +26,7 @@ public class Message {
         public int type;
         public String data;
         public Piece piece;
+        public byte[] bitfield;
     }
 
     public static class Piece {
@@ -64,10 +65,14 @@ public class Message {
         if (message.type == HAVE || message.type == BITFIELD) {
             ByteBuffer messageBuf = ByteBuffer.allocate(message.length);
             int count = client.read(messageBuf);
-            message.data = new String(messageBuf.array());
             if (count != message.length) {
                 System.err.println("Read just " + count + " / " + message.length + " bytes.");
             }
+            if (message.type == HAVE) {
+                message.data = new String(messageBuf.array());
+                return message;
+            }
+            message.bitfield = messageBuf.array();
             return message;
         }
         if (message.type == PIECE || message.type == CANCEL || message.type == REQUEST) {

@@ -9,12 +9,7 @@ import java.util.Map;
 public class TrackerServer {
     public static final int PORT = 1000;
     private final ArrayList<Socket> clients = new ArrayList<>();
-    private final static Map<String, Map<Socket, PeerInfo>> filesPeersInfo = new HashMap<>();
-
-    public static class PeerInfo {
-        public Integer port;
-        public ArrayList<Integer> availablePieces;
-    }
+    private final static Map<String, Map<Socket, Integer>> peerPorts = new HashMap<>();
 
     public void run() {
         ServerSocket server = null;
@@ -49,8 +44,8 @@ public class TrackerServer {
         return clients;
     }
 
-    public Map<String, Map<Socket, PeerInfo>> getFilePeersInfo() {
-        return filesPeersInfo;
+    public Map<String, Map<Socket, Integer>> getPeerPorts() {
+        return peerPorts;
     }
 
     public static void main(String[] args) {

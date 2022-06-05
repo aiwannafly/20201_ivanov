@@ -38,18 +38,15 @@ public class UploadLauncher implements Uploader {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        // listen-port 5000 fileName 30 1 2 3 ... 30
     }
 
     @Override
     public void launchDistribution() {
+        // listen-port 5000 fileName
         String torrentFileName = torrentFile.getName() + Constants.POSTFIX;
-        StringBuilder command = new StringBuilder(TrackerCommandHandler.SET_LISTENING_SOCKET + " " +
-                getListeningPort() + " " + torrentFileName + " " + availablePieces.size());
-        for (Integer piece : availablePieces) {
-            command.append(" ").append(piece);
-        }
-        trackerComm.sendToTracker(command.toString());
+        String command = TrackerCommandHandler.SET_LISTENING_SOCKET + " " +
+                getListeningPort() + " " + torrentFileName;
+        trackerComm.sendToTracker(command);
         trackerComm.receiveFromTracker();
         connectionsHandlerThread = new Thread(new UploadHandler(this.torrentFile,
                 this.fileManager, this.peerId, this.serverSocketChannel, this.availablePieces,

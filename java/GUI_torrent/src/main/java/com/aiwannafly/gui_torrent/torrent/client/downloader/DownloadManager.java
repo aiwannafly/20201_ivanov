@@ -203,7 +203,7 @@ public class DownloadManager {
             long waitTimeMillis = 5000;
             service.submit(new CollectPiecesInfoTask(peersInfo.get(peerPort), peerPort, waitTimeMillis,
                     Message.HAVE));
-            // System.out.println("=== Wait for info about new pieces from " + peerPort);
+            System.out.println("=== Wait for info about new pieces from " + peerPort);
             return;
         }
         int randomIdx = random.nextInt(interestingPieces.size());
@@ -242,6 +242,7 @@ public class DownloadManager {
         if (null == message) {
             throw new ServerNotCorrespondsException("Server did not show peers");
         }
+        System.out.println(message);
         String[] words = message.split(" ");
         if (words.length - 1 == 0) {
             throw new NoSeedsException("No peers are uploading the file at the moment");
@@ -249,26 +250,12 @@ public class DownloadManager {
         int idx = 1;
         while (idx < words.length) {
             int peerPort = Integer.parseInt(words[idx++]);
-            int piecesCount = Integer.parseInt(words[idx++]);
-            if (peerPort < 0 || piecesCount < 0) {
-                throw new BadServerReplyException("Negative peerPort or piecesCount");
-            }
-            ArrayList<Integer> availablePieces = new ArrayList<>();
-            for (int i = 0; i < piecesCount; i++) {
-                if (idx >= words.length) {
-                    throw new BadServerReplyException("Wrong count of pieces");
-                }
-                availablePieces.add(Integer.parseInt(words[idx++]));
+            if (peerPort < 0) {
+                throw new BadServerReplyException("Negative peerPort");
             }
             if (!peersInfo.containsKey(peerPort)) {
                 peersInfo.put(peerPort, new PeerInfo());
-                peersInfo.get(peerPort).availablePieces = availablePieces;
-            }
-            for (Integer piece: availablePieces) {
-                if (peersInfo.get(peerPort).availablePieces.contains(piece)) {
-                    continue;
-                }
-                peersInfo.get(peerPort).availablePieces.add(piece);
+                peersInfo.get(peerPort).availablePieces = new ArrayList<>();
             }
         }
         for (Integer peerPort : peersInfo.keySet()) {
@@ -336,17 +323,25 @@ public class DownloadManager {
         if (messageInfo.type != Message.BITFIELD) {
             return;
         }
-        int bitsInByte = 8;
-        byte[] bytes = messageInfo.data.getBytes(StandardCharsets.UTF_8);
+        byte[] bitfield = messageInfo.bitfield;
+        System.out.println(bitfield.length);
+        for (byte aByte : bitfield) {
+            System.out.println(aByte + " ");
+        }
+        System.out.println();
         for (int i = 0; i < torrentFile.getPieces().size(); i++) {
-            int bitIdx = i % bitsInByte;
-            int byteIdx = i / bitsInByte;
+            int bitIdx = i % 8;
+            int byteIdx = i / 8;
             byte bit = (byte) (1 << bitIdx);
-            if ((bytes[byteIdx] & bit) != 0) {
+            if ((bitfield[byteIdx] & bit) != 0) {
                 if (!peersInfo.get(peerPort).availablePieces.contains(i)) {
                     peersInfo.get(peerPort).availablePieces.add(i);
                 }
+                System.out.print(i + " ");
             }
         }
+        System.out.println();
+        System.out.println("Count of available pieces: " + peersInfo.get(peerPort).availablePieces.size());
+        System.out.println("Count of all pieces: " + torrentFile.getPieces().size());
     }
 }

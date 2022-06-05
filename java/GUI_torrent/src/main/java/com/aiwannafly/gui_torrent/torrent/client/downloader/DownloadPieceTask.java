@@ -21,14 +21,14 @@ public class DownloadPieceTask implements Callable<Response> {
     private final int pieceIdx;
     private final int pieceLength;
     private final DownloadManager.PeerInfo peerInfo;
-    private final int peerId;
+    private final int peerPort;
     private ArrayList<Integer> newAvailablePieces;
 
     public DownloadPieceTask(Torrent torrentFile, FileManager fileManager,
                              String fileName, int peerPort, int pieceIdx, int pieceLength,
                              DownloadManager.PeerInfo peerInfo) {
         this.fileManager = fileManager;
-        this.peerId = peerPort;
+        this.peerPort = peerPort;
         this.torrentFile = torrentFile;
         this.fileName = fileName;
         this.pieceIdx = pieceIdx;
@@ -38,7 +38,7 @@ public class DownloadPieceTask implements Callable<Response> {
 
     @Override
     public Response call() throws IOException, BadMessageException {
-        Response result = new Response(Response.Status.RECEIVED, peerId, pieceIdx);
+        Response result = new Response(Response.Status.RECEIVED, peerPort, pieceIdx);
         requestPiece(pieceIdx, 0, pieceLength);
         while (true) {
             Response.Status received = receivePiece();
@@ -62,7 +62,7 @@ public class DownloadPieceTask implements Callable<Response> {
     }
 
     private void requestPiece(int index, int begin, int length) {
-        String message = ByteOperations.convertIntoBytes(13) + "6" +
+        String message = ByteOperations.convertIntoBytes(13) + Message.REQUEST +
                 ByteOperations.convertIntoBytes(index) + ByteOperations.convertIntoBytes(begin) +
                 ByteOperations.convertIntoBytes(length);
         peerInfo.out.print(message);
@@ -99,12 +99,12 @@ public class DownloadPieceTask implements Callable<Response> {
             e.printStackTrace();
             return Response.Status.LOST;
         }
-        if (!receivedHash.equals(origHash)) {
-            System.err.println("=== Bad hash, r and o:");
-            System.err.println(receivedHash);
-            System.err.println(origHash);
-            return Response.Status.LOST;
-        }
+//        if (!receivedHash.equals(origHash)) {
+//            System.err.println("=== Bad hash, r and o:");
+//            System.err.println(receivedHash);
+//            System.err.println(origHash);
+//            return Response.Status.LOST;
+//        }
         try {
             int offset;
             offset = piece.idx * torrentFile.getPieceLength().intValue() + piece.begin;

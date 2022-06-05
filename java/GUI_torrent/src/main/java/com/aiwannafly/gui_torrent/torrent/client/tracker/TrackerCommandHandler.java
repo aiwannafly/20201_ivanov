@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,8 +41,8 @@ public class TrackerCommandHandler implements Runnable {
                 if (command.equals(EXIT_COMMAND)) {
                     synchronized (server) {
                         server.getClients().remove(clientSocket);
-                        for (String torrentFileName: server.getFilePeersInfo().keySet()) {
-                            server.getFilePeersInfo().get(torrentFileName).remove(clientSocket);
+                        for (String torrentFileName: server.getPeerPorts().keySet()) {
+                            server.getPeerPorts().get(torrentFileName).remove(clientSocket);
                         }
                     }
                     break;
@@ -95,18 +94,13 @@ public class TrackerCommandHandler implements Runnable {
                     StringBuilder message = new StringBuilder();
                     message.append("Peers: ");
                     synchronized (server) {
-                        Map<Socket, TrackerServer.PeerInfo> fileSeeds = server.getFilePeersInfo().get(torrentFileName);
+                        Map<Socket, Integer> fileSeeds = server.getPeerPorts().get(torrentFileName);
                         for (Socket client : fileSeeds.keySet()) {
                             if (client == clientSocket) {
                                 continue;
                             }
-                            int port = fileSeeds.get(client).port;
-                            ArrayList<Integer> availablePieces = fileSeeds.get(client).availablePieces;
+                            int port = fileSeeds.get(client);
                             message.append(port).append(" ");
-                            message.append(availablePieces.size()).append(" ");
-                            for (Integer piece : availablePieces) {
-                                message.append(piece).append(" ");
-                            }
                         }
                     }
                     return message.toString();
@@ -119,28 +113,12 @@ public class TrackerCommandHandler implements Runnable {
                 }
                 int port = Integer.parseInt(words[1]);
                 String torrentFileName = words[2];
-                ArrayList<Integer> availablePieces = new ArrayList<>();
-                try {
-                    int piecesCount = Integer.parseInt(words[3]);
-                    if (words.length != 1 + 1 + 1 + 1 + piecesCount) {
-                        return WRONG_COMMAND_MSG;
-                    }
-                    for (int i = 0; i < piecesCount; i++) {
-                        availablePieces.add(Integer.parseInt(words[4 + i]));
-                    }
-                } catch (NumberFormatException e) {
-                    e.printStackTrace();
-                    return WRONG_COMMAND_MSG;
-                }
                 synchronized (server) {
-                    server.getFilePeersInfo().computeIfAbsent(torrentFileName, k -> new HashMap<>());
-                    TrackerServer.PeerInfo peerInfo = new TrackerServer.PeerInfo();
-                    peerInfo.port = port;
-                    peerInfo.availablePieces = availablePieces;
-                    if (server.getFilePeersInfo().get(torrentFileName).containsKey(clientSocket)) {
-                        server.getFilePeersInfo().get(torrentFileName).replace(clientSocket, peerInfo);
+                    server.getPeerPorts().computeIfAbsent(torrentFileName, k -> new HashMap<>());
+                    if (server.getPeerPorts().get(torrentFileName).containsKey(clientSocket)) {
+                        server.getPeerPorts().get(torrentFileName).replace(clientSocket, port);
                     } else {
-                        server.getFilePeersInfo().get(torrentFileName).put(clientSocket, peerInfo);
+                        server.getPeerPorts().get(torrentFileName).put(clientSocket, port);
                     }
                 }
             }

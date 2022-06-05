@@ -201,9 +201,8 @@ public class UploadHandler implements Runnable {
 
     private void sendBitfield(SocketChannel client) throws IOException {
         int totalPiecesCount = torrentFile.getPieces().size();
-        int bitsInByte = 8;
-        int count = totalPiecesCount / bitsInByte;
-        if (totalPiecesCount % bitsInByte != 0) {
+        int count = totalPiecesCount / 8;
+        if (totalPiecesCount % 8 != 0) {
             count++;
         }
         byte[] data = new byte[count];
@@ -211,11 +210,17 @@ public class UploadHandler implements Runnable {
             if (!myPieces.contains(i)) {
                 continue;
             }
-            int bitIdx = i % bitsInByte;
-            int byteIdx = i / bitsInByte;
+            int bitIdx = i % 8;
+            int byteIdx = i / 8;
             data[byteIdx] |= 1 << bitIdx;
             announcedPieces.add(i);
         }
+        System.out.println(data.length);
+        for (byte datum : data) {
+            System.out.println(datum + " ");
+        }
+        System.out.println();
+        System.out.println("Announced: " + announcedPieces.size());
         String bitfieldMsg = ByteOperations.convertIntoBytes(1 + data.length) +
                 Message.BITFIELD;
         client.write(ByteBuffer.wrap(bitfieldMsg.getBytes(StandardCharsets.UTF_8)));
