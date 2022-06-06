@@ -41,7 +41,7 @@ public class DownloadListener implements Flow.Subscriber<Boolean> {
             }
             if (fileSection.torrent.getPieces().size() == collectedPieces.size()) {
                 downloadedTorrents.add(fileSection.torrentFileName);
-                Renderer.instance.clearFileSection(fileSection);
+                Renderer.instance.clearFileSection(fileSection, GUITorrentRenderer.ClearType.ONLY_D);
                 return;
             }
             if (downloadedCount % piecesPortion != 0) {

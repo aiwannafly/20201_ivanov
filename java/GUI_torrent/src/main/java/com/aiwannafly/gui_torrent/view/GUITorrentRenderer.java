@@ -18,6 +18,10 @@ public interface GUITorrentRenderer {
         STOP, RESUME
     }
 
+    enum ClearType {
+        ONLY_D, ONLY_U, ALL
+    }
+
     class FileSection {
         public String torrentFileName;
         public Status status;
@@ -38,7 +42,7 @@ public interface GUITorrentRenderer {
 
     void renderFileSection(FileSection fileSection);
 
-    void clearFileSection(FileSection fileSection);
+    void clearFileSection(FileSection fileSection, ClearType clearType);
 
     void renderNewSegmentBar(FileSection fileSection);
 }

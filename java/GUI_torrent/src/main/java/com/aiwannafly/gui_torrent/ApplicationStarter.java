@@ -6,12 +6,10 @@ import com.aiwannafly.gui_torrent.torrent.client.TorrentClient;
 import com.aiwannafly.gui_torrent.view.Renderer;
 import com.aiwannafly.gui_torrent.view.TexturePack;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 public class ApplicationStarter extends Application {
     private static final TorrentClient torrentClient = new BitTorrentClient();

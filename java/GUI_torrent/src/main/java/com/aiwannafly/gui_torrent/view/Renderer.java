@@ -168,9 +168,9 @@ public class Renderer implements GUITorrentRenderer {
     }
 
     @Override
-    public void clearFileSection(FileSection fileSection) {
+    public void clearFileSection(FileSection fileSection, ClearType clearType) {
         Button button = fileSection.stopResumeButton;
-        if (button != null) {
+        if (button != null && clearType.equals(ClearType.ONLY_D)) {
             rootPane.getChildren().remove(button);
             Label buttonLabel = new Label();
             buttonLabel.setPrefHeight(LABEL_HEIGHT);
@@ -179,8 +179,14 @@ public class Renderer implements GUITorrentRenderer {
             buttonLabel.setLayoutY(button.getLayoutY());
             rootPane.getChildren().add(buttonLabel);
         }
-        fileSection.uSpeedLabel.setText("");
-        fileSection.dSpeedLabel.setText("");
+        switch (clearType) {
+            case ALL -> {
+                fileSection.uSpeedLabel.setText("");
+                fileSection.dSpeedLabel.setText("");
+            }
+            case ONLY_D -> fileSection.dSpeedLabel.setText("");
+            case ONLY_U -> fileSection.uSpeedLabel.setText("");
+        }
     }
 
     @Override

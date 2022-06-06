@@ -44,7 +44,7 @@ public class UploadListener implements Flow.Subscriber<Boolean> {
 
     private void showUploadSpeed() {
         if (sentPieces.isEmpty()) {
-            Renderer.instance.clearFileSection(fileSection);
+            Renderer.instance.clearFileSection(fileSection, GUITorrentRenderer.ClearType.ONLY_U);
             return;
         }
         uploadedCount++;
