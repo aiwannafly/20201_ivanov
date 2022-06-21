@@ -69,15 +69,26 @@ public class MultyDownloadManager implements Downloader {
                             Constants.POSTFIX;
                     downloadManagers.put(torrentFileName, downloadManager);
                 }
+                int waitingCount = 0;
                 for (String torrentFileName: downloadManagers.keySet()) {
                     if (stoppedTorrents.contains(torrentFileName)) {
                         continue;
                     }
                     DownloadManager downloadManager = downloadManagers.get(torrentFileName);
+                    System.out.println("Try to download next piece");
                     DownloadManager.Result result = downloadManager.downloadNextPiece();
+                    System.out.println("Got result");
+                    if (result.downloadStatus == DownloadManager.DownloadStatus.WAITING_FOR_PEERS) {
+                        waitingCount++;
+                    }
                     if (result.downloadStatus == DownloadManager.DownloadStatus.FINISHED) {
                         removalList.add(torrentFileName);
                     }
+                }
+                if (waitingCount == downloadManagers.size()) {
+                    System.out.println("WAIT FOR PEERS...");
+                    /* all download managers are waiting for peers, we need to wait */
+                    Thread.sleep(DownloadManager.CONNECTIONS_UPDATE_TIME);
                 }
                 for (String torrent: removalList) {
                     downloadManagers.remove(torrent).shutdown();

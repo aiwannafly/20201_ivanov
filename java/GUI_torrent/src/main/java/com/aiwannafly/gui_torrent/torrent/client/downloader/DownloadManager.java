@@ -22,6 +22,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class DownloadManager {
+    public static final long CONNECTIONS_UPDATE_TIME = 4 * 1000;
     private final Torrent torrentFile;
     private final CompletionService<Response> service;
     private final ArrayList<Integer> leftPieces;
@@ -37,7 +38,7 @@ public class DownloadManager {
     private final Set<Integer> badPeers = new HashSet<>();
 
     public enum DownloadStatus {
-        FINISHED, NOT_FINISHED, FAILED
+        FINISHED, NOT_FINISHED, FAILED, WAITING_FOR_PEERS
     }
 
     public static class Result {
@@ -56,11 +57,12 @@ public class DownloadManager {
         ArrayList<Integer> availablePieces = null;
         SocketChannel channel = null;
         PeerStatus peerStatus = PeerStatus.INVALID;
+        int currentPieceIdx;
     }
 
     public DownloadManager(Torrent torrentFile, FileManager fileManager, String peerId,
-                           ExecutorService leechPool,
-                           ObservableList<Integer> myPieces, TrackerCommunicator trackerComm) throws NoSeedsException,
+                           ExecutorService leechPool, ObservableList<Integer> myPieces,
+                           TrackerCommunicator trackerComm) throws NoSeedsException,
             ServerNotCorrespondsException, BadServerReplyException {
         this.peerId = peerId;
         this.fileManager = fileManager;
@@ -75,13 +77,13 @@ public class DownloadManager {
             public void run() {
                 try {
                     setConnections();
-                } catch (ServerNotCorrespondsException | NoSeedsException | BadServerReplyException e) {
+                } catch (NoSeedsException ignored) {
+                } catch (ServerNotCorrespondsException | BadServerReplyException e) {
                     e.printStackTrace();
                 }
             }
         };
-        long UPDATE_INTERV = 4 * 1000;
-        updateConnectionsTimer.schedule(updateConnections, UPDATE_INTERV, UPDATE_INTERV);
+        updateConnectionsTimer.schedule(updateConnections, CONNECTIONS_UPDATE_TIME, CONNECTIONS_UPDATE_TIME);
         if (peersInfo.isEmpty()) {
             throw new NoSeedsException("No seeds uploading file " + torrentFile.getName());
         }
@@ -105,9 +107,8 @@ public class DownloadManager {
             }
         }
         if (peersInfo.isEmpty()) {
-            shutdown();
-            closed = true;
-            downloadResult.downloadStatus = DownloadStatus.FAILED;
+            System.out.println("TOLD THAT I AM WAITING");
+            downloadResult.downloadStatus = DownloadStatus.WAITING_FOR_PEERS;
             return downloadResult;
         }
         Future<Response> future;
@@ -124,6 +125,19 @@ public class DownloadManager {
                 shutdown();
                 closed = true;
                 downloadResult.downloadStatus = DownloadStatus.FINISHED;
+            }
+            System.out.println("TOLD ABOUT FAIL");
+            for (int pieceIdx = 0; pieceIdx < torrentFile.getPieces().size(); pieceIdx++) {
+                if (!myPieces.contains(pieceIdx) && !leftPieces.contains(pieceIdx)) {
+                    leftPieces.add(pieceIdx);
+                    for (int peerPort: peersInfo.keySet()) {
+                        if (peersInfo.get(peerPort).currentPieceIdx == pieceIdx) {
+                            peersInfo.remove(peerPort);
+                            break;
+                        }
+                    }
+                    break;
+                }
             }
             return downloadResult;
         }
@@ -236,9 +250,9 @@ public class DownloadManager {
 
     private void requestPiece(int pieceIdx, int peerPort) {
         int pieceLength = getPieceLength(pieceIdx);
+        peersInfo.get(peerPort).currentPieceIdx = pieceIdx;
         service.submit(new DownloadPieceTask(torrentFile, fileManager,
-                fileName, peerPort, pieceIdx, pieceLength,
-                peersInfo.get(peerPort)));
+                fileName, peerPort, pieceLength, peersInfo.get(peerPort)));
     }
 
     private int getPieceLength(int pieceIdx) {

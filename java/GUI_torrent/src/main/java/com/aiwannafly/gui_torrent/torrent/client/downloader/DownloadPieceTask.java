@@ -8,13 +8,12 @@ import com.aiwannafly.gui_torrent.torrent.client.messages.Message;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.Random;
 import java.util.concurrent.Callable;
 
 public class DownloadPieceTask implements Callable<Response> {
@@ -28,13 +27,13 @@ public class DownloadPieceTask implements Callable<Response> {
     private ArrayList<Integer> newAvailablePieces;
 
     public DownloadPieceTask(Torrent torrentFile, FileManager fileManager,
-                             String fileName, int peerPort, int pieceIdx, int pieceLength,
+                             String fileName, int peerPort, int pieceLength,
                              DownloadManager.PeerInfo peerInfo) {
         this.fileManager = fileManager;
         this.peerPort = peerPort;
         this.torrentFile = torrentFile;
         this.fileName = fileName;
-        this.pieceIdx = pieceIdx;
+        this.pieceIdx = peerInfo.currentPieceIdx;
         this.pieceLength = pieceLength;
         this.peerInfo = peerInfo;
     }
@@ -43,7 +42,6 @@ public class DownloadPieceTask implements Callable<Response> {
     public Response call() throws IOException, BadMessageException {
         Response result = new Response(Response.Status.RECEIVED, peerPort, pieceIdx);
         requestPiece(pieceIdx, 0, pieceLength);
-//        System.out.println("ASK FOR " + pieceIdx);
         while (true) {
             Response.Status received = receivePiece();
             if (received == Response.Status.GOT_KEEP_ALIVE) {
@@ -79,6 +77,16 @@ public class DownloadPieceTask implements Callable<Response> {
     }
 
     private Response.Status receivePiece() throws IOException, BadMessageException {
+        Selector selector = Selector.open();
+        peerInfo.channel.configureBlocking(false);
+        peerInfo.channel.register(selector, SelectionKey.OP_READ);
+        long waitTime = 1000;
+        int r = selector.select(waitTime);
+        if (r == 0) {
+            return Response.Status.LOST;
+        }
+        peerInfo.channel.keyFor(selector).cancel();
+        peerInfo.channel.configureBlocking(true);
         Message.MessageInfo messageInfo = Message.getMessage(peerInfo.channel);
         if (messageInfo.type == Message.KEEP_ALIVE) {
             return Response.Status.GOT_KEEP_ALIVE;

@@ -1,11 +1,23 @@
 https://www.cs.swarthmore.edu/~aviv/classes/f12/cs43/labs/lab5/lab5.pdf
 https://translatedby.com/you/bittorrent-protocol-specification-v1-0-in-detail/into-ru/
 
-?. Реализовать все команды из задания
-(желательно) Показывать скорости более плавно, по таймеру, например
+1. Возможно стоит переделать DownloadManager
+Нужно сделать так, чтобы и с отваливающимся пиром можно было работать
+Надо войти в специальный режим ожидания соединений, получается
 
-• (5pt) Choking Protocol: Build a client that can do the above, and also implement the choking algorithm
-  described in Cohen’s specification.
-• (5pt) Tracker Protocol: Add in features for communicating with a tracker server. Note that you do
-not need to implement a tracker.
-• (25pt) Real Working: Build a client that can work with real world bittorrent clients. (HARD!)
+Ну то есть ситуация там понятная. Мы скачивали файл, а потом в один момент
+все сиды пропали. И что делать. Мы должны перейти в режим ожидания. Но как?
+MultyDownloadManager из раза в раз дает задания на скачивание кусков.
+И он сам переходит в ожидание момента, когда к нам приходит новый кусок.
+Но он не может просто перейти в ожидание того момента, пока у какого-то файла
+не появится новый сид. В это время он должен скачивать другие файлы.
+
+Что можно делать тогда? Вариант следующий: он итерируется по DownloadManager-ам
+Если какой-то из них ожидает сидов, то мы скипаем и работаем со следующим.
+Представим ситуацию, когда они все в ожидании сидов находятся.
+
+Тогда тут получим холостой цикл. Но вроде лечится это просто. Мы просто впадаем в спячку на 4 секунды.
+Потом проснемся. Если ничего не изменится, то снова уснем.
+
+Можно попробовать реализовать.
+
