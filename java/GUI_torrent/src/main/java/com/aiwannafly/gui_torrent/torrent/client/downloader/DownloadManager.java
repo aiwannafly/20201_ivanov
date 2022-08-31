@@ -107,7 +107,6 @@ public class DownloadManager {
             }
         }
         if (peersInfo.isEmpty()) {
-            System.out.println("TOLD THAT I AM WAITING");
             downloadResult.downloadStatus = DownloadStatus.WAITING_FOR_PEERS;
             return downloadResult;
         }
@@ -126,7 +125,6 @@ public class DownloadManager {
                 closed = true;
                 downloadResult.downloadStatus = DownloadStatus.FINISHED;
             }
-            System.out.println("TOLD ABOUT FAIL");
             for (int pieceIdx = 0; pieceIdx < torrentFile.getPieces().size(); pieceIdx++) {
                 if (!myPieces.contains(pieceIdx) && !leftPieces.contains(pieceIdx)) {
                     leftPieces.add(pieceIdx);
@@ -234,7 +232,6 @@ public class DownloadManager {
             long waitTimeMillis = 5000;
             service.submit(new CollectPiecesInfoTask(peersInfo.get(peerPort), peerPort, waitTimeMillis,
                     Message.HAVE));
-            System.out.println("=== Wait for info about new pieces from " + peerPort);
             return;
         }
         int randomIdx = random.nextInt(interestingPieces.size());
@@ -287,12 +284,10 @@ public class DownloadManager {
                 peersInfo.put(peerPort, new PeerInfo());
                 peersInfo.get(peerPort).availablePieces = new ArrayList<>();
                 try {
-                    System.out.println("=== Try to connect to " + peerPort);
                     establishConnection(peerPort);
                 } catch (DifferentHandshakesException e) {
                     System.err.println("=== " + e.getMessage());
                 } catch (IOException e) {
-                    System.out.println("=== Failed to connect to " + peerPort);
                     e.printStackTrace();
                     peersInfo.remove(peerPort);
                     badPeers.add(peerPort);
@@ -335,7 +330,6 @@ public class DownloadManager {
             keysIterator.next().cancel();
             currentPeerChannel.configureBlocking(true);
             handleBitField(peerPort, currentPeerChannel);
-            System.out.println("=== Connected to " + peerPort);
         } else {
             throw new DifferentHandshakesException("Handshakes are different, reject connection");
         }
@@ -371,6 +365,5 @@ public class DownloadManager {
                 }
             }
         }
-        System.out.println("GOT BITFIELD: " + peersInfo.get(peerPort).availablePieces.size());
     }
 }

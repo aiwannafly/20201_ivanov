@@ -75,9 +75,7 @@ public class MultyDownloadManager implements Downloader {
                         continue;
                     }
                     DownloadManager downloadManager = downloadManagers.get(torrentFileName);
-                    System.out.println("Try to download next piece");
                     DownloadManager.Result result = downloadManager.downloadNextPiece();
-                    System.out.println("Got result");
                     if (result.downloadStatus == DownloadManager.DownloadStatus.WAITING_FOR_PEERS) {
                         waitingCount++;
                     }
@@ -86,7 +84,6 @@ public class MultyDownloadManager implements Downloader {
                     }
                 }
                 if (waitingCount == downloadManagers.size()) {
-                    System.out.println("WAIT FOR PEERS...");
                     /* all download managers are waiting for peers, we need to wait */
                     Thread.sleep(DownloadManager.CONNECTIONS_UPDATE_TIME);
                 }

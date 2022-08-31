@@ -77,7 +77,6 @@ public class UploadHandler implements Runnable {
     private void handleEvents(Selector selector) throws IOException {
         selector.select();
         synchronized (myPieces) {
-            System.out.println("COLLECTED: " + myPieces.size());
             if (announcedPieces.size() < myPieces.size()) {
                 for (Integer piece : myPieces) {
                     if (!announcedPieces.contains(piece)) {
@@ -104,9 +103,7 @@ public class UploadHandler implements Runnable {
                 SocketChannel client = (SocketChannel) selectionKey.channel();
                 Message.MessageInfo message;
                 try {
-//                    client.configureBlocking(true);
                     message = Message.getMessage(client);
-//                    client.configureBlocking(false);
                 } catch (BadMessageException e) {
                     System.out.println("=== Closed connection");
                     leechesInfo.remove(client);
@@ -139,7 +136,6 @@ public class UploadHandler implements Runnable {
                 SocketChannel client = (SocketChannel) selectionKey.channel();
                 client.register(selector, SelectionKey.OP_READ);
                 while (!leechesInfo.get(client).myReplies.isEmpty()) {
-                    System.out.println("Announced: " + announcedPieces.size());
                     String message = leechesInfo.get(client).myReplies.remove();
                     client.write(ByteBuffer.wrap(message.getBytes(StandardCharsets.UTF_8)));
                 }
