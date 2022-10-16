@@ -1,1 +1,1 @@
-Repo with my tasks from university
+Repo with my labs from university
