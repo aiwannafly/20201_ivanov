@@ -1,0 +1,9 @@
+Real user id shows who you really are, and the effective user id 
+is the id, according to which OS decides whether to allow you do
+something or not.
+
+So, such system provides you with the opportunity to temporarely
+take someone's another id and use it in your goals.
+
+Programs with the setuid bit may be a good example of how it works.
+

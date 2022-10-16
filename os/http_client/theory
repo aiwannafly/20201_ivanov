@@ -1,0 +1,287 @@
+Так, надо выводить инфу по мере поступления.
+
+Делаем рид. Он прочитал 5 байт. Выводим их.
+И так далее.
+НО! Выводим посимвольно, чекая на новые строки.
+Когда будет выведено 25 строк, ставим флажок, что
+не выводим, на селекте ждем, пока пользователь не разрешит вывести еще 25 строк
+и т.д. и т.д.
+
+Теперь другая ситуация. Мы напечатали 25 строк и заблокались.
+Считали еще 4 кб. Пользователь не дает выводить дальше. Нам некуда
+читать. Что делать? Есть риск войти в холостой цикл.
+Ну как бы это нормально, но нет.
+Холостой цикл -- это неправильное использование ресурсов компьютера.
+Мы должны заблокаться.
+
+Есть вариант следующий:
+выводить мы не можем, буфер уже забит,
+тогда мы убераем сокет из множества селекта и тупо ждем, пока
+не разрешат этот буфер скинуть в терминал.
+
+#include <stdbool.h>
+#include <sys/socket.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <netdb.h>
+#include <unistd.h>
+
+#define USAGE_GUIDE "usage: ./prog <url>"
+#define REQUIRED_ARGC (2)
+#define SUCCESS (0)
+#define FAIL (-1)
+#define HTTP_PORT "80"
+#define HEADER_SIZE (100)
+#define WAIT_TIME (3 * 60)
+#define BUFFER_CAPACITY (4 * 1024)
+#define MAX_LINES_COUNT_ON_SCREEN (2)
+
+int main(int argc, char *argv[]) {
+    if (argc < REQUIRED_ARGC) {
+        fprintf(stderr, "%s\n", USAGE_GUIDE);
+        return EXIT_FAILURE;
+    }
+    const char *url = argv[1];
+    struct addrinfo hints;
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = 0;
+    struct addrinfo *result;
+    int return_value = getaddrinfo(url, HTTP_PORT, &hints, &result);
+    if (return_value != SUCCESS) {
+        fprintf(stderr, "=== Error in getaddrinfo: %s\n", gai_strerror(return_value));
+        return EXIT_FAILURE;
+    }
+    int http_sd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    if (http_sd == FAIL) {
+        perror("=== Error in socket");
+        freeaddrinfo(result);
+        return EXIT_FAILURE;
+    }
+    return_value = connect(http_sd, result->ai_addr, result->ai_addrlen);
+    if (return_value == FAIL) {
+        perror("=== Error in connect");
+        freeaddrinfo(result);
+        return EXIT_FAILURE;
+    }
+    char temp[] = "GET / HTTP/1.1\r\nHost: %s\r\n\r\n";
+    char header[HEADER_SIZE];
+    sprintf(header, temp, url);
+    ssize_t written_bytes = write(http_sd, header, strlen(header));
+    if (written_bytes == FAIL) {
+        perror("=== Error in write");
+        freeaddrinfo(result);
+        return EXIT_FAILURE;
+    }
+    char buffer[BUFFER_CAPACITY];
+    bool print_available = true;
+    size_t bytes_in_buffer = 0;
+    size_t printed_lines_count = 0;
+    fd_set fd_read_set;
+    FD_ZERO(&fd_read_set);
+    FD_SET(STDIN_FILENO, &fd_read_set);
+    FD_SET(http_sd, &fd_read_set);
+    while (true) {
+        printf("=== Waiting in select...\n");
+        struct timeval timeout = {
+                .tv_sec = WAIT_TIME,
+                .tv_usec = 0
+        };
+        return_value = select(http_sd + 1, &fd_read_set, NULL, NULL, &timeout);
+        if (return_value == FAIL) {
+            perror("=== Error in select");
+            break;
+        }
+        if (return_value == 0) {
+            printf("=== TIME_OUT\n");
+            break;
+        }
+        printf("=== Check descriptors...\n");
+        if (FD_ISSET(STDIN_FILENO, &fd_read_set)) {
+            print_available = true;
+            printf("I am here\n");
+            char input[100];
+            fscanf(stdin, "%s\n", input);
+            printf("%s\n", buffer);
+        }
+        if (FD_ISSET(http_sd, &fd_read_set)) {
+            ssize_t read_bytes;
+            if (bytes_in_buffer == BUFFER_CAPACITY) {
+//                 FD_CLR(http_sd, &fd_read_set);
+            } else {
+                read_bytes = read(http_sd, buffer + bytes_in_buffer, BUFFER_CAPACITY
+                                                                     - bytes_in_buffer);
+                if (read_bytes == FAIL) {
+                    perror("=== Error in read");
+                    continue;
+                }
+                bytes_in_buffer += read_bytes;
+                printf("read bytes: %zu\n", bytes_in_buffer);
+            }
+            if (!print_available) {
+                continue;
+            }
+            for (size_t i = 0; i < bytes_in_buffer; i++) {
+                if (buffer[i] == '\n') {
+                    printed_lines_count++;
+                }
+                printf("%c", buffer[i]);
+                if (printed_lines_count > 0 &&
+                    printed_lines_count % MAX_LINES_COUNT_ON_SCREEN == 0) {
+                    print_available = false;
+                    printf("=== Press space to scroll down\n");
+                    bytes_in_buffer -= (i + 1);
+                    for (size_t j = 0; j < bytes_in_buffer; j++) {
+                        buffer[j] = buffer[j + (i + 1)];
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    freeaddrinfo(result);
+    return EXIT_SUCCESS;
+}
+***********************************
+
+
+#include <netdb.h>
+#include <poll.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <stdio.h>
+#include <termios.h>
+#include <unistd.h>
+
+#define USAGE_GUIDE "usage: ./prog <url>"
+#define REQUIRED_ARGC (2)
+#define SUCCESS (0)
+#define FAIL (-1)
+#define MAX_LINES_COUNT (25)
+#define HTTP_PORT "80"
+#define POLL_INFINITY (-1)
+#define MAX_LINE_LEN (79)
+#define BUF_CAPACITY (2048)
+#define PORTION_SIZE (32)
+#define NEXT_SCREEN_COMMAND ' '
+#define QUIT_COMMAND 'q'
+
+struct termios old_terminal;
+
+/* Makes a connection and returns
+ * socket fd.
+ * Prints errors in stderr */
+static int connect_to_URL(const char *URL) {
+    struct addrinfo hints;
+    memset(&hints, 0, sizeof hints);
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_family = AF_INET;
+    struct addrinfo *res;
+    int return_value = getaddrinfo(URL, HTTP_PORT, &hints, &res);
+    if (return_value != SUCCESS) {
+        fprintf(stderr, "=== Error in getaddrinfo: %s\n", gai_strerror(return_value));
+        return FAIL;
+    }
+    int conn_sd = socket(AF_INET, SOCK_STREAM, 0);
+    if (conn_sd == FAIL) {
+        perror("=== Error in socket()");
+        return FAIL;
+    }
+    if (connect(conn_sd, res->ai_addr, res->ai_addrlen) < 0) {
+        perror("=== Error in connect()");
+        return FAIL;
+    }
+    freeaddrinfo(res);
+    return conn_sd;
+}
+
+/* returns the count of left bytes in buffer */
+static size_t print_screen(int fd, char *buf, size_t buf_size) {
+    int lines_count = 0;
+    int chars_in_line = 0;
+    int pos = 0;
+    while (lines_count < MAX_LINES_COUNT && pos < buf_size) {
+        if (chars_in_line++ >= MAX_LINE_LEN) {
+            chars_in_line = 0;
+            lines_count++;
+        }
+        if (buf[pos++] == '\n') {
+            lines_count++;
+            chars_in_line = 0;
+        }
+    }
+    write(fd, buf, pos);
+    memmove(buf, buf + pos, buf_size - pos);
+    return buf_size - pos;
+}
+
+static void reset_terminal() {
+    tcsetattr(STDIN_FILENO, TCSANOW, &old_terminal);
+}
+
+static void switch_terminal_mode() {
+    struct termios term;
+    tcgetattr(STDIN_FILENO, &term);
+    old_terminal = term;
+    term.c_lflag &= ~(ICANON | ISIG | ECHO);
+    term.c_cc[VMIN] = 1;
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &term);
+    atexit(reset_terminal);
+}
+
+int main(int argc, char **argv) {
+    if (argc < REQUIRED_ARGC) {
+        fprintf(stderr, "%s\n", USAGE_GUIDE);
+        return EXIT_FAILURE;
+    }
+    const char *url = argv[1];
+    int socket_fd = connect_to_URL(url);
+    switch_terminal_mode();
+    char *req = "GET /\r\n\r\n";
+    write(socket_fd, req, strlen(req));
+    struct pollfd fds[2];
+    fds[0].fd = socket_fd;
+    fds[0].events = POLLIN;
+    fds[1].fd = STDIN_FILENO;
+    fds[1].events = POLLIN;
+    bool received_all = false;
+    char buf[BUF_CAPACITY];
+    int buf_index = 0;
+    while (true) {
+        int return_value = poll(fds, 2, POLL_INFINITY);
+        if (return_value == FAIL) {
+            perror("=== Error in poll\n");
+        }
+        if (fds[0].revents & POLLIN && buf_index < BUF_CAPACITY - PORTION_SIZE) {
+            ssize_t count_of_read = read(socket_fd, buf + buf_index, PORTION_SIZE);
+            buf_index += count_of_read;
+            if (count_of_read == 0) {
+                received_all = true;
+            }
+        }
+        if (fds[1].revents & POLLIN) {
+            char input;
+            read(STDIN_FILENO, &input, 1);
+            if (input == NEXT_SCREEN_COMMAND) {
+                buf_index = print_screen(STDOUT_FILENO, buf, buf_index);
+            }
+            if (input == QUIT_COMMAND || received_all) {
+                goto FINISH;
+            }
+            printf("\n=== Press space to scroll down\n");
+        }
+    }
+    FINISH:
+    {
+        printf("\n");
+        int return_value = close(socket_fd);
+        if (return_value == FAIL) {
+            perror("=== Error in close");
+        }
+        return EXIT_SUCCESS;
+    };
+}
+

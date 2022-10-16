@@ -1,0 +1,120 @@
+#include <errno.h>
+#include <ctype.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <wait.h>
+
+#define BUFFER_SIZE (1000)
+#define CHILD_FORK_PID (0)
+#define FAIL (-1)
+#define READ_ID (0)
+#define WRITE_ID (1)
+#define WARNING_MESSAGE "Warning! Hot water is hot!\n"
+
+static bool read_from_pipe(int pipe_fd, char read_buffer[BUFFER_SIZE]) {
+    ssize_t bytes_read = 0;
+    while (true) {
+        bytes_read = read(pipe_fd, read_buffer, BUFFER_SIZE);
+        if (FAIL == bytes_read) {
+            if (errno == EINTR) {
+                continue;
+            } else {
+                return false;
+            }
+        } else {
+            break;
+        }
+    }
+    read_buffer[bytes_read] = '\0';
+    return true;
+}
+
+int main() {
+    int pipe_fd[2];
+    int status = pipe(pipe_fd);
+    if (FAIL == status) {
+        perror("error in pipe");
+        return EXIT_FAILURE;
+    }
+    pid_t first_child_pid = fork();
+    if (FAIL == first_child_pid) {
+        perror("error in fork");
+        return EXIT_FAILURE;
+    }
+    if (first_child_pid == CHILD_FORK_PID) {
+        status = close(pipe_fd[READ_ID]);
+        if (FAIL == status) {
+            perror("error in close");
+        }
+        write(pipe_fd[WRITE_ID], WARNING_MESSAGE, strlen(WARNING_MESSAGE));
+        return EXIT_SUCCESS;
+    } else {
+        status = 0;
+        waitpid(first_child_pid, &status, 0);
+        int child_exit_code = WEXITSTATUS(status);
+        if (EXIT_FAILURE == child_exit_code) {
+            fprintf(stderr, "Error in first child process occurred.\n");
+            return EXIT_FAILURE;
+        }
+    }
+    pid_t second_child_pid = fork();
+    if (FAIL == second_child_pid) {
+        perror("error in fork");
+        return EXIT_FAILURE;
+    }
+    if (second_child_pid == CHILD_FORK_PID) {
+        status = close(pipe_fd[WRITE_ID]);
+        if (FAIL == status) {
+            perror("error in close");
+        }
+        char read_buffer[BUFFER_SIZE];
+        bool read = read_from_pipe(pipe_fd[READ_ID], read_buffer);
+        if (!read) {
+            perror("error in read");
+        }
+        for (size_t i = 0; i < strlen(read_buffer); i++) {
+            printf("%c", toupper(read_buffer[i]));
+        }
+        return EXIT_SUCCESS;
+    } else {
+        status = 0;
+        waitpid(second_child_pid, &status, 0);
+        int child_exit_code = WEXITSTATUS(status);
+        if (EXIT_FAILURE == child_exit_code) {
+            fprintf(stderr, "Error in second child process occurred.\n");
+            return EXIT_FAILURE;
+        }
+    }
+    return EXIT_SUCCESS;
+}
+
+
+*****************
+#include <stdio.h>
+#include <stdlib.h>
+
+#define NUMBERS_COUNT (100)
+#define BUF_SIZE (10)
+
+int main(void) {
+    int random_numbers[NUMBERS_COUNT];
+    for (size_t i = 0; i < NUMBERS_COUNT; i++) {
+        random_numbers[i] = rand() % NUMBERS_COUNT;
+    }
+    FILE *pipe_fp = popen("sort -n", "w");
+    if (pipe_fp == NULL) {
+        perror("popen");
+        return EXIT_FAILURE;
+    }
+    for (size_t i = 0; i < NUMBERS_COUNT; i++) {
+        char buffer[BUF_SIZE];
+        sprintf(buffer, "%d\n", random_numbers[i]);
+        fputs(buffer, pipe_fp);
+    }
+    pclose(pipe_fp);
+    return EXIT_SUCCESS;
+}

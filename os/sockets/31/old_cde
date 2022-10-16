@@ -1,0 +1,10 @@
+//    int status = setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR,   // Allow socket descriptor to be reuseable
+//                            (char *) &opt_value, sizeof(opt_value));
+//    if (status == FAIL) {
+//        perror("error in setsockopt");
+//        status =  close(listen_fd);
+//        if (status == FAIL) {
+//            perror("error in close");
+//        }
+//        return EXIT_FAILURE;
+//    }

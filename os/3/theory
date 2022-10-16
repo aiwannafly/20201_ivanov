@@ -1,0 +1,246 @@
+* Файл - это совокупность данных, доступ к которой осуществляется по имени.
+
+* ОС семейства Unix трактуют понятие файла более широко - файлом там называется вообще
+любой объект, имеющий имя в файловой системе.
+Правда каталоги, внешние устройства называются в данном случае специальными файлами.
+
+* Как правило, хранят также дату создания файла, дату его последней модификации, местоположение на диске,
+индентификатор хозяина этого файла, права доступа к нему других пользователей.
+Эта информация обычно хранится не в самом файле, а в специальной структуре данных - иноде, метафайле и т.д.
+
+* Совокупность каталогов и других метаданных, т.е. системных структур данных, отслеживающих
+размещение файлов на диске и свободное дисковое пространство, называется файловой системой (ФС).
+
+* Операция open() "открывает" файл, устанавливая соединение между программой и файлом.
+При этом программа получает целое число, дескриптор, который идентифицирует данное соединение.
+Фактически это индекс в системной таблице открытых файлов для данной задачи.
+Все остальные операции используют этот индекс для ссылки на файл.
+
+* В мире ОС UNIX по историческим причинам термин "файловая система" является перегруженным, обозначая одновременно иерархию каталогов и файлов и часть ядра, 
+которая управляет каталогами и файлами.
+
+* Под иерархией понимается дерево с вершиной root, промежуточными вершинами в виде каталогов и листьев в виде пустых каталогов и файлов.
+
+* Структура файловой системы:
+Файловая система обычно размещается на дисках или других устройствах внешней памяти, имеющих блочную структуру.
+Кроме блоков, сохраняющих каталоги и файлы, во внешей памяти поддерживается еще несколько служебных областей.
+
+Наиболее известны традиционная система UNIX System V и UNIX BSD (ufs).
+
+Вот как выглядит файловая система UNIX System V:
+
+Boot-блок
+--------------
+Суперблок
+--------------
+Список i-узлов
+--------------
+Блоки данных
+
+-Boot-блок содержит программу раскрутки, которая служит для первоначального запуска ОС UNIX.
+-Суперблок - это наиболее ответственная область файловой системы, содержащая информацию, которая
+необходима для работы с файловой системой в целом.
+Суперблок содержит список свободных inodes.
+-Блок группы цилиндров содержит число inodes, специфицированных в списке inodes для данной группы цилиндров, и число
+блоков данных, которые связаны с этими inodes. Размер блока группы цилиндров зависит от размера файловой системы.
+-Список i-узлов содержит список i-узлов, соответствующих файлам данной файловой системы. Максимальное число файлов,
+которые могут быть созданы в файловой системе, определяется числом доступных i-узлов.
+В i-узле хранится информация, описывающая файл: режимы доступа к файлу, время создания и последней модификации, 
+идентификатор польщователя и идентификатор группы создателя файла, описание блочной структуры файла и т.д.
+-Блоки данных: в этой части файловой системы хранятся реальные данные файлов.
+
+* Файлы любой файловой системы становятся доступными только после "монтирования" этой файловой системы.
+Файлы "не смонтированной" файловой системы не являются видимыми операционной системой.
+
+Для монтирования ФС используется системный вызов mount. Под монтированием обозначают следующее:
+в имеющемся к моменту монтирования дереве каталогов и файлов должен иметься листовой узел - пустой каталог
+(точка монтирования). В любой файловой системе имеется корневой каталог. Во время выполнения системного вызова mount
+корневой каталог монтируемой файловой системы совмещается с каталогом - точкой монтирования, в результате чего
+образуется новая иерархия с полными именами каталогов и файлов.
+
+Смонтированная файловая система впоследствии может быть отсоединена от общей иерархии с использованием
+системного вызова umount.
+
+* Адресация блоками позволяет использовать достаточно короткие адреса, покрывая при этом целые
+терабайты данных.
+
+* Кластеры - логические блоки, состоящие из нескольких секторов.
+
+-------2 кластера------------|-----Кластер---------|--------Фрагментированный кластер|
+	Файл 1			Файл 2			Конец 1 | Конец 2 | Свободно
+--------------------------------------------------------------------------------------
+			Субаллокация блоков
+
+
+Субаллокация требует от файловой системы поддержания открытых блоков на случай, если пользователь
+увеличивает размер файла, хвост которого лежит во фрагментированном блоке.
+
+Каталог - таблица преобразования имен в адреса.
+Иногда в каталоге лежит лишь имя файла и указатель на его управляющую структуру, например, инод.
+
+* Сложные файловые системы
+Обычно файловая система начинается с суперблока.
+Он хранит информацию о размерах дискового тома, отведенного под ФС, указатели на начало системных структур данных и другую
+информацию, зависющую от типа ФС.
+
+
+# ~/.bashrc: executed by bash(1) for non-login shells.
+# see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
+# for examples
+
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+wws
+# don't put duplicate lines or lines starting with space in the history.
+# See bash(1) for more options
+HISTCONTROL=ignoreboth
+
+# append to the history file, don't overwrite it
+shopt -s histappend
+
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+HISTSIZE=1000
+HISTFILESIZE=2000
+
+# check the window size after each command and, if necessary,
+# update the values of LINES and COLUMNS.
+shopt -s checkwinsize
+
+# If set, the pattern "**" used in a pathname expansion context will
+# match all files and zero or more directories and subdirectories.
+#shopt -s globstar
+
+# make less more friendly for non-text input files, see lesspipe(1)
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+
+# set variable identifying the chroot you work in (used in the prompt below)
+if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
+    debian_chroot=$(cat /etc/debian_chroot)
+fi
+
+# set a fancy prompt (non-color, unless we know we "want" color)
+case "$TERM" in
+    xterm-color|*-256color) color_prompt=yes;;
+esac
+
+# uncomment for a colored prompt, if the terminal has the capability; turned
+# off by default to not distract the user: the focus in a terminal window
+# should be on the output of commands, not on the prompt
+#force_color_prompt=yes
+
+if [ -n "$force_color_prompt" ]; then
+    if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
+        # We have color support; assume it's compliant with Ecma-48
+        # (ISO/IEC-6429). (Lack of such support is extremely rare, and such
+        # a case would tend to support setf rather than setaf.)
+        color_prompt=yes
+    else
+        color_prompt=
+    fi
+fi
+
+if [ "$color_prompt" = yes ]; then
+    PS1="\[\033[m\]|\[\033[1;35m\]\t\[\033[m\]|\[\e[1;31m\]\u\[\e[1;36m\]\[\033[m\]@\[\e[1;36m\]\h\[\033[m\]:\[\e[0m\]\[\e[1;32m\][\W]> \[\e[0m\]"
+else
+    PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
+fi
+#if [ $(id -u) -eq 0 ];
+#then # you are root, set red colour prompt
+#         PS1="\\[$(tput setaf 1)\\]\\u@\\h:\\w #\\[$(tput sgr0)\\]"
+#  else # normal
+#           PS1="[\\u@\\h:\\w] $"
+#fi
+unset color_prompt force_color_prompt
+
+# If this is an xterm set the title to user@host:dir
+case "$TERM" in
+xterm*|rxvt*)
+    PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
+    ;;
+*)
+    ;;
+esac
+
+# enable color support of ls and also add handy aliases
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    alias dir='dir --color=auto'
+    alias vdir='vdir --color=auto'
+
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# colored GCC warnings and errors
+export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+
+# some more ls aliases
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+
+# Add an "alert" alias for long running commands.  Use like so:
+#   sleep 10; alert
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+
+# Alias definitions.
+# You may want to put all your additions into a separate file like
+# ~/.bash_aliases, instead of adding them here directly.
+# See /usr/share/doc/bash-doc/examples in the bash-doc package.
+
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
+
+# enable programmable completion features (you don't need to enable
+# this, if it's already enabled in /etc/bash.bashrc and /etc/profile
+# sources /etc/bash.bashrc).
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
+
+export PATH=$PATH:/mnt/c/Users/ms_dr/progs/gradle-7.4/bin
+export PS1="\[$(tput setaf 11)\]\u:\w $ \[$(tput sgr0)\]"
+
+#alias ls='ls --color LS_COLORS='di=33:fi=01:ln=33:pi=5:so=5:bd=5:cd=5:or=33:mi=0:ex=33:*.rpm=90''
+
+#LS_COLORS="ow=01;32:di=01;32:fi=01;32:ln=01;32:pi=01;32:so=01;32:ex=01;33"'
+
+#LS_COLORS='di=3:fi=10:ln=10:pi=5:so=5:bd=5:cd=5:or=31:mi=0:ex=35:*.rpm=90''
+#export LS_COLORS
+
+echo "            _ _           "
+echo "  /\  /\___| | | ___      "
+echo " / /_/ / _ \ | |/ _ \     "
+echo "/ __  /  __/ | | (_) |    "
+echo "\/ /_/ \___|_|_|\____/    "
+echo "                          "
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

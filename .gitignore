@@ -29,3 +29,10 @@ gradlew
 *torrents
 *zip
 
+cmake-build-debug
+
+CmakeLists.txt
+
+util
+util.txt
+

@@ -1,0 +1,44 @@
+=== SOCKET
+socket() creates an endpoint of communication and returns file descriptor 
+that refers to endpoint.
+
+The domain argument specifies a communication domain; this selects the protocol family which will be  used  for  communication.
+
+AF_INET --- IpV4
+
+SOCK_STREAM  Provides  sequenced,  reliable,  two-way,  connection-based byte streams.  An out-of-band data transmission
+             mechanism may be supported.
+
+=== sockaddr_in
+/* Structure describing an Internet socket address.  */
+struct sockaddr_in
+
+=== BIND
+
+bind() binds a name to a socket.
+
+When  a  socket  is  created  with socket(2), it exists in a name space (address family) but has no address assigned to it.
+bind() assigns the address specified by addr to the socket referred to by the file descriptor  sockfd.   addrlen  specifies
+the size, in bytes, of the address structure pointed to by addr.  Traditionally, this operation is called “assigning a name
+to a socket”.
+
+=== LISTEN
+listen()  marks  the socket referred to by sockfd as a passive socket, that is, as a socket that will be used to accept in‐
+coming connection requests using accept(2).
+
+
+=== ACCEPT
+The  accept()  system call is used with connection-based socket types (SOCK_STREAM, SOCK_SEQPACKET).  It extracts the first
+connection request on the queue of pending connections for the listening socket, sockfd, creates a  new  connected  socket,
+and  returns  a new file descriptor referring to that socket.  The newly created socket is not in the listening state.  The
+original socket sockfd is unaffected by this call.
+
+inet_pton - convert IPv4 and IPv6 addresses from text to binary form
+
+
+
+
+
+
+
+

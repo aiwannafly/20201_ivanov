@@ -1,0 +1,75 @@
+Процесс --- это сущность операционной системы,
+которая нужна для того, чтобы исполнить нашу программу.
+
+
+fork() --- создает новый процесс,
+т.е. выделяет память под структуру и заполняет ее.
+
+exec файлы трогать не будет
+Ему можно сказать, чтобы он закрыл файлы кроме stdin, stdout, stderr.
+
+
+== ВОПРОСЫ
+1. Кажется, что exec-у будет достаточно иметь ручки 0, 1, 2.
+Остальные он может закрыть. Когда он их будет закрывать?
+Если нет, то как он восстановит доступ к этим ручкам.
+
+2. exit(), wait() --- зачем нужны
+Функция exit(), завершает работу программы. Аргумент code указывает
+статус завершения работы. При завершении работы в штатном порядке 
+рекомендуется указывать значение статуса 0 или EXIT_SUCCESS. В противном
+случае рекомендуется указывать отличное от нуля значение или EXIT_FAILURE.
+При вызове функции exit () в начале вызываются все функции зарегистрированные
+функцией atexit () в порядке обратном регистрации. Если какие то функции были
+зарегистрированы несколько раз, то они будут вызваны столько раз, сколько раз были зарегистрированы.
+
+Затем сбрасываются и закрываются все открытые программой потоки данных и удаляются 
+все созданные временные файлы (созданные с помощью функции tmpfile()). 
+Затем завершается работы программы.
+
+Зомби процессы --- процессы, которые были завершены при помощи exit(),
+но они все еще ждут, пока родитель не считает их код завершения.
+Занимают место в таблице процессов.
+При помощи wait() можно считать код завершения процесса и убить зомби.
+Если этого не сделать, то после смерти родителя init удочерит child-ов,
+при этом он мониторит процессы-зомби и их убивает.
+
+3. Почему нужен fork() + exec(), если можно
+это объединить в одно действие. На самом деле, это
+совсем не случайно.
+
+== ОТВЕТЫ
+1. После exec открытые файлы сохраняют свое состояние, кроме тех, которые помечены флагом
+O_CLOEXEC.
+Помеченные файлы закрываются.
+stdout, stdin, stderr, конечно будут унаследованы запускааемой программой.
+getdtablesize() позволит узнать, сколько у нас было дескрипторов и потенциально ими
+воспользоваться.
+
+2. To prevent the child becoming a zombie the parent should call wait on its children
+
+3. Есть сегмент кода, сегмент стека и сегмент данных.
+The main reason is likely that the separation of the fork() and 
+exec() steps allows arbitrary setup of the child environment to be
+done using other system calls. For example, you can:
+
+--- Set up an arbitrary set of open file descriptors;
+--- Alter the signal mask;
+--- Set the current working directory;
+--- Set the process group and/or session;
+--- Set the user, group and supplementary groups;
+--- Set hard and soft resource limits;
+
+...and many more besides. If you were to combine these calls into a single spawn() call, 
+it would have to have a very complex interface, to be able to encode all of these possible 
+changes to the child's environment - and if you ever added a new setting, the interface would 
+need to be changed. On the other hand, separate fork() and exec() steps allow you to use the 
+ordinary system calls (open(), close(), dup(), fcntl(), ...) to manipulate the child's 
+environment prior to the exec(). New functionality (eg. capset()) is easily supported.
+
+Когда мы создаем свой процесс, мы потенциально можем хотеть выставлять множество настроек.
+Окружение, рабочую директорию, подготовить множество файловых дескрипторов.
+Это удобно делать между fork() и exec().
+
+
+

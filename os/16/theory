@@ -1,0 +1,17 @@
+tcgetattr()  gets  the parameters associated with the object referred by fd and stores them in the termios structure refer‐
+enced by termios_p.  This function may be invoked from a background process; however, the terminal attributes may be subse‐
+quently changed by a foreground process.
+
+tcsetattr()  sets the parameters associated with the terminal (unless support is required from the underlying hardware that
+is not available) from the termios structure referred to by termios_p.  optional_actions specifies when  the  changes  take
+effect:
+       TCSANOW
+              the change occurs immediately.
+
+       TCSADRAIN
+              the change occurs after all output written to fd has been transmitted.  This option should be used when changing pa‐
+              rameters that affect output.
+
+       TCSAFLUSH
+              the change occurs after all output written to the object referred by fd has been transmitted, and all input that has
+              been received but not read will be discarded before the change is made.

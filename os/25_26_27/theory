@@ -1,0 +1,11 @@
+The popen()  function  opens a process by creating a pipe, forking, and invoking the shell.  Since a pipe is by definition
+    unidirectional, the type argument may specify only reading or writing, not both; the resulting  stream  is  correspondingly
+    read-only or write-only.
+
+The pclose() function waits for the associated process to terminate and returns the exit status of the command as returned
+    by wait4(2).
+
+
+The dup() system call creates a copy of the file descriptor oldfd, using the lowest-numbered unused file descriptor for the
+new descriptor.
+
